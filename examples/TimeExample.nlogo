@@ -17,9 +17,9 @@ to setup
   ;;   more info: http://joda-time.sourceforge.net/cal_iso.html
   
 ;  let t time:create ""
-  let t time:create "2012-01-01T00:00:00.000"
+  let t time:create "2012-03-11T00:00:00.000"
   
-;  print t
+  print time:show t "yyyy-MM-dd"
 ;  print time:add t 1.0 "seconds"
 ;  print time:add t 1.0 "minutes"
 ;  print time:add t 1.0 "hours"
@@ -36,17 +36,17 @@ to setup
 ;  print time:advance t 1 "months"
 ;  print time:advance t 1 "years"
   
-  set tick-time time:anchor "now" 2 "years"
+  set tick-time time:anchor t 1.5 "hour"
 end
 
 to go
   setup
-  while[ticks < 10][
+  while[ticks < 20][
     tick
     print word ticks tick-time
   ]
   tick
-  print time:add tick-time 5 "days"
+  print time:plus tick-time 5.5 "days"
 end
 @#$#@#$#@
 GRAPHICS-WINDOW

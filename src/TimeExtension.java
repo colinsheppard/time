@@ -32,7 +32,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 		LogoTime(String dt) {
 			if(!(dt.trim().equals("") || dt.trim().toLowerCase().equals("now"))){
-				this.datetime.parse(dt.trim());
+				this.datetime = this.datetime.parse(dt.trim());
 			}
 			// if we wanted to convert the time to UTC instead of the machine's default time zone, do this
 			//this.datetime = (this.datetime.withChronology(ISOChronology.getInstance(DateTimeZone.forID("UTC"))));
@@ -55,18 +55,16 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			Double durDouble = world.ticks()*this.tickCount;
 			Period per = null;
 			switch(this.tickType){
+			case WEEK:
+				durDouble *= 7;
+			case DAY:
+				durDouble *= 24;
 			case HOUR:
 				durDouble *= 60;
 			case MINUTE:
 				durDouble *= 60;
 			case SECOND:
 				durDouble *= 1000;
-				break;
-			case DAY:
-				per = new Period(0,0,0,roundDouble(durDouble),0,0,0,0);
-				break;
-			case WEEK:
-				per = new Period(0,0,roundDouble(durDouble),0,0,0,0,0);
 				break;
 			case MONTH:
 				per = new Period(0,roundDouble(durDouble),0,0,0,0,0,0);
@@ -102,10 +100,10 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		primManager.addPrimitive("create", new Create());
 		// time:anchor
 		primManager.addPrimitive("anchor", new Anchor());
-		// time:add
-		primManager.addPrimitive("add", new Add());
-		// time:advance
-		primManager.addPrimitive("advance", new Advance());
+		// time:plus
+		primManager.addPrimitive("plus", new Plus());
+		// time:show
+		primManager.addPrimitive("show", new Show());
 	}
 
 	public static class Create extends DefaultReporter {
@@ -124,19 +122,31 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 					Syntax.WildcardType());
 		}
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
-			LogoTime time = null;
-			if(args[0].get() instanceof LogoTime){
-				time = getTimeFromArgument(args, 0);
-			}else{
-				time = new LogoTime(getStringFromArgument(args, 0));
-			}
+			LogoTime time = getTimeFromArgument(args, 0);
 			time.setAnchor(getDoubleFromArgument(args, 1),
 					stringToPeriodType(getStringFromArgument(args, 2)),
 					((ExtensionContext)context).workspace().world());
 			return time;
 		}
 	}
-	public static class Add extends DefaultReporter {
+	public static class Show extends DefaultReporter {
+		public Syntax getSyntax() {
+			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType(),Syntax.StringType()},
+					Syntax.StringType());
+		}
+		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
+			LogoTime time = getTimeFromArgument(args, 0);
+			String fmtString = getStringFromArgument(args, 1);
+			DateTimeFormatter fmt = null;
+			if(fmtString.trim().equals("")){
+				fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
+			}else{
+				fmt = DateTimeFormat.forPattern(fmtString);
+			}
+			return time.datetime.toString(fmt);
+		}
+	}
+	public static class Plus extends DefaultReporter {
 		public Syntax getSyntax() {
 			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType(),Syntax.NumberType(),Syntax.StringType()},
 					Syntax.WildcardType());
@@ -144,6 +154,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
 			LogoTime time = getTimeFromArgument(args,0);
 			Duration dur = null;
+			Period per = null;
 			switch(stringToPeriodType(getStringFromArgument(args, 2))){
 			case SECOND:
 				dur = new Duration(dToL(getDoubleFromArgument(args, 1)*1000));
@@ -161,47 +172,13 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				dur = new Duration(dToL(getDoubleFromArgument(args, 1)*7*24*3600*1000));
 				break;
 			case MONTH:
-				dur = new Duration(dToL(getDoubleFromArgument(args, 1)*(365.0/12)*24*3600*1000));
-				break;
-			case YEAR:
-				dur = new Duration(dToL(getDoubleFromArgument(args, 1)*365*24*3600*1000));
-				break;
-			}
-			return new LogoTime(time.datetime.plus(dur));
-		}
-	}
-	public static class Advance extends DefaultReporter {
-		public Syntax getSyntax() {
-			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType(),Syntax.NumberType(),Syntax.StringType()},
-					Syntax.WildcardType());
-		}
-		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
-			LogoTime time = getTimeFromArgument(args,0);
-			Period per = null;
-			switch(stringToPeriodType(getStringFromArgument(args, 2))){
-			case SECOND:
-				per = new Period(0,0,0,0,0,0,getIntFromArgument(args, 1),0);
-				break;
-			case MINUTE:
-				per = new Period(0,0,0,0,0,getIntFromArgument(args, 1),0,0);
-				break;
-			case HOUR:
-				per = new Period(0,0,0,0,getIntFromArgument(args, 1),0,0,0);
-				break;
-			case DAY:
-				per = new Period(0,0,0,getIntFromArgument(args, 1),0,0,0,0);
-				break;
-			case WEEK:
-				per = new Period(0,0,getIntFromArgument(args, 1),0,0,0,0,0);
-				break;
-			case MONTH:
 				per = new Period(0,getIntFromArgument(args, 1),0,0,0,0,0,0);
 				break;
 			case YEAR:
 				per = new Period(getIntFromArgument(args, 1),0,0,0,0,0,0,0);
 				break;
 			}
-			return new LogoTime(time.datetime.plus(per));
+			return ((per==null) ? (new LogoTime(time.datetime.plus(dur))) : (new LogoTime(time.datetime.plus(per))));
 		}
 	}
 
@@ -241,12 +218,17 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	 * Convenience methods, to error check and extract a object from an Argument. 
 	 */
 	private static LogoTime getTimeFromArgument(Argument args[], Integer argIndex) throws ExtensionException, LogoException {
+		LogoTime time = null;
 		Object obj = args[argIndex].get();
-		if (!(obj instanceof LogoTime)) {
+		if (obj instanceof String) {
+			time = new LogoTime(args[argIndex].getString());
+		}else if (obj instanceof LogoTime) {
+			time = (LogoTime) obj;
+		}else{			
 			throw new ExtensionException("time: was expecting a LogoTime object as argument "+(argIndex+1)+", found this instead: " + Dump.logoObject(obj));
 		}
-		((LogoTime)obj).updateFromTick();
-		return (LogoTime) obj;
+		time.updateFromTick();
+		return time;
 	}
 	private static Double getDoubleFromArgument(Argument args[], Integer argIndex) throws ExtensionException, LogoException {
 		Object obj = args[argIndex].get();
