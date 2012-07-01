@@ -37,7 +37,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			// if we wanted to convert the time to UTC instead of the machine's default time zone, do this
 			//this.datetime = (this.datetime.withChronology(ISOChronology.getInstance(DateTimeZone.forID("UTC"))));
 		}
-		public void setAnchor(Double tickCount, PeriodType tickType, World world){
+		public void setAnchor(Double tickCount, PeriodType tickType, World world) throws ExtensionException{
+			if(tickType == PeriodType.DAYOFWEEK)throw new ExtensionException(tickType.toString() + " type is not a supported tick type");
 			this.isAnchored = true;
 			this.tickCount = tickCount;
 			this.tickType = tickType;
@@ -58,6 +59,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			case WEEK:
 				durDouble *= 7;
 			case DAY:
+			case DAYOFYEAR:
 				durDouble *= 24;
 			case HOUR:
 				durDouble *= 60;
@@ -73,6 +75,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			case YEAR:
 				per = new Period(roundDouble(durDouble),0,0,0,0,0,0,0);
 				break;
+			default:
+				return;
 			}
 			if(per==null){
 				Duration dur = new Duration(dToL(durDouble));
@@ -99,8 +103,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	public void load(org.nlogo.api.PrimitiveManager primManager) {
 		// time:create
 		primManager.addPrimitive("create", new Create());
-		// time:anchor
-		primManager.addPrimitive("anchor", new Anchor());
+		// time:anchor-to-ticks
+		primManager.addPrimitive("anchor-to-ticks", new Anchor());
 		// time:plus
 		primManager.addPrimitive("plus", new Plus());
 		// time:show
@@ -174,6 +178,12 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			case DAY:
 				result = time.datetime.getDayOfMonth();
 				break;
+			case DAYOFYEAR:
+				result = time.datetime.getDayOfYear();
+				break;
+			case DAYOFWEEK:
+				result = time.datetime.getDayOfWeek();
+				break;
 			case WEEK:
 				result = time.datetime.getWeekOfWeekyear();
 				break;
@@ -216,8 +226,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			case YEAR:
 				per = new Period(getIntFromArgument(args, 1),0,0,0,0,0,0,0);
 				break;
-			case DAYOFWEEK:
-				throw new ExtensionException("DAYOFWEEK type is not supported by the time:plus primitive");
+			default:
+				throw new ExtensionException(getStringFromArgument(args, 2)+" type is not supported by the time:plus primitive");
 			}
 			if(per==null){
 				return new LogoTime(time.datetime.plus(new Duration(dToL(doubleDur))));
@@ -249,7 +259,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			return PeriodType.MINUTE;
 		}else if(sType.equals("hour")){
 			return PeriodType.HOUR;
-		}else if(sType.equals("day")){
+		}else if(sType.equals("day") || sType.equals("dayofmonth") || sType.equals("dom")){
 			return PeriodType.DAY;
 		}else if(sType.equals("doy") || sType.equals("dayofyear") || sType.equals("julianday") || sType.equals("jday")){
 			return PeriodType.DAYOFYEAR;

@@ -17,9 +17,18 @@ to setup
   ;;   more info: http://joda-time.sourceforge.net/cal_iso.html
   
 ;  let t time:create ""
-  let t time:create "2012-03-11T00:00:00.000"
+  let t time:create "2012-11-10T09:08:07.654"
   
   print time:show t "yyyy-MM-dd"
+  print time:get "year" t
+  print time:get "month" t
+  print time:get "week" t
+  print time:get "day" t
+  print time:get "dayofyear" t
+  print time:get "dayofweek" t
+  print time:get "hour" t
+  print time:get "minute" t
+  print time:get "second" t
   print time:get "millis" t
 ;  print time:add t 1.0 "seconds"
 ;  print time:add t 1.0 "minutes"
@@ -37,7 +46,7 @@ to setup
 ;  print time:advance t 1 "months"
 ;  print time:advance t 1 "years"
   
-  set tick-time time:anchor t 1.5 "hour"
+  set tick-time time:anchor-to-ticks t 1.5 "week"
 end
 
 to go
