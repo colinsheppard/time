@@ -20,6 +20,7 @@ to setup
   let t time:create "2012-03-11T00:00:00.000"
   
   print time:show t "yyyy-MM-dd"
+  print time:get "millis" t
 ;  print time:add t 1.0 "seconds"
 ;  print time:add t 1.0 "minutes"
 ;  print time:add t 1.0 "hours"

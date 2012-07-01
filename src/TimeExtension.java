@@ -8,7 +8,7 @@ import org.joda.time.format.*;
 public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	
 	public enum PeriodType {
-		SECOND,MINUTE,HOUR,DAY,WEEK,MONTH,YEAR
+		MILLI,SECOND,MINUTE,HOUR,DAY,DAYOFYEAR,DAYOFWEEK,WEEK,MONTH,YEAR
 	}
 
 	public java.util.List<String> additionalJars() {
@@ -65,6 +65,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				durDouble *= 60;
 			case SECOND:
 				durDouble *= 1000;
+			case MILLI:
 				break;
 			case MONTH:
 				per = new Period(0,roundDouble(durDouble),0,0,0,0,0,0);
@@ -104,6 +105,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		primManager.addPrimitive("plus", new Plus());
 		// time:show
 		primManager.addPrimitive("show", new Show());
+		// time:get
+		primManager.addPrimitive("get", new Get());
 	}
 
 	public static class Create extends DefaultReporter {
@@ -146,6 +149,44 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			return time.datetime.toString(fmt);
 		}
 	}
+	public static class Get extends DefaultReporter {
+		public Syntax getSyntax() {
+			return Syntax.reporterSyntax(new int[]{Syntax.StringType(),Syntax.WildcardType()},
+					Syntax.NumberType());
+		}
+		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
+			PeriodType periodType = stringToPeriodType(getStringFromArgument(args, 0));
+			LogoTime time = getTimeFromArgument(args, 1);
+			Integer result = null;
+			switch(periodType){
+			case MILLI:
+				result = time.datetime.getMillisOfSecond();
+				break;
+			case SECOND:
+				result = time.datetime.getSecondOfMinute();
+				break;
+			case MINUTE:
+				result = time.datetime.getMinuteOfHour();
+				break;
+			case HOUR:
+				result = time.datetime.getHourOfDay();
+				break;
+			case DAY:
+				result = time.datetime.getDayOfMonth();
+				break;
+			case WEEK:
+				result = time.datetime.getWeekOfWeekyear();
+				break;
+			case MONTH:
+				result = time.datetime.getMonthOfYear();
+				break;
+			case YEAR:
+				result = time.datetime.getYear();
+				break;
+			}
+			return result.doubleValue();
+		}
+	}
 	public static class Plus extends DefaultReporter {
 		public Syntax getSyntax() {
 			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType(),Syntax.NumberType(),Syntax.StringType()},
@@ -153,23 +194,21 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
 			LogoTime time = getTimeFromArgument(args,0);
-			Duration dur = null;
+			Double doubleDur = getDoubleFromArgument(args, 1);
 			Period per = null;
 			switch(stringToPeriodType(getStringFromArgument(args, 2))){
-			case SECOND:
-				dur = new Duration(dToL(getDoubleFromArgument(args, 1)*1000));
-				break;
-			case MINUTE:
-				dur = new Duration(dToL(getDoubleFromArgument(args, 1)*60*1000));
-				break;
-			case HOUR:
-				dur = new Duration(dToL(getDoubleFromArgument(args, 1)*3600*1000));
-				break;
-			case DAY:
-				dur = new Duration(dToL(getDoubleFromArgument(args, 1)*24*3600*1000));
-				break;
 			case WEEK:
-				dur = new Duration(dToL(getDoubleFromArgument(args, 1)*7*24*3600*1000));
+				doubleDur *= 7;
+			case DAY:
+			case DAYOFYEAR:
+				doubleDur *= 24;
+			case HOUR:
+				doubleDur *= 60;
+			case MINUTE:
+				doubleDur *= 60;
+			case SECOND:
+				doubleDur *= 1000;
+			case MILLI:
 				break;
 			case MONTH:
 				per = new Period(0,getIntFromArgument(args, 1),0,0,0,0,0,0);
@@ -177,8 +216,14 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			case YEAR:
 				per = new Period(getIntFromArgument(args, 1),0,0,0,0,0,0,0);
 				break;
+			case DAYOFWEEK:
+				throw new ExtensionException("DAYOFWEEK type is not supported by the time:plus primitive");
 			}
-			return ((per==null) ? (new LogoTime(time.datetime.plus(dur))) : (new LogoTime(time.datetime.plus(per))));
+			if(per==null){
+				return new LogoTime(time.datetime.plus(new Duration(dToL(doubleDur))));
+			}else{
+				return new LogoTime(time.datetime.plus(per));
+			}
 		}
 	}
 
@@ -196,7 +241,9 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	private static TimeExtension.PeriodType stringToPeriodType(String sType) throws ExtensionException{
 		sType = sType.trim().toLowerCase();
 		if(sType.substring(sType.length()-1).equals("s"))sType = sType.substring(0,sType.length()-1);
-		if(sType.equals("second")){
+		if(sType.equals("milli")){
+			return PeriodType.MILLI;
+		}else if(sType.equals("second")){
 			return PeriodType.SECOND;
 		}else if(sType.equals("minute")){
 			return PeriodType.MINUTE;
@@ -204,6 +251,10 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			return PeriodType.HOUR;
 		}else if(sType.equals("day")){
 			return PeriodType.DAY;
+		}else if(sType.equals("doy") || sType.equals("dayofyear") || sType.equals("julianday") || sType.equals("jday")){
+			return PeriodType.DAYOFYEAR;
+		}else if(sType.equals("dayofweek") || sType.equals("dow") || sType.equals("weekday") || sType.equals("wday")){
+			return PeriodType.DAYOFWEEK;
 		}else if(sType.equals("week")){
 			return PeriodType.WEEK;
 		}else if(sType.equals("month")){
