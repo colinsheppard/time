@@ -1,5 +1,3 @@
-Time Zone List: http://joda-time.sourceforge.net/timezones.html
-
 # NetLogo Time Extension
 
 ## What is it?
