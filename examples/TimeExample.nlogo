@@ -38,13 +38,6 @@ to setup
 ;  print time:add t 1.0 "months"
 ;  print time:add t 1.0 "years"
 ;  print ""
-;  print time:advance t 1 "seconds"
-;  print time:advance t 1 "minutes"
-;  print time:advance t 1 "hours"
-;  print time:advance t 1 "days"
-;  print time:advance t 1 "weeks"
-;  print time:advance t 1 "months"
-;  print time:advance t 1 "years"
   
   set tick-time time:anchor-to-ticks t 1.5 "week"
 end
