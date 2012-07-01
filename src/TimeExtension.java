@@ -19,22 +19,20 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	private static boolean debug = true;
 
 	private static class LogoTime implements org.nlogo.api.ExtensionObject {
-		public DateTime datetime;
+		public LocalDateTime datetime = new LocalDateTime();
 		private DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
 		private Boolean isAnchored = false;
 		private Double tickCount;
 		private PeriodType tickType;
-		private DateTime anchorTime;
+		private LocalDateTime anchorTime;
 		private World world;
 
-		LogoTime(DateTime dt) {
+		LogoTime(LocalDateTime dt) {
 			this.datetime = dt;
 		}
 		LogoTime(String dt) {
-			if(dt.trim().equals("") || dt.trim().toLowerCase().equals("now")){
-				this.datetime = new DateTime();
-			}else{
-				this.datetime = new DateTime(dt.trim());
+			if(!(dt.trim().equals("") || dt.trim().toLowerCase().equals("now"))){
+				this.datetime.parse(dt.trim());
 			}
 			// if we wanted to convert the time to UTC instead of the machine's default time zone, do this
 			//this.datetime = (this.datetime.withChronology(ISOChronology.getInstance(DateTimeZone.forID("UTC"))));
@@ -43,7 +41,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			this.isAnchored = true;
 			this.tickCount = tickCount;
 			this.tickType = tickType;
-			this.anchorTime = new DateTime(this.datetime);
+			this.anchorTime = new LocalDateTime(this.datetime);
 			this.world = world;
 		}
 
