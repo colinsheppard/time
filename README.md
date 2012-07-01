@@ -20,7 +20,7 @@ time has the following notable behavior:
 
 * **Leap Days are Included** - While we simplify things by excluding time zones and DST, leap days are kept to allow users to reliably use real world time series in their Netlogo model.
 
-* **Decimal versus Whole Number Time Periods** - In this extension, decimal values can be used by the *plus* and *anchor-to-ticks* primitives for seconds, minutes, hours, days, and weeks.  But because of the ambiguity in what 1 month or year is (due to the varying number of days in a month or a year), decimal values used for months and years are rounded to the nearest whole number.  If you want to increment a time variable by one 365-day year, then just increment by 365 days.
+* **Decimal versus Whole Number Time Periods** - In this extension, decimal values can be used by the *plus* and *anchor-to-ticks* primitives for seconds, minutes, hours, days, and weeks (milliseconds can't be fractional because they are the base unit of time).  These units are treated as *durations* because they can unambiguously be converted from a decimal number to a whole number of milliseconds.  But there is ambiguity in how many milliseconds there are in 1 month or 1 year, so month and year increments are treated as *periods* which are by definition whole number valued. So if I use the *time:plus* primitive to add 1 month to the date "2012-02-02", I'll get "2012-03-02" and if I add another month I get "2012-04-02" even though those have varying days between them.  If you try to use a fractional number, it will be rounded to the nearest integer and then added. If you want to increment a time variable by one and a half 365-day years, then just increment by 1.5 * 365 days instead of 1.5 years.
 
 ## Primitives
 
