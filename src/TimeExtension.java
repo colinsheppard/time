@@ -31,7 +31,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			this.datetime = dt;
 		}
 		LogoTime(String dt) {
-			if(dt.trim().equals("")){
+			if(dt.trim().equals("") || dt.trim().toLowerCase().equals("now")){
 				this.datetime = new DateTime();
 			}else{
 				this.datetime = new DateTime(dt.trim());

@@ -1,6 +1,6 @@
 extensions [time]
 globals[
-  t
+  tick-time
 ] 
 to setup
   ;;print __dump-extensions 
@@ -17,7 +17,7 @@ to setup
   ;;   more info: http://joda-time.sourceforge.net/cal_iso.html
   
 ;  let t time:create ""
-  set t time:create "2012-01-01T00:00:00.000"
+  let t time:create "2012-01-01T00:00:00.000"
   
 ;  print t
 ;  print time:add t 1.0 "seconds"
@@ -36,17 +36,17 @@ to setup
 ;  print time:advance t 1 "months"
 ;  print time:advance t 1 "years"
   
-  set t time:anchor t 2 "years"
+  set tick-time time:anchor "now" 2 "years"
 end
 
 to go
   setup
   while[ticks < 10][
     tick
-    print word ticks t
+    print word ticks tick-time
   ]
   tick
-  print time:add t 5 "days"
+  print time:add tick-time 5 "days"
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
