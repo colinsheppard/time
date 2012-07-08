@@ -12,34 +12,41 @@ to setup
   
   ;; Time strings are based on the ISO8601 Standard
   ;;   month based:  "yyyy-mm-ddTHH:MM:SS.SSS"
+  ;                   12345678901234567890123
   ;;   day based:    "yyyy-dddTHH:MM:SS.SSS"
+  ;                   123456789012345678901
   ;;   week based:   "yyyy-Www-dTHH:MM:SS.SSS"
+  ;;                  12345678901234567890123
   ;;   more info: http://joda-time.sourceforge.net/cal_iso.html
   
 ;  let t time:create ""
   let t time:create "2012-11-10T09:08:07.654"
+  let t2 time:create "02-29" 
   
-  print time:show t "yyyy-MM-dd"
-  print time:get "year" t
-  print time:get "month" t
-  print time:get "week" t
-  print time:get "day" t
-  print time:get "dayofyear" t
-  print time:get "dayofweek" t
-  print time:get "hour" t
-  print time:get "minute" t
-  print time:get "second" t
-  print time:get "millis" t
-;  print time:add t 1.0 "seconds"
-;  print time:add t 1.0 "minutes"
-;  print time:add t 1.0 "hours"
-;  print time:add t 1.0 "days"
-;  print time:add t 1.0 "weeks"
-;  print time:add t 1.0 "months"
-;  print time:add t 1.0 "years"
+  print t2
+  print time:get "day" t2
+  
+;  print time:show t "yyyy-MM-dd"
+;  print time:get "year" t
+;  print time:get "month" t
+;  print time:get "week" t
+;  print time:get "day" t
+;  print time:get "dayofyear" t
+;  print time:get "dayofweek" t
+;  print time:get "hour" t
+;  print time:get "minute" t
+;  print time:get "second" t
+;  print time:get "millis" t
+;  print time:plus t2 1.0 "seconds"
+;  print time:plus t2 1.0 "minutes"
+;  print time:plus t2 (60.0 * 24) "minutes"
+  print time:plus t2 1 "week"
+;  print time:plus t2 1.0 "weeks"
+;  print time:plus t2 1.0 "months"
+;  print time:plus t2 1.0 "years"
 ;  print ""
   
-  set tick-time time:anchor-to-ticks t 1.5 "week"
+  set tick-time time:anchor-to-ticks t2 1 "day"
 end
 
 to go

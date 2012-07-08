@@ -6,7 +6,10 @@ import org.joda.time.*;
 import org.joda.time.format.*;
 
 public class TimeExtension extends org.nlogo.api.DefaultClassManager {
-	
+
+	public enum DateType {
+		DATETIME,DATE,DAY
+	}
 	public enum PeriodType {
 		MILLI,SECOND,MINUTE,HOUR,DAY,DAYOFYEAR,DAYOFWEEK,WEEK,MONTH,YEAR
 	}
@@ -15,74 +18,135 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		java.util.List<String> list = new java.util.ArrayList<String>();
 		return list;
 	}
-	
+
 	private static boolean debug = true;
 
 	private static class LogoTime implements org.nlogo.api.ExtensionObject {
-		public LocalDateTime datetime = new LocalDateTime();
-		private DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
+		public DateType			dateType = null;
+		public LocalDateTime 	datetime = null;
+		public LocalDate 		date	 = null;
+		public MonthDay 		monthDay = null;
+		private DateTimeFormatter fmt = null;
 		private Boolean isAnchored = false;
 		private Double tickCount;
 		private PeriodType tickType;
-		private LocalDateTime anchorTime;
+		private LocalDateTime 	anchorDatetime;
+		private LocalDate 		anchorDate;
+		private MonthDay 		anchorMonthDay;
 		private World world;
 
 		LogoTime(LocalDateTime dt) {
 			this.datetime = dt;
+			this.fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
+			this.dateType = DateType.DATETIME;
 		}
-		LogoTime(String dt) {
-			if(!(dt.trim().equals("") || dt.trim().toLowerCase().equals("now"))){
-				this.datetime = this.datetime.parse(dt.trim());
+		LogoTime(LocalDate dt) {
+			this.date = dt;
+			this.fmt = DateTimeFormat.forPattern("yyyy-MM-dd");
+			this.dateType = DateType.DATE;
+		}
+		LogoTime(MonthDay dt) {
+			this.monthDay = dt;
+			this.fmt = DateTimeFormat.forPattern("MM-dd");
+			this.dateType = DateType.DAY;
+		}
+		LogoTime(String dateString) throws ExtensionException {
+			dateString = parseDateString(dateString);
+			switch(this.dateType){
+			case DATETIME:
+				if(dateString.length() >= 3){
+					this.datetime = new LocalDateTime();
+				}else{
+					this.datetime = new LocalDateTime(dateString);
+				}
+				this.fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
+				break;
+			case DATE:
+				this.date = new LocalDate(dateString);
+				this.fmt = DateTimeFormat.forPattern("yyyy-MM-dd");
+				break;
+			case DAY:
+				this.fmt = DateTimeFormat.forPattern("MM-dd");
+				this.monthDay = (new MonthDay()).parse(dateString, this.fmt);
+				break;
 			}
-			// if we wanted to convert the time to UTC instead of the machine's default time zone, do this
-			//this.datetime = (this.datetime.withChronology(ISOChronology.getInstance(DateTimeZone.forID("UTC"))));
+		}
+		// we accommodate shorthand and human readability, allowing substitution of space for 'T' and '/' for '-'
+		// we also accommodate all three versions of specifying a full DATETIME (month, day, week -based) but only 
+		// allow one specific way each to specify a DATE and a DAY. single digit months and days need a preceding 
+		// zero (e.g. '06', not '6')
+		String parseDateString(String dateString) throws ExtensionException{
+			int len = dateString.length();
+			dateString = dateString.replace('/', '-').replace(' ', 'T');
+			if(len == 23 || len ==21 || len == 3 || len == 0){ // a full DATETIME
+				this.dateType = DateType.DATETIME;
+			}else if(len == 19 || len == 17){ // a DATETIME without millis
+				this.dateType = DateType.DATETIME;
+				dateString += ".000"; 
+			}else if(len == 16 || len == 14){ // a DATETIME without seconds or millis
+				this.dateType = DateType.DATETIME;
+				dateString += ":00.000"; 
+			}else if(len == 13 || len == 11){ // a DATETIME without minutes, seconds or millis
+				this.dateType = DateType.DATETIME;
+				dateString += ":00:00.000"; 
+			}else if(len == 10){ // a DATE
+				this.dateType = DateType.DATE;
+			}else if(len == 5){ // a DAY
+				this.dateType = DateType.DAY;
+			}else{
+				throw new ExtensionException("Illegal time string: '" + dateString + "'"); 
+			}
+			return dateString;
 		}
 		public void setAnchor(Double tickCount, PeriodType tickType, World world) throws ExtensionException{
 			if(tickType == PeriodType.DAYOFWEEK)throw new ExtensionException(tickType.toString() + " type is not a supported tick type");
 			this.isAnchored = true;
 			this.tickCount = tickCount;
 			this.tickType = tickType;
-			this.anchorTime = new LocalDateTime(this.datetime);
+			switch(this.dateType){
+			case DATETIME:
+				this.anchorDatetime = new LocalDateTime(this.datetime);
+				break;
+			case DATE:
+				this.anchorDate = new LocalDate(this.date);
+				break;
+			case DAY:
+				this.anchorMonthDay = new MonthDay(this.monthDay);
+				break;
+			}
 			this.world = world;
 		}
 
 		public String dump(boolean arg0, boolean arg1, boolean arg2) {
-			this.updateFromTick();
-			return datetime.toString(this.fmt);
-		}
-		
-		public void updateFromTick(){
-			if(!this.isAnchored)return;
-			Double durDouble = world.ticks()*this.tickCount;
-			Period per = null;
-			switch(this.tickType){
-			case WEEK:
-				durDouble *= 7;
-			case DAY:
-			case DAYOFYEAR:
-				durDouble *= 24;
-			case HOUR:
-				durDouble *= 60;
-			case MINUTE:
-				durDouble *= 60;
-			case SECOND:
-				durDouble *= 1000;
-			case MILLI:
-				break;
-			case MONTH:
-				per = new Period(0,roundDouble(durDouble),0,0,0,0,0,0);
-				break;
-			case YEAR:
-				per = new Period(roundDouble(durDouble),0,0,0,0,0,0,0);
-				break;
-			default:
-				return;
+			try {
+				this.updateFromTick();
+			} catch (ExtensionException e) {
+				// ignore
 			}
-			if(per==null){
-				Duration dur = new Duration(dToL(durDouble));
-				this.datetime = this.anchorTime.plus(dur);
-			}else{
-				this.datetime = this.anchorTime.plus(per);
+			switch(this.dateType){
+			case DATETIME:
+				return datetime.toString(this.fmt);
+			case DATE:
+				return date.toString(this.fmt);
+			case DAY:
+				return monthDay.toString(this.fmt);
+			}
+			return "";
+		}
+
+		public void updateFromTick() throws ExtensionException {
+			if(!this.isAnchored)return;
+			
+			switch(this.dateType){
+			case DATETIME:
+				this.datetime = this.plus(this.anchorDatetime,this.tickType, this.world.ticks()*this.tickCount).datetime;
+				break;
+			case DATE:
+				this.date = this.plus(this.anchorDate,this.tickType, this.world.ticks()*this.tickCount).date;
+				break;
+			case DAY:
+				this.monthDay = this.plus(this.anchorMonthDay,this.tickType, this.world.ticks()*this.tickCount).monthDay;
+				break;
 			}
 		}
 
@@ -97,9 +161,215 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public boolean recursivelyEqual(Object arg0) {
 			return equals(arg0);
 		}
+		public String show(DateTimeFormatter fmt){
+			return (this.date == null) ? this.datetime.toString(fmt) : this.date.toString(fmt);
+		}
+		public Integer get(PeriodType periodType) throws ExtensionException{
+			Integer result = null;
+			try{
+				switch(periodType){
+				case MILLI:
+					switch(this.dateType){
+					case DATETIME:
+						result =  datetime.getMillisOfSecond();
+						break;
+					case DATE:
+						result =  date.get(DateTimeFieldType.millisOfSecond());
+						break;
+					case DAY:
+						result =  monthDay.get(DateTimeFieldType.millisOfSecond());
+						break;
+					}
+					break;
+				case SECOND:
+					switch(this.dateType){
+					case DATETIME:
+						result =  datetime.getSecondOfMinute();
+						break;
+					case DATE:
+						result =  date.get(DateTimeFieldType.secondOfMinute());
+						break;
+					case DAY:
+						result =  monthDay.get(DateTimeFieldType.secondOfMinute());
+						break;
+					}
+					break;
+				case MINUTE:
+					switch(this.dateType){
+					case DATETIME:
+						result =  datetime.getMinuteOfHour();
+						break;
+					case DATE:
+						result =  date.get(DateTimeFieldType.minuteOfHour());
+						break;
+					case DAY:
+						result =  monthDay.get(DateTimeFieldType.minuteOfHour());
+						break;
+					}
+					break;
+				case HOUR:
+					switch(this.dateType){
+					case DATETIME:
+						result =  datetime.getHourOfDay();
+						break;
+					case DATE:
+						result =  date.get(DateTimeFieldType.hourOfDay());
+						break;
+					case DAY:
+						result =  monthDay.get(DateTimeFieldType.hourOfDay());
+						break;
+					}
+					break;
+				case DAY:
+					switch(this.dateType){
+					case DATETIME:
+						result =  datetime.getDayOfMonth();
+						break;
+					case DATE:
+						result =  date.get(DateTimeFieldType.dayOfMonth());
+						break;
+					case DAY:
+						result =  monthDay.get(DateTimeFieldType.dayOfMonth());
+						break;
+					}
+					break;
+				case DAYOFYEAR:
+					switch(this.dateType){
+					case DATETIME:
+						result =  datetime.getDayOfYear();
+						break;
+					case DATE:
+						result =  date.get(DateTimeFieldType.dayOfYear());
+						break;
+					case DAY:
+						result =  monthDay.get(DateTimeFieldType.dayOfYear());
+						break;
+					}
+					break;
+				case DAYOFWEEK:
+					switch(this.dateType){
+					case DATETIME:
+						result =  datetime.getDayOfWeek();
+						break;
+					case DATE:
+						result =  date.get(DateTimeFieldType.dayOfWeek());
+						break;
+					case DAY:
+						result =  monthDay.get(DateTimeFieldType.dayOfWeek());
+						break;
+					}
+					break;
+				case WEEK:
+					switch(this.dateType){
+					case DATETIME:
+						result =  datetime.getWeekOfWeekyear();
+						break;
+					case DATE:
+						result =  date.get(DateTimeFieldType.weekOfWeekyear());
+						break;
+					case DAY:
+						result =  monthDay.get(DateTimeFieldType.weekOfWeekyear());
+						break;
+					}
+					break;
+				case MONTH:
+					switch(this.dateType){
+					case DATETIME:
+						result =  datetime.getMonthOfYear();
+						break;
+					case DATE:
+						result =  date.get(DateTimeFieldType.monthOfYear());
+						break;
+					case DAY:
+						result =  monthDay.get(DateTimeFieldType.monthOfYear());
+						break;
+					}
+					break;
+				case YEAR:
+					switch(this.dateType){
+					case DATETIME:
+						result =  datetime.getYear();
+						break;
+					case DATE:
+						result =  date.get(DateTimeFieldType.year());
+						break;
+					case DAY:
+						result =  monthDay.get(DateTimeFieldType.year());
+						break;
+					}
+					break;
+				}
+			}catch(IllegalArgumentException e){
+				throw new ExtensionException("Period type "+periodType.toString()+" is not defined for the time "+this.dump(true,true,true));
+			}
+			return result;
+		}
+		public LogoTime plus(PeriodType pType, Double durVal) throws ExtensionException{
+			switch(this.dateType){
+			case DATETIME:
+				return this.plus(this.datetime,pType,durVal);
+			case DATE:
+				return this.plus(this.date,pType,durVal);
+			case DAY:
+				return this.plus(this.monthDay,pType,durVal);
+			}
+			return null;
+		}
+		public LogoTime plus(Object refTime, PeriodType pType, Double durVal) throws ExtensionException{
+			Period per = null;
+			switch(pType){
+			case WEEK:
+				durVal *= 7;
+			case DAY:
+			case DAYOFYEAR:
+				durVal *= 24;
+			case HOUR:
+				durVal *= 60;
+			case MINUTE:
+				durVal *= 60;
+			case SECOND:
+				durVal *= 1000;
+			case MILLI:
+				break;
+			case MONTH:
+				per = new Period(0,roundDouble(durVal),0,0,0,0,0,0);
+				break;
+			case YEAR:
+				per = new Period(roundDouble(durVal),0,0,0,0,0,0,0);
+				break;
+			default:
+				throw new ExtensionException(pType+" type is not supported by the time:plus primitive");
+			}
+			switch(this.dateType){
+			case DATETIME:
+				if(per==null){
+					return new LogoTime(((LocalDateTime)refTime).plus(new Duration(dToL(durVal))));
+				}else{
+					return new LogoTime(((LocalDateTime)refTime).plus(per));
+				}
+			case DATE:
+				if(per==null){
+					Integer dayDurVal = ((Double)(durVal / (24.0*60.0*60.0*1000.0))).intValue();
+					return new LogoTime(((LocalDate)refTime).plusDays(dayDurVal));
+				}else{
+					return new LogoTime(((LocalDate)refTime).plus(per));
+				}
+			case DAY:
+				if(per==null){
+					Integer dayDurVal = ((Double)(durVal / (24.0*60.0*60.0*1000.0))).intValue();
+					return new LogoTime(((MonthDay)refTime).plusDays(dayDurVal));
+				}else{
+					return new LogoTime(((MonthDay)refTime).plus(per));
+				}
+			}
+			return null;
+		}
+		public void throwUnlessDatetime() throws ExtensionException{
+			if(this.datetime == null)throw new ExtensionException("This operation cannot be performed on a time of type " + this.dateType.toString() + ": "+this.show(this.fmt));
+		}
 	}
 
-	///
+	//
 	public void load(org.nlogo.api.PrimitiveManager primManager) {
 		// time:create
 		primManager.addPrimitive("create", new Create());
@@ -150,7 +420,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			}else{
 				fmt = DateTimeFormat.forPattern(fmtString);
 			}
-			return time.datetime.toString(fmt);
+			return time.show(fmt);
 		}
 	}
 	public static class Get extends DefaultReporter {
@@ -161,40 +431,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
 			PeriodType periodType = stringToPeriodType(getStringFromArgument(args, 0));
 			LogoTime time = getTimeFromArgument(args, 1);
-			Integer result = null;
-			switch(periodType){
-			case MILLI:
-				result = time.datetime.getMillisOfSecond();
-				break;
-			case SECOND:
-				result = time.datetime.getSecondOfMinute();
-				break;
-			case MINUTE:
-				result = time.datetime.getMinuteOfHour();
-				break;
-			case HOUR:
-				result = time.datetime.getHourOfDay();
-				break;
-			case DAY:
-				result = time.datetime.getDayOfMonth();
-				break;
-			case DAYOFYEAR:
-				result = time.datetime.getDayOfYear();
-				break;
-			case DAYOFWEEK:
-				result = time.datetime.getDayOfWeek();
-				break;
-			case WEEK:
-				result = time.datetime.getWeekOfWeekyear();
-				break;
-			case MONTH:
-				result = time.datetime.getMonthOfYear();
-				break;
-			case YEAR:
-				result = time.datetime.getYear();
-				break;
-			}
-			return result.doubleValue();
+			return time.get(periodType).doubleValue();
 		}
 	}
 	public static class Plus extends DefaultReporter {
@@ -204,36 +441,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
 			LogoTime time = getTimeFromArgument(args,0);
-			Double doubleDur = getDoubleFromArgument(args, 1);
-			Period per = null;
-			switch(stringToPeriodType(getStringFromArgument(args, 2))){
-			case WEEK:
-				doubleDur *= 7;
-			case DAY:
-			case DAYOFYEAR:
-				doubleDur *= 24;
-			case HOUR:
-				doubleDur *= 60;
-			case MINUTE:
-				doubleDur *= 60;
-			case SECOND:
-				doubleDur *= 1000;
-			case MILLI:
-				break;
-			case MONTH:
-				per = new Period(0,getIntFromArgument(args, 1),0,0,0,0,0,0);
-				break;
-			case YEAR:
-				per = new Period(getIntFromArgument(args, 1),0,0,0,0,0,0,0);
-				break;
-			default:
-				throw new ExtensionException(getStringFromArgument(args, 2)+" type is not supported by the time:plus primitive");
-			}
-			if(per==null){
-				return new LogoTime(time.datetime.plus(new Duration(dToL(doubleDur))));
-			}else{
-				return new LogoTime(time.datetime.plus(per));
-			}
+			return time.plus(stringToPeriodType(getStringFromArgument(args, 2)), getDoubleFromArgument(args, 1));
 		}
 	}
 
@@ -275,6 +483,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			throw new ExtensionException("illegal time period type: "+sType);
 		}
 	}
+
 	/*
 	 * Convenience methods, to error check and extract a object from an Argument. 
 	 */
