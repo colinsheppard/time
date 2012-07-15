@@ -1,6 +1,8 @@
 extensions [time]
 globals[
-  tick-time
+  tick-datetime
+  tick-date
+  tick-day
 ] 
 to setup
   ;;print __dump-extensions 
@@ -19,44 +21,76 @@ to setup
   ;;                  12345678901234567890123
   ;;   more info: http://joda-time.sourceforge.net/cal_iso.html
   
-;  let t time:create ""
-  let t time:create "2012-11-10T09:08:07.654"
-  let t2 time:create "02-29" 
+  ;; Show what's possible in terms of formatting DATETIME, DATE, and DAY
+  ; VALID DATETIME's
+  print time:create "2000-01-02T03:04:05.678"
+  print time:create "2000-01-02 03:04:05"
+  print time:create "2000-01-02 03:04"
+  print time:create "2000-01-02 03"
+  print time:create "2000/01/02 03:04:05.678"
+  print time:create "2000-1-02 03:04:05.678"
+  print time:create "2000-01-2 03:04:05.678"
+  print time:create "2000-1-2 03:04:05.678"
+  print time:create "2000-01-02"
+  print time:create "2000-01-2"
+  print time:create "2000-1-02"
+  print time:create "01-02"
+  print time:create "01-2"
+  print time:create "1-02"
+  print ""
+    
+  ; prints the current datetime, two different ways
+  print time:create "now"  
+  print time:create ""  
+  print ""
+
+  ;; Create a datetime, a date, and a day
+  let t-datetime time:create "2000-01-02 03:04:05.678"
+  let t-date time:create "2000-01-02"
+  let t-day time:create "01-02"
   
-  print t2
-  print time:get "day" t2
+  ;; Print out the logotime using user specified format, for full description of options, see:
+  ;; http://joda-time.sourceforge.net/api-release/org/joda/time/format/DateTimeFormat.html
+  print time:show t-datetime "yyyy-MM-dd"
+  print ""
   
-;  print time:show t "yyyy-MM-dd"
-;  print time:get "year" t
-;  print time:get "month" t
-;  print time:get "week" t
-;  print time:get "day" t
-;  print time:get "dayofyear" t
-;  print time:get "dayofweek" t
-;  print time:get "hour" t
-;  print time:get "minute" t
-;  print time:get "second" t
-;  print time:get "millis" t
-;  print time:plus t2 1.0 "seconds"
-;  print time:plus t2 1.0 "minutes"
-;  print time:plus t2 (60.0 * 24) "minutes"
-  print time:plus t2 1 "week"
-;  print time:plus t2 1.0 "weeks"
-;  print time:plus t2 1.0 "months"
-;  print time:plus t2 1.0 "years"
-;  print ""
+  ;; Print out specific fields from the datetime
+  print time:get "year" t-datetime
+  print time:get "month" t-datetime
+  print time:get "week" t-datetime
+  print time:get "day" t-datetime
+  print time:get "dayofyear" t-datetime
+  print time:get "dayofweek" t-datetime
+  print time:get "hour" t-datetime
+  print time:get "minute" t-datetime
+  print time:get "second" t-datetime
+  print time:get "millis" t-datetime
+  print ""
   
-  set tick-time time:anchor-to-ticks t2 1 "day"
+  print time:plus t-datetime 1.0 "seconds"
+  print time:plus t-datetime 1.0 "minutes"
+  print time:plus t-datetime (60.0 * 24) "minutes"
+  print time:plus t-datetime 1 "week"
+  print time:plus t-datetime 1.0 "weeks"
+  print time:plus t-datetime 1.0 "months"
+  print time:plus t-datetime 1.0 "years"
+  print ""
+  
+  set tick-datetime time:anchor-to-ticks t-datetime 1 "hour"
+  set tick-date time:anchor-to-ticks t-date 1 "day"
+  set tick-day time:anchor-to-ticks t-day 1 "month"
 end
 
 to go
   setup
   while[ticks < 20][
     tick
-    print word ticks tick-time
+    print (word "tick " ticks)
+    print (word "tick-datetime " tick-datetime)
+    print (word "tick-date " tick-date)
+    print (word "tick-day " tick-day)
   ]
   tick
-  print time:plus tick-time 5.5 "days"
 end
 @#$#@#$#@
 GRAPHICS-WINDOW

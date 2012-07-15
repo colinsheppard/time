@@ -1,3 +1,8 @@
+import java.io.IOException;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+
 import org.nlogo.api.*;
 import org.nlogo.nvm.ExtensionContext;
 import org.nlogo.nvm.Workspace.OutputDestination;
@@ -27,13 +32,13 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public LocalDate 		date	 = null;
 		public MonthDay 		monthDay = null;
 		private DateTimeFormatter fmt = null;
-		private Boolean isAnchored = false;
-		private Double tickCount;
-		private PeriodType tickType;
+		private Boolean 		isAnchored = false;
+		private Double 			tickCount;
+		private PeriodType 		tickType;
 		private LocalDateTime 	anchorDatetime;
 		private LocalDate 		anchorDate;
 		private MonthDay 		anchorMonthDay;
-		private World world;
+		private World 			world;
 
 		LogoTime(LocalDateTime dt) {
 			this.datetime = dt;
@@ -54,11 +59,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			dateString = parseDateString(dateString);
 			switch(this.dateType){
 			case DATETIME:
-				if(dateString.length() >= 3){
-					this.datetime = new LocalDateTime();
-				}else{
-					this.datetime = new LocalDateTime(dateString);
-				}
+				this.datetime = (dateString.length() == 0 || dateString.equals("now")) ? new LocalDateTime() : new LocalDateTime(dateString);
 				this.fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
 				break;
 			case DATE:
@@ -71,13 +72,68 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				break;
 			}
 		}
-		// we accommodate shorthand and human readability, allowing substitution of space for 'T' and '/' for '-'
-		// we also accommodate all three versions of specifying a full DATETIME (month, day, week -based) but only 
-		// allow one specific way each to specify a DATE and a DAY. single digit months and days need a preceding 
-		// zero (e.g. '06', not '6')
+		/* 
+		 * parseDateString
+		 * 
+		 * Accommodate shorthand and human readability, allowing substitution of space for 'T' and '/' for '-'.
+		 * Also accommodate all three versions of specifying a full DATETIME (month, day, week -based) but only
+		 * allow one specific way each to specify a DATE and a DAY. Single digit months and days are ok, but single
+		 * digit hours, minutes, and seconds need a preceding zero (e.g. '06', not '6')
+		 * 
+		 * LEGIT
+		 * 2012-11-10T09:08:07.654
+		 * 2012/11/10T09:08:07.654
+		 * 2012-11-10 09:08:07.654
+		 * 2012/11/10 09:08:07.654
+		 * 2012-11-10 09:08:07		// assumes 0 for millis
+		 * 2012-11-10 09:08			// assumes 0 for seconds and millis
+		 * 2012-11-10 09			// assumes 0 for minutes, seconds, and millis
+		 * 2012-1-1 09:08:07.654
+		 * 2012-01-1 09:08:07.654
+		 * 2012-1-01 09:08:07.654
+		 * 2012-01-01
+		 * 2012-1-01
+		 * 2012-01-1
+		 * 01-01
+		 * 1-01
+		 * 01-1
+		 * 
+		 * NOT LEGIT
+		 * 2012-11-10 9:08:07.654
+		 * 2012-11-10 09:08:07.654
+		 */
+		//
+		//
 		String parseDateString(String dateString) throws ExtensionException{
+			dateString = dateString.replace('/', '-').replace(' ', 'T').trim();
 			int len = dateString.length();
-			dateString = dateString.replace('/', '-').replace(' ', 'T');
+			// First add 0's to pad single digit months / days if necessary
+			int firstDash = dateString.indexOf('-');
+			if(firstDash == 1 || firstDash == 2){ // DAY 
+				if(firstDash == 1){ // month is single digit
+					dateString = "0" + dateString;
+					len++;
+				}
+				// Now check the day for a single digit
+				if(len == 4){
+					dateString = dateString.substring(0, 3) + "0" + dateString.substring(3, 4);
+					len++;
+				}else if(len < 5){
+					throw new ExtensionException("Illegal time string: '" + dateString + "'"); 
+				}
+			}else if(firstDash != 4 && firstDash != -1){
+				throw new ExtensionException("Illegal time string: '" + dateString + "'"); 
+			}else{ // DATETIME or DATE
+				int secondDash = dateString.lastIndexOf('-');
+				if(secondDash == 6){ // month is single digit
+					dateString = dateString.substring(0, 5) + "0" + dateString.substring(5, len);
+					len++;
+				}
+				if(len == 9 || dateString.indexOf('T') == 9){ // day is single digit
+					dateString = dateString.substring(0, 8) + "0" + dateString.substring(8, len);
+					len++;
+				}
+			}
 			if(len == 23 || len ==21 || len == 3 || len == 0){ // a full DATETIME
 				this.dateType = DateType.DATETIME;
 			}else if(len == 19 || len == 17){ // a DATETIME without millis
@@ -155,7 +211,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 
 		public String getNLTypeName() {
-			return "datetime";
+			return "logotime";
 		}
 
 		public boolean recursivelyEqual(Object arg0) {
@@ -535,6 +591,26 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	}
 	private static Integer roundDouble(Double d){
 		return ((Long)Math.round(d)).intValue();
+	}
+	private static void printToLogfile(String msg){
+		  Logger logger = Logger.getLogger("MyLog");  
+	      FileHandler fh;  
+	          
+	      try {  
+	            // This block configure the logger with handler and formatter  
+	            fh = new FileHandler("logfile.txt",true);
+	            logger.addHandler(fh);  
+	            //logger.setLevel(Level.ALL);  
+	            SimpleFormatter formatter = new SimpleFormatter();  
+	            fh.setFormatter(formatter);  
+	            // the following statement is used to log any messages  
+	            logger.info(msg);
+	            fh.close();
+	        } catch (SecurityException e) {  
+	            e.printStackTrace();  
+	        } catch (IOException e) {  
+	            e.printStackTrace();  
+	        }  
 	}
 }
 
