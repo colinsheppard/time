@@ -12,14 +12,23 @@ to setup
   print "============================"
   print ""
   
-  ;; Time strings are based on the ISO8601 Standard
+  ;; A logotime can be one of three varieties: a DATETIME, a DATE, and a DAY
+  ;; The variety is inferred by the length of the string passed to time:create
+  ;; 
+  ;; The date delimiter can be '-' or '/' and the delimeter between the date and time
+  ;; can be a 'T' or a ' '.  Single digit months and days can have an optional leading zero.
+  ;; Single digit hours, minutes, and seconds must have a leading zero.  Hours are basd on a 
+  ;; 24-hour clock (e.g. midnight is '00', noon is '12', and 11pm is '23').
+  ;;
+  ;; DATETIME strings are based on the ISO8601 Standard which can by month, day, or week based:
   ;;   month based:  "yyyy-mm-ddTHH:MM:SS.SSS"
-  ;                   12345678901234567890123
   ;;   day based:    "yyyy-dddTHH:MM:SS.SSS"
-  ;                   123456789012345678901
   ;;   week based:   "yyyy-Www-dTHH:MM:SS.SSS"
-  ;;                  12345678901234567890123
   ;;   more info: http://joda-time.sourceforge.net/cal_iso.html
+  ;; 
+  ;; DATE must be ordered as year-month-day, and DAY must be month-day.
+  ;; 
+  ;; Use "" or "now" to get the computer's system datetime
   
   ;; Show what's possible in terms of formatting DATETIME, DATE, and DAY
   ; VALID DATETIME's
@@ -38,10 +47,14 @@ to setup
   print time:create "01-2"
   print time:create "1-02"
   print ""
+  print "============================"
+  print ""
     
   ; prints the current datetime, two different ways
   print time:create "now"  
   print time:create ""  
+  print ""
+  print "============================"
   print ""
 
   ;; Create a datetime, a date, and a day
@@ -52,6 +65,8 @@ to setup
   ;; Print out the logotime using user specified format, for full description of options, see:
   ;; http://joda-time.sourceforge.net/api-release/org/joda/time/format/DateTimeFormat.html
   print time:show t-datetime "yyyy-MM-dd"
+  print ""
+  print "============================"
   print ""
   
   ;; Print out specific fields from the datetime
@@ -66,23 +81,54 @@ to setup
   print time:get "second" t-datetime
   print time:get "millis" t-datetime
   print ""
+  print "============================"
+  print ""
   
   print time:plus t-datetime 1.0 "seconds"
   print time:plus t-datetime 1.0 "minutes"
   print time:plus t-datetime (60.0 * 24) "minutes"
   print time:plus t-datetime 1 "week"
   print time:plus t-datetime 1.0 "weeks"
-  print time:plus t-datetime 1.0 "months"
-  print time:plus t-datetime 1.0 "years"
+  print time:plus t-datetime 1.0 "months"  ;; note that decimal months or years are
+  print time:plus t-datetime 1.0 "years"   ;; rounded to the nearest whole number
+  print ""
+  print "============================"
   print ""
   
+  ;; any of the three varieties of logotime can be achored to the tick,
+  ;; the time value of the logotime is assumed to be tick zero.
+  ;; the other arguments to this call describe how much time one tick is worth,
+  ;; e.g. below one tick is with one hour, two days, and three months respectively
   set tick-datetime time:anchor-to-ticks t-datetime 1 "hour"
-  set tick-date time:anchor-to-ticks t-date 1 "day"
-  set tick-day time:anchor-to-ticks t-day 1 "month"
+  set tick-date time:anchor-to-ticks t-date 2 "days"
+  set tick-day time:anchor-to-ticks t-day 3 "months"
+  
+  ;; make comparisons between LogoTimes
+  print "before, before, after, equal, equal"
+  print time:is-before (time:create "2000-01-02") (time:create "2000-01-03")
+  print time:is-before (time:create "2000-01-03") (time:create "2000-01-02")
+  print time:is-after  (time:create "2000-01-03") (time:create "2000-01-02")
+  print time:is-equal  (time:create "2000-01-02") (time:create "2000-01-02")
+  print time:is-equal  (time:create "2000-01-02") (time:create "2000-01-03")
+  print "before days"
+  print time:is-before (time:create "01-02") (time:create "01-03")
+  print "is between"
+  print time:is-between (time:create "2000-03-08")  (time:create "1999-12-02") (time:create "2000-05-03")
+  print ""
+  print "============================"
+  print ""
+  
+  ;; find the amount of time between two LogoTimes, make sure to specify a time unit and recall that months
+  ;; and years will only be reported as whole numbers
+  print time:difference-between (time:create "2000-01-02 00:00") (time:create "2000-02-02 00:00") "days"
+  print time:difference-between (time:create "2000-01-02") (time:create "2001-02-02") "days"
+  print time:difference-between (time:create "01-02") (time:create "01-01") "hours"
 end
 
 to go
   setup
+  ;; during model execution, any logotime that has been achored to ticks will automatically
+  ;; hold the appropriate date, and can be used analogously to using the "ticks" primitive
   while[ticks < 20][
     tick
     print (word "tick " ticks)

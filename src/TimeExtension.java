@@ -8,6 +8,7 @@ import org.nlogo.nvm.ExtensionContext;
 import org.nlogo.nvm.Workspace.OutputDestination;
 
 import org.joda.time.*;
+import org.joda.time.chrono.ISOChronology;
 import org.joda.time.format.*;
 
 public class TimeExtension extends org.nlogo.api.DefaultClassManager {
@@ -192,7 +193,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 
 		public void updateFromTick() throws ExtensionException {
 			if(!this.isAnchored)return;
-			
+
 			switch(this.dateType){
 			case DATETIME:
 				this.datetime = this.plus(this.anchorDatetime,this.tickType, this.world.ticks()*this.tickCount).datetime;
@@ -420,8 +421,90 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			}
 			return null;
 		}
-		public void throwUnlessDatetime() throws ExtensionException{
-			if(this.datetime == null)throw new ExtensionException("This operation cannot be performed on a time of type " + this.dateType.toString() + ": "+this.show(this.fmt));
+		public boolean isBefore(LogoTime timeB)throws ExtensionException{
+			if(this.dateType != timeB.dateType)throw new ExtensionException("time comparisons only work if the LogoTime's are the same variety, but you called with a "+this.dateType.toString()+" and a "+timeB.dateType.toString());
+			switch(this.dateType){
+			case DATETIME:
+				return this.datetime.isBefore(timeB.datetime);
+			case DATE:
+				return this.date.isBefore(timeB.date);
+			case DAY:
+				return this.monthDay.isBefore(timeB.monthDay);
+			}
+			return true;
+		}
+		public boolean isEqual(LogoTime timeB)throws ExtensionException{
+			if(this.dateType != timeB.dateType)throw new ExtensionException("time comparisons only work if the LogoTime's are the same variety, but you called with a "+this.dateType.toString()+" and a "+timeB.dateType.toString());
+			switch(this.dateType){
+			case DATETIME:
+				return this.datetime.isEqual(timeB.datetime);
+			case DATE:
+				return this.date.isEqual(timeB.date);
+			case DAY:
+				return this.monthDay.isEqual(timeB.monthDay);
+			}
+			return true;
+		}
+		public boolean isBetween(LogoTime timeA, LogoTime timeB)throws ExtensionException{
+			if(this.dateType != timeA.dateType || this.dateType != timeB.dateType)throw new ExtensionException("time comparisons only work if the LogoTime's are the same variety, but you called with a "+
+					this.dateType.toString()+", a "+timeA.dateType.toString()+", and a "+timeB.dateType.toString());
+			switch(this.dateType){
+			case DATETIME:
+				return ((this.datetime.isAfter(timeA.datetime) && this.datetime.isBefore(timeB.datetime)) || this.datetime.isEqual(timeA.datetime) || this.datetime.isEqual(timeB.datetime));
+			case DATE:
+				return ((this.date.isAfter(timeA.date) && this.date.isBefore(timeB.date)) || this.date.isEqual(timeA.date) || this.date.isEqual(timeB.date));
+			case DAY:
+				return ((this.monthDay.isAfter(timeA.monthDay) && this.monthDay.isBefore(timeB.monthDay)) || this.monthDay.isEqual(timeA.monthDay) || this.monthDay.isEqual(timeB.monthDay));
+			}
+			return true;
+		}
+		public Double getDifferenceBetween(PeriodType pType, LogoTime endTime)throws ExtensionException{
+			if(this.dateType != endTime.dateType)throw new ExtensionException("time comparisons only work if the LogoTimes are the same variety, but you called with a "+
+					this.dateType.toString()+" and a "+endTime.dateType.toString());
+			Double durVal = 1.0;
+			switch(pType){
+			case YEAR:
+				switch(this.dateType){
+				case DATETIME:
+					return intToDouble((new Period(this.datetime,endTime.datetime)).getYears());
+				case DATE:
+					return intToDouble((new Period(this.date,endTime.date)).getYears());
+				case DAY:
+					throw new ExtensionException(pType+" type is not supported by the time:difference-between primitive with LogoTimes of type DAY");
+				}
+			case MONTH:
+				switch(this.dateType){
+				case DATETIME:
+					return intToDouble((new Period(this.datetime,endTime.datetime)).getMonths());
+				case DATE:
+					return intToDouble((new Period(this.date,endTime.date)).getMonths());
+				case DAY:
+					return intToDouble((new Period(this.monthDay,endTime.monthDay)).getMonths());
+				}
+			case WEEK:
+				durVal /= 7.0;
+			case DAY:
+			case DAYOFYEAR:
+				durVal /= 24.0;
+			case HOUR:
+				durVal /= 60.0;
+			case MINUTE:
+				durVal /= 60.0;
+			case SECOND:
+				durVal /= 1000.0;
+			case MILLI:
+				DateTime refDateTime = new DateTime(ISOChronology.getInstanceUTC());
+				switch(this.dateType){
+				case DATETIME:
+					return durVal * (new Duration(this.datetime.toDateTime(refDateTime),endTime.datetime.toDateTime(refDateTime))).getMillis();
+				case DATE:
+					return durVal * (new Duration(this.date.toDateTime(refDateTime),endTime.date.toDateTime(refDateTime))).getMillis();
+				case DAY:
+					return durVal * (new Duration(this.monthDay.toLocalDate(2000).toDateTime(refDateTime),endTime.monthDay.toLocalDate(2000).toDateTime(refDateTime))).getMillis();
+				}
+			default:
+				throw new ExtensionException(pType+" type is not supported by the time:difference-between primitive");
+			}
 		}
 	}
 
@@ -437,6 +520,16 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		primManager.addPrimitive("show", new Show());
 		// time:get
 		primManager.addPrimitive("get", new Get());
+		// time:is-before
+		primManager.addPrimitive("is-before", new IsBefore());
+		// time:is-after
+		primManager.addPrimitive("is-after", new IsAfter());
+		// time:is-equal
+		primManager.addPrimitive("is-equal", new IsEqual());
+		// time:is-between
+		primManager.addPrimitive("is-between", new IsBetween());
+		// time:difference-between
+		primManager.addPrimitive("difference-between", new DifferenceBetween());
 	}
 
 	public static class Create extends DefaultReporter {
@@ -498,6 +591,63 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
 			LogoTime time = getTimeFromArgument(args,0);
 			return time.plus(stringToPeriodType(getStringFromArgument(args, 2)), getDoubleFromArgument(args, 1));
+		}
+	}
+	public static class IsBefore extends DefaultReporter {
+		public Syntax getSyntax() {
+			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType(),Syntax.WildcardType()},
+					Syntax.BooleanType());
+		}
+		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
+			LogoTime timeA = getTimeFromArgument(args,0);
+			LogoTime timeB = getTimeFromArgument(args,1);
+			return timeA.isBefore(timeB);
+		}
+	}
+	public static class IsAfter extends DefaultReporter {
+		public Syntax getSyntax() {
+			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType(),Syntax.WildcardType()},
+					Syntax.BooleanType());
+		}
+		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
+			LogoTime timeA = getTimeFromArgument(args,0);
+			LogoTime timeB = getTimeFromArgument(args,1);
+			return !timeA.isBefore(timeB);
+		}
+	}
+	public static class IsEqual extends DefaultReporter {
+		public Syntax getSyntax() {
+			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType(),Syntax.WildcardType()},
+					Syntax.BooleanType());
+		}
+		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
+			LogoTime timeA = getTimeFromArgument(args,0);
+			LogoTime timeB = getTimeFromArgument(args,1);
+			return timeA.isEqual(timeB);
+		}
+	}
+	public static class IsBetween extends DefaultReporter {
+		public Syntax getSyntax() {
+			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType(),Syntax.WildcardType(),Syntax.WildcardType()},
+					Syntax.BooleanType());
+		}
+		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
+			LogoTime timeA = getTimeFromArgument(args,0);
+			LogoTime timeB = getTimeFromArgument(args,1);
+			LogoTime timeC = getTimeFromArgument(args,2);
+			return timeA.isBetween(timeB,timeC);
+		}
+	}
+	public static class DifferenceBetween extends DefaultReporter {
+		public Syntax getSyntax() {
+			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType(),Syntax.WildcardType(),Syntax.StringType()},
+					Syntax.NumberType());
+		}
+		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
+			LogoTime startTime = getTimeFromArgument(args,0);
+			LogoTime endTime = getTimeFromArgument(args,1);
+			PeriodType pType = stringToPeriodType(getStringFromArgument(args, 2));
+			return startTime.getDifferenceBetween(pType, endTime);
 		}
 	}
 
@@ -592,25 +742,28 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	private static Integer roundDouble(Double d){
 		return ((Long)Math.round(d)).intValue();
 	}
+	private static Double intToDouble(int i){
+		return (new Integer(i)).doubleValue();
+	}
 	private static void printToLogfile(String msg){
-		  Logger logger = Logger.getLogger("MyLog");  
-	      FileHandler fh;  
-	          
-	      try {  
-	            // This block configure the logger with handler and formatter  
-	            fh = new FileHandler("logfile.txt",true);
-	            logger.addHandler(fh);  
-	            //logger.setLevel(Level.ALL);  
-	            SimpleFormatter formatter = new SimpleFormatter();  
-	            fh.setFormatter(formatter);  
-	            // the following statement is used to log any messages  
-	            logger.info(msg);
-	            fh.close();
-	        } catch (SecurityException e) {  
-	            e.printStackTrace();  
-	        } catch (IOException e) {  
-	            e.printStackTrace();  
-	        }  
+		Logger logger = Logger.getLogger("MyLog");  
+		FileHandler fh;  
+
+		try {  
+			// This block configure the logger with handler and formatter  
+			fh = new FileHandler("logfile.txt",true);
+			logger.addHandler(fh);  
+			//logger.setLevel(Level.ALL);  
+			SimpleFormatter formatter = new SimpleFormatter();  
+			fh.setFormatter(formatter);  
+			// the following statement is used to log any messages  
+			logger.info(msg);
+			fh.close();
+		} catch (SecurityException e) {  
+			e.printStackTrace();  
+		} catch (IOException e) {  
+			e.printStackTrace();  
+		}  
 	}
 }
 
