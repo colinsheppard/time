@@ -24,13 +24,23 @@ time has the following notable behavior:
 
 Coming soon.
 
+## Installation
+
+Two jars need to be present in the same directory as your Netlogo modle or in the extensions directory of your Netlogo application:
+
+time.jar
+joda-time-2.2.jar
+
+For more information on Netlogo extensions:
+http://ccl.northwestern.edu/netlogo/docs/extensions.html
+
 ## Building
 
 Use the NETLOGO environment variable to tell the Makefile which NetLogoLite.jar to compile against.  For example:
 
     NETLOGO=/Applications/NetLogo\\\ 5.0 make
 
-If compilation succeeds, `time.jar` will be created.
+If compilation succeeds, `time.jar` will be created.  
 
 ## Author
 
