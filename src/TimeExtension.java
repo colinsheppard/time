@@ -475,9 +475,9 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			case MONTH:
 				switch(this.dateType){
 				case DATETIME:
-					return intToDouble((new Period(this.datetime,endTime.datetime)).getMonths());
+					return intToDouble(Months.monthsBetween(this.datetime,endTime.datetime).getMonths());
 				case DATE:
-					return intToDouble((new Period(this.date,endTime.date)).getMonths());
+					return intToDouble(Months.monthsBetween(this.date,endTime.date).getMonths());
 				case DAY:
 					return intToDouble((new Period(this.monthDay,endTime.monthDay)).getMonths());
 				}
