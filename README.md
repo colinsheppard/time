@@ -43,18 +43,18 @@ See the example models in the extension subfolder "examples" for a demonstration
 
 * **Time recognizes "period types"** - In order to make it easy to specify a time duration like 2 "days" or 4 "weeks", the time extension will accept strings to specify a period type.  The following is the list of period types and strings that time recognizes (note, any of these period type strings can be pluralized and are case IN-sensitive):
   
-| PERIOD TYPE        | Valid string specifiers  |
-| ------------- |:-------------:|
-| YEAR  | "year" |
-| MONTH | "month" |
-| WEEK  | "week" |
-| DAY |  "day", "dayofmonth", "dom" |
-| DAYOFYEAR |  "dayofyear", "doy", "julianday", "jday" |
-| DAYOFWEEK |  "dayofweek", "dow", "weekday", "wday" |
-| HOUR |  "hour" |
-| MINUTE |  "minute" |
-| SECOND |  "second" |
-| MILLI |  "milli" |
+| PERIOD TYPE | Valid string specifiers			|
+| ------------|-----------------------------------------|
+| YEAR	      | "year"					|
+| MONTH	      | "month"					|
+| WEEK	      | "week"					|
+| DAY	      | "day", "dayofmonth", "dom"		|
+| DAYOFYEAR   | "dayofyear", "doy", "julianday", "jday" |
+| DAYOFWEEK   | "dayofweek", "dow", "weekday", "wday"	|
+| HOUR	      | "hour"					|
+| MINUTE      | "minute"				|
+| SECOND      | "second"				|
+| MILLI	      | "milli"					|
 
 * **Time has Millisecond Resolution** - This is a fundamental feature of Joda Time and cannot be changed.  The biggest reason Joda Time does not support micro or nano seconds is performance, going to that resolution would require the use of BigInts which would substantially slow down computations.  [Read more on this topic](http://joda-time.sourceforge.net/faq.html#submilli)
 
