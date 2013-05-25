@@ -15,7 +15,7 @@ time has the following notable behavior:
 * **It enables a new data type called a "logotime"** - A logotime is a flexible data structure that will represent your time data as one of three varieties depending on how you create the logotime object.  A logotime can be a DATETIME, a DATE, and a DAY:
   * A DATIME is a fully specified instant in time (e.g. January 2, 2000 at 3:04am and 5.678 seconds).
   * A DATE is a fully specified day in time but lacks any information about the time of day (e.g. January 2, 2000).
-  * A DAY is a generic date that lacks a year (e.g. January 2).<br/><br/>
+  * A DAY is a generic date that lacks a year (e.g. January 2).<br/>
 
   Depending on which variety of logotime you are storing, the behavior of the time extension primitives will vary.  For example, the difference between two DATETIMES will have millisecond resolution, while the difference between two DATES or two DAYS will only have resolution to the nearest whole day.
 
@@ -32,12 +32,12 @@ time has the following notable behavior:
   The following are all valid DATE strings:
   * "2000-01-02"
   * "2000-01-2"
-  * "2000-1-02"<br/><br/>
+  * "2000-1-02"<br/>
 
   The following are all valid DAY strings:
   * "01-02"
   * "01-2"
-  * "1-02"<br/><br/>
+  * "1-02"<br/>
 
 * **Time recognizes "period types"** - In order to make it easy to specify a time duration like 2 "days" or 4 "weeks", the time extension will accept strings to specify a period type.  The following is the list of period types and strings that time recognizes (note, any of these period type strings can be pluralized and are case IN-sensitive):
   
@@ -50,7 +50,7 @@ time has the following notable behavior:
   * HOUR: "hour"
   * MINUTE: "minute"
   * SECOND: "second"
-  * MILLI: "milli"<br/><br/>
+  * MILLI: "milli"<br/>
 
 * **Time has Millisecond Resolution** - This is a fundamental feature of Joda Time and cannot be changed.  The biggest reason Joda Time does not support micro or nano seconds is performance, going to that resolution would require the use of BigInts which would substantially slow down computations.  [Read more on this topic](http://joda-time.sourceforge.net/faq.html#submilli)
 
