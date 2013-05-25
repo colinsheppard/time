@@ -10,7 +10,7 @@ See the example models in the extension subfolder "examples" for a demonstration
 
 ## Behavior
 
-time has the following notable behavior:
+**time** has the following notable behavior:
 
 * **It enables a new data type called a "logotime"** - A logotime is a flexible data structure that will represent your time data as one of three varieties depending on how you create the logotime object.  A logotime can be a DATETIME, a DATE, and a DAY:
   * A DATIME is a fully specified instant in time (e.g. January 2, 2000 at 3:04am and 5.678 seconds).
@@ -19,7 +19,7 @@ time has the following notable behavior:
 
   Depending on which variety of logotime you are storing, the behavior of the time extension primitives will vary.  For example, the difference between two DATETIMES will have millisecond resolution, while the difference between two DATES or two DAYS will only have resolution to the nearest whole day.
 
-* **You create logotime objects by passing a string representation** - The time:create primitive was designed to both follow the standard used by joda-time, but also make date time parsing more convenient by allowing a wider range of delimiters and formats.  For example, the following are all valid DATETIME strings: 
+* **You create logotime objects by passing a string** - The time:create primitive was designed to both follow the standard used by joda-time, but also make date time parsing more convenient by allowing a wider range of delimiters and formats.  For example, the following are all valid DATETIME strings: 
   * "2000-01-02T03:04:05.678"
   * "2000-01-02 03:04:05"
   * "2000-01-02 03:04"
@@ -39,18 +39,22 @@ time has the following notable behavior:
   * "01-2"
   * "1-02"<br/>
 
+  Note, if you do not include a the time in your string, the **time** extension will assume you want a DATE, if you want a DATETIME that happens to be at midnight, specify the time as zeros: "2000-01-02 00:00".
+
 * **Time recognizes "period types"** - In order to make it easy to specify a time duration like 2 "days" or 4 "weeks", the time extension will accept strings to specify a period type.  The following is the list of period types and strings that time recognizes (note, any of these period type strings can be pluralized and are case IN-sensitive):
   
-  * YEAR: "year" 
-  * MONTH: "month"
-  * WEEK: "week"
-  * DAY: "day", "dayofmonth", "dom"
-  * DAYOFYEAR: "dayofyear", "doy", "julianday", "jday"
-  * DAYOFWEEK: "dayofweek", "dow", "weekday", "wday"
-  * HOUR: "hour"
-  * MINUTE: "minute"
-  * SECOND: "second"
-  * MILLI: "milli"<br/>
+| PERIOD TYPE        | Valid string specifiers  |
+| ------------- |:-------------:|
+| YEAR  | "year" |
+| MONTH | "month" |
+| WEEK  | "week" |
+| DAY |  "day", "dayofmonth", "dom" |
+| DAYOFYEAR |  "dayofyear", "doy", "julianday", "jday" |
+| DAYOFWEEK |  "dayofweek", "dow", "weekday", "wday" |
+| HOUR |  "hour" |
+| MINUTE |  "minute" |
+| SECOND |  "second" |
+| MILLI |  "milli" |
 
 * **Time has Millisecond Resolution** - This is a fundamental feature of Joda Time and cannot be changed.  The biggest reason Joda Time does not support micro or nano seconds is performance, going to that resolution would require the use of BigInts which would substantially slow down computations.  [Read more on this topic](http://joda-time.sourceforge.net/faq.html#submilli)
 
