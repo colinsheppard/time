@@ -28,7 +28,7 @@ to setup
   ;; 
   ;; DATE must be ordered as year-month-day, and DAY must be month-day.
   ;; 
-  ;; Use "" or "now" to get the computer's system datetime
+  ;; Use "" or "now" to get the system datetime
   
   ;; Show what's possible in terms of formatting DATETIME, DATE, and DAY
   ; VALID DATETIME's
@@ -84,6 +84,7 @@ to setup
   print "============================"
   print ""
   
+  ;; Add some interval to the datetime
   print time:plus t-datetime 1.0 "seconds"
   print time:plus t-datetime 1.0 "minutes"
   print time:plus t-datetime (60.0 * 24) "minutes"
