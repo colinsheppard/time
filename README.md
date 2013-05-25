@@ -1,25 +1,15 @@
 # NetLogo Time Extension
 
-[What is it?](#what-is-it?)
-
-[Examples](#examples)
-
-[Behavior](#behabior)
-
-[Primitives](#primitives)
-
-[Installation](#installation)
-
-[Building](#building)
-
-[Author](#author)
-
-[Feedback](#feedback?-bugs?-feature-requests?)
-
-[Credits](#credits)
-
-[Terms of use](#terms-of-use)
-
+* [What is it?](#what-is-it)
+* [Examples](#examples)
+* [Behavior](#behavior)
+* [Primitives](#primitives)
+* [Installation](#installation)
+* [Building](#building)
+* [Author](#author)
+* [Feedback](#feedback-bugs-feature-requests)
+* [Credits](#credits)
+* [Terms of use](#terms-of-use)
 
 ## What is it?
 
