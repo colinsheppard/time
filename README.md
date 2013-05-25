@@ -1,5 +1,26 @@
 # NetLogo Time Extension
 
+[What is it?](#what-is-it?)
+
+[Examples](#examples)
+
+[Behavior](#behabior)
+
+[Primitives](#primitives)
+
+[Installation](#installation)
+
+[Building](#building)
+
+[Author](#author)
+
+[Feedback](#feedback?-bugs?-feature-requests?)
+
+[Credits](#credits)
+
+[Terms of use](#terms-of-use)
+
+
 ## What is it?
 
 This package contains the NetLogo **time extension**, which provides NetLogo with a set of common date and time operations.  This extension is powered by the [Joda Time API for Java](http://joda-time.sourceforge.net/), and while this README trys to explain the subtle details of how dates and times are treated, it is recommended that you review at least the front page of Joda Time's website and preferably the "Key Concepts" topics in the navigation menu.  This documentation will make use of the terminology established by Joda Time (e.g. there's a meaningful difference between an *interval*, a *duration*, and a *period*.)
@@ -153,6 +174,58 @@ Reports a logotime resulting from the addition of some time interval to the *log
     print time:plus t-datetime 1.0 "years"   
     ;; prints "{{time:logotime 2001-01-02 03:04:05.678}}"
 
+
+---------------------------------------
+
+**time:is-before**<br/>
+**time:is-after**<br/>
+**time:is-equal**<br/>
+**time:is-between**
+
+*time:is-before logotime1 logotime2*<br/>
+*time:is-after  logotime1 logotime2*<br/>
+*time:is-equal  logotime1 logotime2*<br/>
+*time:is-between  logotime1 logotime2 logotime3*
+
+Reports a boolean for the test of whether *logotime1* is before/after/equal-to *logotime2*.  The is-between primitive returns true if *logotime1* is between *logotime2* and *logotime3*.  All logotime arguments must be of the same variety (DATETIME, DATE, or DAY). 
+
+	print time:is-before (time:create "2000-01-02") (time:create "2000-01-03")
+	;;prints "true"
+
+  	print time:is-before (time:create "2000-01-03") (time:create "2000-01-02")
+	;;prints "false"
+
+  	print time:is-after  (time:create "2000-01-03") (time:create "2000-01-02")
+	;;prints "true"
+
+  	print time:is-equal  (time:create "2000-01-02") (time:create "2000-01-02")
+	;;prints "true"
+
+  	print time:is-equal  (time:create "2000-01-02") (time:create "2000-01-03")
+	;;prints "false"
+
+ 	print time:is-between (time:create "2000-03-08")  (time:create "1999-12-02") (time:create "2000-05-03")
+	;;prints "true"
+
+---------------------------------------
+
+**time:difference-between**
+
+*time:difference-between logotime1 logotime2 period-type-string*
+
+Reports the amount of time between *logotime1* and *logotime2* in units of *period-type-string*.  Note that if the period type is YEAR or MONTH, then the reported value will be a whole number based soley on the month and year components of the logotimes.
+
+	print time:difference-between (time:create "2000-01-02 00:00") (time:create "2000-02-02 00:00") "days"
+	;;prints "31"
+
+  	print time:difference-between (time:create "2000-01-02") (time:create "2001-02-02") "days"
+	;;prints "397"
+
+  	print time:difference-between (time:create "01-02") (time:create "01-01") "hours"
+	;;prints "-24"
+
+	print time:difference-between (time:create "2000-01-02") (time:create "2000-02-15") "months"
+	;;prints "1"
 
 ---------------------------------------
 
