@@ -27,7 +27,7 @@ time has the following notable behavior:
   * "2000/01/02 03:04:05.678"
   * "2000-1-02 03:04:05.678"
   * "2000-01-2 03:04:05.678"
-  * "2000-1-2 03:04:05.678"<br/><br/>
+  * "2000-1-2 03:04:05.678"<br/>
 
   The following are all valid DATE strings:
   * "2000-01-02"
