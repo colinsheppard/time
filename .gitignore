@@ -2,4 +2,5 @@
 /.settings
 /.project
 /.classpath
-time.jar*
+time.jar
+time.jar.pack.gz

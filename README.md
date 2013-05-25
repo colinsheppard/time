@@ -26,13 +26,15 @@ Coming soon.
 
 ## Installation
 
-Two jars need to be present in the same directory as your Netlogo modle or in the extensions directory of your Netlogo application:
+Two jars need to be present in the same directory as your Netlogo model or in the extensions directory of your Netlogo application (i.e. [NETLOGO]/extensions/time/):
 
 time.jar
 joda-time-2.2.jar
 
+Both of these files are included under the lib directory of this repository.  The time.jar file has been compiled against NetLogo 5.0.4, if you are using a different version of netlogo then it is recommended you compile the extension yourself (see "Building" below).
+
 For more information on Netlogo extensions:
-http://ccl.northwestern.edu/netlogo/docs/extensions.html
+[http://ccl.northwestern.edu/netlogo/docs/extensions.html](http://ccl.northwestern.edu/netlogo/docs/extensions.html)
 
 ## Building
 
