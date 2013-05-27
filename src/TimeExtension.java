@@ -149,7 +149,10 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		private final long id;
 		LogoEventComparator comparator = (new TimeExtension()).new LogoEventComparator();
 		TreeSet<LogoEvent> schedule = new TreeSet<LogoEvent>(comparator);
+		// The following three fields track an anchored schedule
 		LogoTime timeAnchor = null;
+		PeriodType tickType = null;
+		Double tickValue = null;
 
 		LogoSchedule() {
 			schedules.put(this, nextSchedule);
@@ -162,8 +165,18 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public boolean isAnchored(){
 			return timeAnchor != null;
 		}
-		public void anchorSchedule(LogoTime time){
-			timeAnchor = time;
+		public void anchorSchedule(LogoTime time, Double tickValue, PeriodType tickType){
+			try {
+				timeAnchor = new LogoTime(time);
+				this.tickType = tickType;
+				this.tickValue = tickValue;
+			} catch (ExtensionException e) {
+				e.printStackTrace();
+			}
+		}
+		public Double timeToTick(LogoTime time) throws ExtensionException{
+			if(this.timeAnchor.dateType != time.dateType)throw new ExtensionException("Cannot schedule event to occur at a LogoTime of type "+time.dateType.toString()+" because the schedule is anchored to a LogoTime of type "+this.timeAnchor.dateType.toString()+".  Types must be consistent.");
+			return this.timeAnchor.getDifferenceBetween(this.tickType, time)/this.tickValue;
 		}
 		public String dump(boolean readable, boolean exporting, boolean reference) {
 			StringBuilder buf = new StringBuilder();
@@ -222,13 +235,16 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public MonthDay 		monthDay = null;
 		private DateTimeFormatter fmt = null;
 		private Boolean 		isAnchored = false;
-		private Double 			tickCount;
+		private Double 			tickValue;
 		private PeriodType 		tickType;
 		private LocalDateTime 	anchorDatetime;
 		private LocalDate 		anchorDate;
 		private MonthDay 		anchorMonthDay;
 		private World 			world;
 
+		LogoTime(LogoTime time) throws ExtensionException {
+			this(time.dump(false,false,false));
+		}
 		LogoTime(LocalDateTime dt) {
 			this.datetime = dt;
 			this.fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
@@ -346,7 +362,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public void setAnchor(Double tickCount, PeriodType tickType, World world) throws ExtensionException{
 			if(tickType == PeriodType.DAYOFWEEK)throw new ExtensionException(tickType.toString() + " type is not a supported tick type");
 			this.isAnchored = true;
-			this.tickCount = tickCount;
+			this.tickValue = tickCount;
 			this.tickType = tickType;
 			switch(this.dateType){
 			case DATETIME:
@@ -361,8 +377,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			}
 			this.world = world;
 		}
-
-		public String dump(boolean arg0, boolean arg1, boolean arg2) {
+		public String dump(boolean arg1, boolean arg2, boolean arg3) {
 			try {
 				this.updateFromTick();
 			} catch (ExtensionException e) {
@@ -384,13 +399,13 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 
 			switch(this.dateType){
 			case DATETIME:
-				this.datetime = this.plus(this.anchorDatetime,this.tickType, this.world.ticks()*this.tickCount).datetime;
+				this.datetime = this.plus(this.anchorDatetime,this.tickType, this.world.ticks()*this.tickValue).datetime;
 				break;
 			case DATE:
-				this.date = this.plus(this.anchorDate,this.tickType, this.world.ticks()*this.tickCount).date;
+				this.date = this.plus(this.anchorDate,this.tickType, this.world.ticks()*this.tickValue).date;
 				break;
 			case DAY:
-				this.monthDay = this.plus(this.anchorMonthDay,this.tickType, this.world.ticks()*this.tickCount).monthDay;
+				this.monthDay = this.plus(this.anchorMonthDay,this.tickType, this.world.ticks()*this.tickValue).monthDay;
 				break;
 			}
 		}
@@ -921,7 +936,6 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			e.printStackTrace();  
 		}  
 	}
-
 	// Convenience method, to extract a schedule object from an Argument.
 	private static LogoSchedule getScheduleFromArguments(Argument args[], int index) throws ExtensionException, LogoException {
 		Object obj = args[index].get();
@@ -930,7 +944,6 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 		return (LogoSchedule) obj;
 	}
-
 	public static class NewLogoSchedule extends DefaultReporter {
 		public Syntax getSyntax() {
 			return Syntax.reporterSyntax(new int[]{},
@@ -942,16 +955,14 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			return sched;
 		}
 	}
-	public static class AnchorSchedule extends DefaultReporter {
+	public static class AnchorSchedule extends DefaultCommand {
 		public Syntax getSyntax() {
-			return Syntax.reporterSyntax(new int[]{},
-					Syntax.WildcardType(),Syntax.WildcardType());
+			return Syntax.commandSyntax(new int[]{Syntax.WildcardType(),Syntax.WildcardType(),Syntax.NumberType(),Syntax.StringType()});
 		}
-		public Object report(Argument args[], Context context)
+		public void perform(Argument args[], Context context)
 				throws ExtensionException, LogoException {
 			LogoSchedule sched = getScheduleFromArguments(args,0);
-			sched.anchorSchedule(getTimeFromArgument(args, 1));
-			return sched;
+			sched.anchorSchedule(getTimeFromArgument(args, 1),getDoubleFromArgument(args, 2),stringToPeriodType(getStringFromArgument(args, 3)));
 		}
 	}
 
@@ -999,7 +1010,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			return Syntax.commandSyntax(new int[]{Syntax.WildcardType(),
 					Syntax.WildcardType(),
 					Syntax.WildcardType(),
-					Syntax.NumberType()});
+					Syntax.WildcardType()});
 		}
 		public void perform(Argument args[], Context context) throws ExtensionException, LogoException {
 			addEvent(args,context,AddType.DEFAULT);
@@ -1011,7 +1022,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			return Syntax.commandSyntax(new int[]{Syntax.WildcardType(),
 					Syntax.WildcardType(),
 					Syntax.WildcardType(),
-					Syntax.NumberType()});
+					Syntax.WildcardType()});
 		}
 		public void perform(Argument args[], Context context) throws ExtensionException, LogoException {
 			addEvent(args,context,AddType.SHUFFLE);
@@ -1023,7 +1034,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			return Syntax.commandSyntax(new int[]{Syntax.WildcardType(),
 					Syntax.WildcardType(),
 					Syntax.WildcardType(),
-					Syntax.NumberType(),
+					Syntax.WildcardType(),
 					Syntax.NumberType()});
 		}
 		public void perform(Argument args[], Context context) throws ExtensionException, LogoException {
@@ -1053,11 +1064,15 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		LogoSchedule sched = getScheduleFromArguments(args,0);
 		if (!(args[1].get() instanceof Agent) && !(args[1].get() instanceof AgentSet)) throw new ExtensionException("time:"+primName+" expecting an agent or agentset as the second argument");
 		if (!(args[2].get() instanceof CommandTask)) throw new ExtensionException("time:"+primName+" expecting a command task as the third argument");
-		if (!args[3].get().getClass().equals(Double.class) && !(args[3].get().getClass().equals(LogoTime.class))) throw new ExtensionException("time:"+primName+" expecting a number or logotime as the fourth argument");
-		if(args[3].get().getClass().equals(LogoTime.class)){
-			
+		if(args[3].get().getClass().equals(Double.class)){
+			eventTick = args[3].getDoubleValue();
+		}else if(args[3].get().getClass().equals(LogoTime.class)){
+			if(!sched.isAnchored())throw new ExtensionException("A LogoEvent can only be scheduled to occur at a LogoTime if the LogoScedule has been anchored to a LogoTime, see time:anchor-schedule");
+			eventTick = sched.timeToTick(getTimeFromArgument(args, 3));
+		}else{
+			throw new ExtensionException("time:"+primName+" expecting a number or logotime as the fourth argument");
 		}
-		if (args[3].getDoubleValue() < ((ExtensionContext)context).workspace().world().ticks()) throw new ExtensionException("Attempted to schedule an event for tick "+args[3].getDoubleValue()+" which is before the present 'moment' of "+((ExtensionContext)context).workspace().world().ticks());
+		if (eventTick < ((ExtensionContext)context).workspace().world().ticks()) throw new ExtensionException("Attempted to schedule an event for tick "+ eventTick +" which is before the present 'moment' of "+((ExtensionContext)context).workspace().world().ticks());
 		Double repeatInterval = null;
 		if(addType == AddType.REPEAT){
 			if (!args[4].get().getClass().equals(Double.class)) throw new ExtensionException("time:repeat expecting a number as the fifth argument");
@@ -1074,8 +1089,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}else{
 			agentSet = (org.nlogo.agent.AgentSet) args[1].getAgentSet();
 		}
-		if(debug)printToConsole(context,"scheduling agents: "+agentSet+" task: "+args[2].getCommandTask().toString()+" tick: "+args[3].getDoubleValue()+" shuffled: "+shuffleAgentSet );
-		LogoEvent event = (new TimeExtension()).new LogoEvent(agentSet,args[2].getCommandTask(),args[3].getDoubleValue(),repeatInterval,shuffleAgentSet);
+		if(debug)printToConsole(context,"scheduling agents: "+agentSet+" task: "+args[2].getCommandTask().toString()+" tick: "+eventTick+" shuffled: "+shuffleAgentSet );
+		LogoEvent event = (new TimeExtension()).new LogoEvent(agentSet,args[2].getCommandTask(),eventTick,repeatInterval,shuffleAgentSet);
 		sched.schedule.add(event);
 	}
 
