@@ -31,9 +31,9 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	public enum PeriodType {
 		MILLI,SECOND,MINUTE,HOUR,DAY,DAYOFYEAR,DAYOFWEEK,WEEK,MONTH,YEAR
 	}
-
 	public java.util.List<String> additionalJars() {
 		java.util.List<String> list = new java.util.ArrayList<String>();
+		list.add("joda-time-2.2.jar");
 		return list;
 	}
 
@@ -43,7 +43,60 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	private static long nextEvent = 0;
 
 	private static boolean debug = true;
-
+	
+	public void load(org.nlogo.api.PrimitiveManager primManager) {
+		/**********************
+		/* TIME PRIMITIVES
+		/**********************/
+		// time:create
+		primManager.addPrimitive("create", new NewLogoTime());
+		// time:anchor-to-ticks
+		primManager.addPrimitive("anchor-to-ticks", new Anchor());
+		// time:plus
+		primManager.addPrimitive("plus", new Plus());
+		// time:show
+		primManager.addPrimitive("show", new Show());
+		// time:get
+		primManager.addPrimitive("get", new Get());
+		// time:is-before
+		primManager.addPrimitive("is-before", new IsBefore());
+		// time:is-after
+		primManager.addPrimitive("is-after", new IsAfter());
+		// time:is-equal
+		primManager.addPrimitive("is-equal", new IsEqual());
+		// time:is-between
+		primManager.addPrimitive("is-between", new IsBetween());
+		// time:difference-between
+		primManager.addPrimitive("difference-between", new DifferenceBetween());
+		
+		/********************************************
+		/* DISCRETE EVENT SIMULATION PRIMITIVES
+		/*******************************************/
+		// time:size-of
+		primManager.addPrimitive("size-of", new GetSize());
+		// time:first-event
+		primManager.addPrimitive("first-event", new FirstEvent());
+		// time:next-event
+		primManager.addPrimitive("next-event", new NextEvent());
+		// time:add-event
+		primManager.addPrimitive("add-event", new AddEvent());
+		// time:add-event-shuffled
+		primManager.addPrimitive("add-event-shuffled", new AddEventShuffled());
+		// time:repeat-event
+		primManager.addPrimitive("repeat-event", new RepeatEvent());
+		// time:create-schedule
+		primManager.addPrimitive("create-schedule", new NewLogoSchedule());
+		// time:anchor-schedule
+		primManager.addPrimitive("anchor-schedule", new AnchorSchedule());
+		// time:go
+		primManager.addPrimitive("go", new Go());
+		// time:go-until
+		primManager.addPrimitive("go-until", new GoUntil());
+	}
+	public void clearAll() {
+		schedules.clear();
+		nextSchedule = 0;
+	}
 	public class LogoEvent implements org.nlogo.api.ExtensionObject {
 		private final long id;
 		public Double tick = null;
@@ -62,13 +115,11 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			this.id = nextEvent;
 			nextEvent++;
 		}
-
 		public void replaceData(Agent agent, CommandTask task, Double tick) {
 			this.agents = agents;
 			this.task = (org.nlogo.nvm.CommandTask) task;
 			this.tick = tick;
 		}
-
 		/*
 		 * If a repeatInterval is set, this method uses it to update it's tick field and then adds itself to the
 		 * schedule argument.  The return value indicates whether the event was added to the schedule again.
@@ -78,28 +129,18 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			this.tick = this.tick + repeatInterval;
 			return schedule.schedule.add(this);
 		}
-
-		/**
-		 * This is a very shallow "equals", see recursivelyEqual()
-		 * for deep equality.
-		 */
 		public boolean equals(Object obj) {
 			return this == obj;
 		}
-
 		public String getExtensionName() {
-			return "dynamic-scheduler";
+			return "time";
 		}
-
 		public String getNLTypeName() {
 			return "event";
 		}
-
 		public boolean recursivelyEqual(Object arg0) {
-			// TODO Auto-generated method stub
 			return equals(arg0);
 		}
-
 		public String dump(boolean arg0, boolean arg1, boolean arg2) {
 			return tick + ((agents==null)?"":agents.toString()) + ((task==null)?"":task.toString()) + ((repeatInterval==null)?"":repeatInterval.toString());
 		}
@@ -108,21 +149,22 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		private final long id;
 		LogoEventComparator comparator = (new TimeExtension()).new LogoEventComparator();
 		TreeSet<LogoEvent> schedule = new TreeSet<LogoEvent>(comparator);
+		LogoTime timeAnchor = null;
 
 		LogoSchedule() {
 			schedules.put(this, nextSchedule);
 			this.id = nextSchedule;
 			nextSchedule++;
 		}
-
-		/**
-		 * This is a very shallow "equals", see recursivelyEqual()
-		 * for deep equality.
-		 */
 		public boolean equals(Object obj) {
 			return this == obj;
 		}
-
+		public boolean isAnchored(){
+			return timeAnchor != null;
+		}
+		public void anchorSchedule(LogoTime time){
+			timeAnchor = time;
+		}
 		public String dump(boolean readable, boolean exporting, boolean reference) {
 			StringBuilder buf = new StringBuilder();
 			if (exporting) {
@@ -142,21 +184,16 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			}
 			return buf.toString();
 		}
-
 		public String getExtensionName() {
-			return "dynamic-scheduler";
+			return "time";
 		}
-
 		public String getNLTypeName() {
 			return "schedule";
 		}
-
 		public boolean recursivelyEqual(Object arg0) {
-			// TODO Auto-generated method stub
 			return equals(arg0);
 		}
 	}
-
 	/*
 	 * The LogoEventComparator first compares based on tick (which is a Double) and then on id 
 	 * so if there is a tie for tick, the event that was created first get's executed first allowing
@@ -176,11 +213,6 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				return 0;
 			}
 		}
-	}
-
-	public void clearAll() {
-		schedules.clear();
-		nextSchedule = 0;
 	}
 
 	private static class LogoTime implements org.nlogo.api.ExtensionObject {
@@ -664,49 +696,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 	}
 
-	//
-	public void load(org.nlogo.api.PrimitiveManager primManager) {
-		// time:create
-		primManager.addPrimitive("create", new Create());
-		// time:anchor-to-ticks
-		primManager.addPrimitive("anchor-to-ticks", new Anchor());
-		// time:plus
-		primManager.addPrimitive("plus", new Plus());
-		// time:show
-		primManager.addPrimitive("show", new Show());
-		// time:get
-		primManager.addPrimitive("get", new Get());
-		// time:is-before
-		primManager.addPrimitive("is-before", new IsBefore());
-		// time:is-after
-		primManager.addPrimitive("is-after", new IsAfter());
-		// time:is-equal
-		primManager.addPrimitive("is-equal", new IsEqual());
-		// time:is-between
-		primManager.addPrimitive("is-between", new IsBetween());
-		// time:difference-between
-		primManager.addPrimitive("difference-between", new DifferenceBetween());
-		// dynamic-scheduler:size-of
-		primManager.addPrimitive("size-of", new GetSize());
-		// dynamic-scheduler:first
-		primManager.addPrimitive("first", new First());
-		// dynamic-scheduler:next
-		primManager.addPrimitive("next", new Next());
-		// dynamic-scheduler:add
-		primManager.addPrimitive("add", new Add());
-		// dynamic-scheduler:add-shuffled
-		primManager.addPrimitive("add-shuffled", new AddShuffled());
-		// dynamic-scheduler:repeat
-		primManager.addPrimitive("repeat", new Repeat());
-		// dynamic-scheduler:new
-		primManager.addPrimitive("create", new NewLogoSchedule());
-		// dynamic-scheduler:go
-		primManager.addPrimitive("go", new Go());
-		// dynamic-scheduler:go-until
-		primManager.addPrimitive("go-until", new GoUntil());
-	}
-
-	public static class Create extends DefaultReporter {
+	public static class NewLogoTime extends DefaultReporter {
 		public Syntax getSyntax() {
 			return Syntax.reporterSyntax(new int[]{Syntax.StringType()},
 					Syntax.WildcardType());
@@ -933,12 +923,10 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	}
 
 	// Convenience method, to extract a schedule object from an Argument.
-	private static LogoSchedule getScheduleFromArgument(Argument arg)
-			throws ExtensionException, LogoException {
-		Object obj = arg.get();
+	private static LogoSchedule getScheduleFromArguments(Argument args[], int index) throws ExtensionException, LogoException {
+		Object obj = args[index].get();
 		if (!(obj instanceof LogoSchedule)) {
-			throw new ExtensionException("not a dynamic schedule: "
-					+ Dump.logoObject(obj));
+			throw new ExtensionException("Was expecting a LogoSchedule as argument "+(index+1)+" found this instead: " + Dump.logoObject(obj));
 		}
 		return (LogoSchedule) obj;
 	}
@@ -954,27 +942,39 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			return sched;
 		}
 	}
+	public static class AnchorSchedule extends DefaultReporter {
+		public Syntax getSyntax() {
+			return Syntax.reporterSyntax(new int[]{},
+					Syntax.WildcardType(),Syntax.WildcardType());
+		}
+		public Object report(Argument args[], Context context)
+				throws ExtensionException, LogoException {
+			LogoSchedule sched = getScheduleFromArguments(args,0);
+			sched.anchorSchedule(getTimeFromArgument(args, 1));
+			return sched;
+		}
+	}
 
-	public static class First extends DefaultReporter {
+	public static class FirstEvent extends DefaultReporter {
 		public Syntax getSyntax() {
 			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType()},
 					Syntax.WildcardType());
 		}
 		public Object report(Argument args[], Context context)
 				throws ExtensionException, LogoException {
-			LogoSchedule sched = getScheduleFromArgument(args[0]);
+			LogoSchedule sched = getScheduleFromArguments(args,0);
 			return sched.schedule.first();
 		}
 	}
 
-	public static class Next extends DefaultReporter {
+	public static class NextEvent extends DefaultReporter {
 		public Syntax getSyntax() {
 			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType()},
 					Syntax.WildcardType());
 		}
 		public Object report(Argument args[], Context context)
 				throws ExtensionException, LogoException {
-			LogoSchedule sched = getScheduleFromArgument(args[0]);
+			LogoSchedule sched = getScheduleFromArguments(args,0);
 			Object toReturn = sched.schedule.first();
 			sched.schedule.remove(toReturn);
 			return toReturn;
@@ -988,13 +988,13 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 		public Object report(Argument args[], Context context)
 				throws ExtensionException, LogoException {
-			LogoSchedule sched = getScheduleFromArgument(args[0]);
+			LogoSchedule sched = getScheduleFromArguments(args,0);
 			if(debug)printToConsole(context, "size of schedule: "+sched.schedule.size());
 			return new Double(sched.schedule.size());
 		}
 	}
 
-	public static class Add extends DefaultCommand {
+	public static class AddEvent extends DefaultCommand {
 		public Syntax getSyntax() {
 			return Syntax.commandSyntax(new int[]{Syntax.WildcardType(),
 					Syntax.WildcardType(),
@@ -1006,7 +1006,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 	}
 
-	public static class AddShuffled extends DefaultCommand {
+	public static class AddEventShuffled extends DefaultCommand {
 		public Syntax getSyntax() {
 			return Syntax.commandSyntax(new int[]{Syntax.WildcardType(),
 					Syntax.WildcardType(),
@@ -1018,7 +1018,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 	}
 
-	public static class Repeat extends DefaultCommand {
+	public static class RepeatEvent extends DefaultCommand {
 		public Syntax getSyntax() {
 			return Syntax.commandSyntax(new int[]{Syntax.WildcardType(),
 					Syntax.WildcardType(),
@@ -1033,31 +1033,35 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 
 	private static void addEvent(Argument args[], Context context, AddType addType) throws ExtensionException, LogoException {
 		String primName = null;
+		Double eventTick = null;
 		switch(addType){
 			case DEFAULT:
 				primName = "add";
-				if(args.length<4)throw new ExtensionException("dynamic-scheduler:add must have 4 arguments: schedule agent task tick");
+				if(args.length<4)throw new ExtensionException("time:add must have 4 arguments: schedule agent task tick/time");
 				break;
 			case SHUFFLE:
 				primName = "add-shuffled";
-				if(args.length<4)throw new ExtensionException("dynamic-scheduler:add-shuffled must have 4 arguments: schedule agent task tick");
+				if(args.length<4)throw new ExtensionException("time:add-shuffled must have 4 arguments: schedule agent task tick/time");
 				break;
 			case REPEAT:
 				primName = "repeat";
-				if(args.length<5)throw new ExtensionException("dynamic-scheduler:repeat must have 5 arguments: schedule agent task tick");
+				if(args.length<5)throw new ExtensionException("time:repeat must have 5 arguments: schedule agent task tick/time number");
 				break;
 		}
 
-		if (!(args[0].get() instanceof LogoSchedule)) throw new ExtensionException("dynamic-scheduler:"+primName+" expecting a schedule as the first argument");
-		LogoSchedule sched = getScheduleFromArgument(args[0]);
-		if (!(args[1].get() instanceof Agent) && !(args[1].get() instanceof AgentSet)) throw new ExtensionException("dynamic-scheduler:"+primName+" expecting an agent or agentset as the second argument");
-		if (!(args[2].get() instanceof CommandTask)) throw new ExtensionException("dynamic-scheduler:"+primName+" expecting a command task as the third argument");
-		if (!args[3].get().getClass().equals(Double.class)) throw new ExtensionException("dynamic-scheduler:"+primName+" expecting a number as the fourth argument");
+		if (!(args[0].get() instanceof LogoSchedule)) throw new ExtensionException("time:"+primName+" expecting a schedule as the first argument");
+		LogoSchedule sched = getScheduleFromArguments(args,0);
+		if (!(args[1].get() instanceof Agent) && !(args[1].get() instanceof AgentSet)) throw new ExtensionException("time:"+primName+" expecting an agent or agentset as the second argument");
+		if (!(args[2].get() instanceof CommandTask)) throw new ExtensionException("time:"+primName+" expecting a command task as the third argument");
+		if (!args[3].get().getClass().equals(Double.class) && !(args[3].get().getClass().equals(LogoTime.class))) throw new ExtensionException("time:"+primName+" expecting a number or logotime as the fourth argument");
+		if(args[3].get().getClass().equals(LogoTime.class)){
+			
+		}
 		if (args[3].getDoubleValue() < ((ExtensionContext)context).workspace().world().ticks()) throw new ExtensionException("Attempted to schedule an event for tick "+args[3].getDoubleValue()+" which is before the present 'moment' of "+((ExtensionContext)context).workspace().world().ticks());
 		Double repeatInterval = null;
 		if(addType == AddType.REPEAT){
-			if (!args[4].get().getClass().equals(Double.class)) throw new ExtensionException("dynamic-scheduler:repeat expecting a number as the fifth argument");
-			if (args[4].getDoubleValue() <= 0) throw new ExtensionException("dynamic-scheduler:repeat the repeat interval must be a positive number");
+			if (!args[4].get().getClass().equals(Double.class)) throw new ExtensionException("time:repeat expecting a number as the fifth argument");
+			if (args[4].getDoubleValue() <= 0) throw new ExtensionException("time:repeat the repeat interval must be a positive number");
 			repeatInterval = args[4].getDoubleValue();
 		}
 		Boolean shuffleAgentSet = (addType == AddType.SHUFFLE);
@@ -1098,10 +1102,10 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	}	
 	private static void performScheduledTasks(Argument args[], Context context, Boolean isGoUntil) throws ExtensionException, LogoException {
 		ExtensionContext extcontext = (ExtensionContext) context;
-		LogoSchedule sched = getScheduleFromArgument(args[0]);
+		LogoSchedule sched = getScheduleFromArguments(args,0);
 		Double untilTick = null;
 		if(isGoUntil){
-			if (!args[1].get().getClass().equals(Double.class)) throw new ExtensionException("dynamic-scheduler:go-until expecting a number as the second argument");
+			if (!args[1].get().getClass().equals(Double.class)) throw new ExtensionException("time:go-until expecting a number as the second argument");
 			untilTick = args[1].getDoubleValue();
 		}else{
 			untilTick = Double.MAX_VALUE;
