@@ -16,6 +16,9 @@ to setup
   
   time:anchor-schedule schedule time:create "2000-01-01" 1 "day"
   
+  let test time:create "01-01"
+  print time:plus test 1 "hour"
+  print test
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Now schedule some events (turtles or other agents must first be created to be assigned an event)
   ;; 
