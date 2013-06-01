@@ -768,7 +768,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 					Syntax.WildcardType());
 		}
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
-			LogoTime time = getTimeFromArgument(args,0);
+			LogoTime time = new LogoTime(getTimeFromArgument(args,0));
 			return time.plus(stringToPeriodType(getStringFromArgument(args, 2)), getDoubleFromArgument(args, 1));
 		}
 	}
