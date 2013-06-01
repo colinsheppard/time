@@ -791,7 +791,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
 			LogoTime timeA = getTimeFromArgument(args,0);
 			LogoTime timeB = getTimeFromArgument(args,1);
-			return !timeA.isBefore(timeB);
+			return !(timeA.isBefore(timeB) || timeA.isEqual(timeB));
 		}
 	}
 	public static class IsEqual extends DefaultReporter {
