@@ -63,7 +63,7 @@ The **time extension** introduces some new data types (more detail about these i
 
 The **time extension** has the following notable behavior:
 
-* **LogoTimes are store DATETIMEs, DATEs, or DAYs** - A LogoTime is a flexible data structure that will represent your time data as one of three varieties depending on how you create the LogoTime object.  A LogoTime can be a DATETIME, a DATE, and a DAY:
+* **LogoTimes can store DATETIMEs, DATEs, or DAYs** - A LogoTime is a flexible data structure that will represent your time data as one of three varieties depending on how you create the LogoTime object.  A LogoTime can be a DATETIME, a DATE, and a DAY:
   * A DATIME is a fully specified instant in time (e.g. January 2, 2000 at 3:04am and 5.678 seconds).
   * A DATE is a fully specified day in time but lacks any information about the time of day (e.g. January 2, 2000).
   * A DAY is a generic date that lacks a year (e.g. January 2).<br/>
@@ -92,7 +92,7 @@ The **time extension** has the following notable behavior:
 
   Note, if you do not include a the time in your string, the **time extension** will assume you want a DATE, if you want a DATETIME that happens to be at midnight, specify the time as zeros: "2000-01-02 00:00".
 
-* **Time extension recognizes "period types"** - In order to make it easy to specify a time duration like 2 "days" or 4 "weeks", the **time extension** will accept strings to specify a period type.  The following is a table of the period types and strings that **time** recognizes (note, any of these period type strings can be pluralized and are case IN-sensitive):
+* **Time extension recognizes "period types"** - In order to make it easy to specify a time duration like 2 "days" or 4 "weeks", the **time extension** will accept strings to specify a period type.  The following is a table of the period types and strings that **time** recognizes (note, any of these period type strings can be pluralized and are case **in**sensitive):
   
   | PERIOD TYPE | Valid string specifiers		|
   | ------------|-----------------------------------------|
@@ -109,7 +109,7 @@ The **time extension** has the following notable behavior:
 
 * **Time extension has Millisecond Resolution** - This is a fundamental feature of Joda Time and cannot be changed.  The biggest reason Joda Time does not support micro or nano seconds is performance, going to that resolution would require the use of BigInts which would substantially slow down computations.  [Read more on this topic](http://joda-time.sourceforge.net/faq.html#submilli)
 
-* **Daylight Savings is Ignored** - All times are treated as local, or "zoneless", and daylight savings time (DST) is ignored.  It is assumed that most Netlogo users don't need to convert times between time zones or be able to follow the rules of Daylight Savings for any particular locale.  Instead, users are much more likely to need the ability to load a data time series and perform date and time operations without worrying about when DST starts and whether an hour of their time series will get skipped in the Spring or repeated in the Fall.  It should be noted that Joda Time definitely can handle DST for most locales on Earth, but that capability is not extended to Netlogo here and won't be unless by popular demand.
+* **Daylight Savings is Ignored** - All times are treated as local, or "zoneless", and daylight savings time (DST) is ignored.  It is assumed that most Netlogo users don't need to convert times between time zones or be able to follow the rules of Daylight Savings for any particular locale.  Instead, users are much more likely to need the ability to load a time series and perform date and time operations without worrying about when DST starts and whether an hour of their time series will get skipped in the Spring or repeated in the Fall.  It should be noted that Joda Time definitely can handle DST for most locales on Earth, but that capability is not extended to Netlogo here and won't be unless by popular demand.
 
 * **Leap Days are Included** - While we simplify things by excluding time zones and DST, leap days are kept to allow users to reliably use real world time series in their Netlogo model.
 
@@ -117,7 +117,7 @@ The **time extension** has the following notable behavior:
 
 * **LogoEvents are dispatched in order, ties go to the first created** - If multiple LogoEvents are scheduled for the exact same time, they are dispatched in the order in which they are added to the LogoSchedule.
 
-* **LogoEvents can be created for an agent set** - When an agentset is scheduled to perform an task, the individual agents execute the procedure in a non-random order, which is different from *ask* which shuffles the agents.  Of note is that this is the only way I'm aware of to accomplish an unsorted *ask* in Netlogo while still allowing for the death and creation of agents during execution.  Based on some simple benchmarking it appears that not shuffling produces a ~15% speedup in execution time.  To shuffle the order, use the *add-shuffled* primitive which will execute the actions in random order with low overhead.
+* **LogoEvents can be created for an agentset** - When an agentset is scheduled to perform an task, the individual agents execute the procedure in a non-random order, which is different from *ask* which shuffles the agents.  Of note is that this is the only way I'm aware of to accomplish an unsorted *ask* in Netlogo while still allowing for the death and creation of agents during execution.  Based on some simple benchmarking it appears that not shuffling can produce a ~15% speedup in execution time.  To shuffle the order, use the *add-shuffled* primitive which will execute the actions in random order with low overhead.
 
 * **LogoEvents won't break if an agent dies** - If an agent is scheduled to perform a task in the future but dies before the event is dispatched, the event will be silently skipped.
 
@@ -270,7 +270,7 @@ Reports the amount of time between *logotime1* and *logotime2* in units of *peri
 
 *time:anchor-to-ticks logotime number intervalstring*
 
-Reports a new LogoTime object which is "anchored" to the native time tracking mechanism in Netlogo (i.e the value of *ticks*).  Once anchored, this LogoTime object will always hold the value of the current time as tracked by *ticks*.  Any of the three varieties of LogoTime can be achored to the tick, the time value of the logotime argument is assumed to be the time at tick zero.  The *number* and *intervalstring* arguments describe the worth of one tick (e.g. a tick can be worth 1 day, 2 hours, 90 seconds, etc.)
+Reports a new LogoTime object which is "anchored" to the native time tracking mechanism in Netlogo (i.e the value of *ticks*).  Once anchored, this LogoTime object will always hold the value of the current time as tracked by *ticks*.  Any of the three varieties of LogoTime can be achored to the tick, the time value of the logotime argument is assumed to be the time at tick zero.  The *number* and *intervalstring* arguments describe the worth of one tick (e.g. a tick can be worth 1 day or 2 hours or 90 seconds, etc.)
 
     set tick-datetime time:anchor-to-ticks (time:create "2000-01-02 03:04:05.678") 1 "hour"
     set tick-date time:anchor-to-ticks (time:create "2000-01-02") 2 "days"
@@ -318,7 +318,7 @@ Anchors *logoschedule* to the native time tracking mechanism in Netlogo (i.e the
 *time:add-event logoschedule agent task tick-or-time*  
 *time:add-event logoschedule agentset task tick-or-time*
 
-Add an event to *logoschedule*.  The order events are added is not important, events will be dispatched in order of the time passed as the last argument. An *agent* or an *agentset* can be passed as the second argument along with a *task* as the third, which is executed by the agent(s) at *tick-or-time* (either a number indicating the tick or a LogoTime), which is a time greater than or equal to the present moment (*>= ticks*).
+Add an event to *logoschedule*.  The order events are added is not important, events will be dispatched in order of the time passed as the last argument. An *agent* or an *agentset* can be passed as the second argument along with a *task* as the third, which is executed by the agent(s) at *tick-or-time* (either a number indicating the tick or a LogoTime), which is a time greater than or equal to the present moment (*>= ticks*).  If *tick-or-time* is a LogoTime, then *logoschedule* must be anchored.
 
     time:add logoschedule turtles task go-forward 1.0
 
