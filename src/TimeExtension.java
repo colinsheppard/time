@@ -1,11 +1,21 @@
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.TreeSet;
+import java.util.LinkedHashMap;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 import org.nlogo.agent.AgentSet.Iterator;
 import org.nlogo.agent.ArrayAgentSet;
@@ -20,6 +30,7 @@ import org.joda.time.*;
 import org.joda.time.chrono.ISOChronology;
 import org.joda.time.format.*;
 
+
 public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 
 	public enum AddType {
@@ -31,6 +42,9 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	public enum PeriodType {
 		MILLI,SECOND,MINUTE,HOUR,DAY,DAYOFYEAR,DAYOFWEEK,WEEK,MONTH,YEAR
 	}
+	public enum DataType {
+		BOOLEAN,INTEGER,DOUBLE,STRING;
+	}
 	public java.util.List<String> additionalJars() {
 		java.util.List<String> list = new java.util.ArrayList<String>();
 		list.add("joda-time-2.2.jar");
@@ -41,9 +55,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	private static long nextSchedule = 0;
 	private static final java.util.WeakHashMap<LogoEvent, Long> events = new java.util.WeakHashMap<LogoEvent, Long>();
 	private static long nextEvent = 0;
-
 	private static boolean debug = true;
-	
+
 	public void load(org.nlogo.api.PrimitiveManager primManager) {
 		/**********************
 		/* TIME PRIMITIVES
@@ -68,7 +81,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		primManager.addPrimitive("is-between", new IsBetween());
 		// time:difference-between
 		primManager.addPrimitive("difference-between", new DifferenceBetween());
-		
+
 		/********************************************
 		/* DISCRETE EVENT SIMULATION PRIMITIVES
 		/*******************************************/
@@ -92,10 +105,147 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		primManager.addPrimitive("go", new Go());
 		// time:go-until
 		primManager.addPrimitive("go-until", new GoUntil());
+
+		/**********************
+		/* TIME SERIES PRIMITIVES
+		/**********************/
+		// time:load-time-series
+		primManager.addPrimitive("load-ts", new LoadTimeSeries());
 	}
 	public void clearAll() {
 		schedules.clear();
 		nextSchedule = 0;
+	}
+	public class TimeSeriesRecordComparator implements Comparator<TimeSeriesRecord> {
+		public int compare(TimeSeriesRecord a, TimeSeriesRecord b) {
+			return (a.dataIndex < b.dataIndex ? -1 : (a.dataIndex > b.dataIndex ? 1 : 0));
+		}
+	}
+	static class TimeSeriesRecord {
+		public LogoTime time;
+		public int dataIndex;
+
+		TimeSeriesRecord(LogoTime time,int i){
+			this.time = time;
+			this.dataIndex = i;
+		}
+	}
+	@SuppressWarnings("unchecked")
+	static class TimeSeriesColumn {
+		public DataType dataType;
+		@SuppressWarnings("rawtypes")
+		public ArrayList data;
+
+		TimeSeriesColumn(){
+		}
+		public void add(String value){
+			if(this.dataType==null){
+				try{
+					Double.parseDouble(value);
+					this.dataType = DataType.DOUBLE;
+					this.data = new ArrayList<Double>();
+					this.data.add(Double.parseDouble(value));
+				}catch (Exception e3) {
+					this.dataType = DataType.STRING;
+					this.data = new ArrayList<String>();
+					this.data.add(value);
+				}
+			}else{
+				switch(dataType){
+				case DOUBLE:
+					this.data.add(Double.parseDouble(value));
+					break;
+				case STRING:
+					this.data.add(value);
+					break;
+				}
+			}
+		}
+	}
+	static class LogoTimeSeries implements org.nlogo.api.ExtensionObject {
+		TreeSet<TimeSeriesRecord> times = new TreeSet<TimeSeriesRecord>((new TimeExtension()).new TimeSeriesRecordComparator());
+		LinkedHashMap<String,TimeSeriesColumn> columns = new LinkedHashMap<String,TimeSeriesColumn>();
+		Integer numRows = 0;
+
+		LogoTimeSeries(String filename) throws ExtensionException{
+			parseTimeSeriesFile(filename);
+		}
+		public void parseTimeSeriesFile(String filename) throws ExtensionException{
+			File dataFile = new File(filename);
+			FileInputStream fstream;
+			try {
+				fstream = new FileInputStream(dataFile);
+			} catch (FileNotFoundException e) {
+				throw new ExtensionException(e.getMessage());
+			}
+			DataInputStream in = new DataInputStream(fstream);
+			BufferedReader br = new BufferedReader(new InputStreamReader(in));
+			int lineCount = 0;
+			String delim = null, strLine = null;
+			String[] lineData;
+
+			// Read the header line and infer the delimiter (tab or comma)
+			try {
+				strLine = br.readLine();
+			} catch (IOException e) {
+				throw new ExtensionException(e.getMessage());
+			}
+			if(strLine==null)throw new ExtensionException("File "+dataFile+" is blank.");
+			Boolean hasTab = strLine.contains("\t");
+			Boolean hasCom = strLine.contains(",");
+			if(hasTab && hasCom){
+				throw new ExtensionException("Ambiguous file format in file "+dataFile+", the header line contains both a tab and a comma character, expecting one or the other.");
+			}else if(hasTab){
+				delim = "\t";
+			}else if(hasCom){
+				delim = ",";
+			}else{
+				throw new ExtensionException("Illegal file format in file "+dataFile+", the header line does not contain a tab or a comma character, expecting one or the other.");
+			}
+			// Parse the header and create the column objects (skipping the time column)
+			String[] columnNames = strLine.split(delim);
+			for(String columnName : Arrays.copyOfRange(columnNames, 1, columnNames.length)){
+				columns.put(columnName, new TimeSeriesColumn());
+			}
+			// Read the rest of the data
+			try{
+				while ((strLine = br.readLine())!=null){
+					lineData = strLine.split(delim);
+					times.add(new TimeSeriesRecord(new LogoTime(lineData[0]), numRows++));
+					for(int colInd = 1; colInd <= columns.size(); colInd++){
+						columns.get(columnNames[colInd]).add(lineData[colInd]);
+					}
+				}
+			}catch (IOException e){
+				throw new ExtensionException(e.getMessage());
+			}
+		}
+		public String dump(boolean arg0, boolean arg1, boolean arg2) {
+			String result = "TIMESTAMP";
+			for(String colName : columns.keySet()){
+				result += "," + colName;
+			}
+			result += "\n";
+			java.util.Iterator<TimeSeriesRecord> timeIter = times.iterator();
+			while(timeIter.hasNext()){
+				TimeSeriesRecord time = timeIter.next();
+				result += time.time.dump(false,false,false);
+				for(String colName : columns.keySet()){
+					result += "," + columns.get(colName).data.get(time.dataIndex);
+				}
+				result += "\n";
+			}
+			return result;
+		}
+		public String getExtensionName() {
+			return null;
+		}
+		public String getNLTypeName() {
+			return null;
+		}
+		public boolean recursivelyEqual(Object arg0) {
+			return false;
+		}
 	}
 	public class LogoEvent implements org.nlogo.api.ExtensionObject {
 		private final long id;
@@ -1046,18 +1196,18 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		String primName = null;
 		Double eventTick = null;
 		switch(addType){
-			case DEFAULT:
-				primName = "add";
-				if(args.length<4)throw new ExtensionException("time:add must have 4 arguments: schedule agent task tick/time");
-				break;
-			case SHUFFLE:
-				primName = "add-shuffled";
-				if(args.length<4)throw new ExtensionException("time:add-shuffled must have 4 arguments: schedule agent task tick/time");
-				break;
-			case REPEAT:
-				primName = "repeat";
-				if(args.length<5)throw new ExtensionException("time:repeat must have 5 arguments: schedule agent task tick/time number");
-				break;
+		case DEFAULT:
+			primName = "add";
+			if(args.length<4)throw new ExtensionException("time:add must have 4 arguments: schedule agent task tick/time");
+			break;
+		case SHUFFLE:
+			primName = "add-shuffled";
+			if(args.length<4)throw new ExtensionException("time:add-shuffled must have 4 arguments: schedule agent task tick/time");
+			break;
+		case REPEAT:
+			primName = "repeat";
+			if(args.length<5)throw new ExtensionException("time:repeat must have 5 arguments: schedule agent task tick/time number");
+			break;
 		}
 
 		if (!(args[0].get() instanceof LogoSchedule)) throw new ExtensionException("time:"+primName+" expecting a schedule as the first argument");
@@ -1170,6 +1320,17 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			event = sched.schedule.isEmpty() ? null : sched.schedule.first();
 		}
 		if(isGoUntil && untilTick > tickCounter.ticks()) tickCounter.tick(untilTick-tickCounter.ticks());
+	}
+
+	public static class LoadTimeSeries extends DefaultReporter{
+		public Syntax getSyntax() {
+			return Syntax.reporterSyntax(new int[]{Syntax.StringType()},Syntax.WildcardType());
+		}
+		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
+			String filename = getStringFromArgument(args, 0);
+			LogoTimeSeries ts = new LogoTimeSeries(filename);
+			return ts;
+		}
 	}
 
 	private static void printToConsole(Context context, String msg) throws ExtensionException{
