@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.TreeSet;
+import java.util.TreeMap;
 import java.util.LinkedHashMap;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
@@ -44,6 +45,9 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	}
 	public enum DataType {
 		BOOLEAN,INTEGER,DOUBLE,STRING;
+	}
+	public enum GetTSMethod{
+		EXACT,NEAREST,LINEAR_INTERP;
 	}
 	public java.util.List<String> additionalJars() {
 		java.util.List<String> list = new java.util.ArrayList<String>();
@@ -116,9 +120,9 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		schedules.clear();
 		nextSchedule = 0;
 	}
-	public class TimeSeriesRecordComparator implements Comparator<TimeSeriesRecord> {
-		public int compare(TimeSeriesRecord a, TimeSeriesRecord b) {
-			return (a.dataIndex < b.dataIndex ? -1 : (a.dataIndex > b.dataIndex ? 1 : 0));
+	public class LogoTimeComparator implements Comparator<LogoTime> {
+		public int compare(LogoTime a, LogoTime b) {
+			return a.compareTo(b);
 		}
 	}
 	static class TimeSeriesRecord {
@@ -163,7 +167,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 	}
 	static class LogoTimeSeries implements org.nlogo.api.ExtensionObject {
-		TreeSet<TimeSeriesRecord> times = new TreeSet<TimeSeriesRecord>((new TimeExtension()).new TimeSeriesRecordComparator());
+		TreeMap<LogoTime,TimeSeriesRecord> times = new TreeMap<LogoTime,TimeSeriesRecord>((new TimeExtension()).new LogoTimeComparator());
 		LinkedHashMap<String,TimeSeriesColumn> columns = new LinkedHashMap<String,TimeSeriesColumn>();
 		Integer numRows = 0;
 
@@ -211,7 +215,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			try{
 				while ((strLine = br.readLine())!=null){
 					lineData = strLine.split(delim);
-					times.add(new TimeSeriesRecord(new LogoTime(lineData[0]), numRows++));
+					LogoTime newTime = new LogoTime(lineData[0]);
+					times.put(newTime,new TimeSeriesRecord(newTime, numRows++));
 					for(int colInd = 1; colInd <= columns.size(); colInd++){
 						columns.get(columnNames[colInd]).add(lineData[colInd]);
 					}
@@ -220,15 +225,45 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				throw new ExtensionException(e.getMessage());
 			}
 		}
+		public Object getByTime(LogoTime time, String columnName, GetTSMethod getMethod) throws ExtensionException{
+			if(columnName.equals("ALL_-_COLUMNS")){
+				return null;
+			}else if(!columns.containsKey(columnName)){
+				throw new ExtensionException("The LogoTimeSeries does not contain the column "+columnName);
+			}else{
+				int index = -1;
+				switch(getMethod){
+				case EXACT:
+					return columns.get(columnName).data.get(times.get(time).dataIndex);
+				case NEAREST:
+					if(times.get(time)!=null){
+						return columns.get(columnName).data.get(times.get(time).dataIndex);
+					}else{
+						LogoTime higherKey = times.higherKey(time);
+						LogoTime lowerKey = times.lowerKey(time);
+						if(higherKey == null){
+							return columns.get(columnName).data.get(times.get(lowerKey).dataIndex);
+						}else if(lowerKey == null){
+							return columns.get(columnName).data.get(times.get(higherKey).dataIndex);
+						}else{
+							return(time.isCloserToAThanB(lowerKey, higherKey) ? 
+									columns.get(columnName).data.get(times.get(lowerKey).dataIndex) : 
+									columns.get(columnName).data.get(times.get(higherKey).dataIndex));
+						}
+					}
+				}
+				return null;
+			}
+			
+		}
 		public String dump(boolean arg0, boolean arg1, boolean arg2) {
 			String result = "TIMESTAMP";
 			for(String colName : columns.keySet()){
 				result += "," + colName;
 			}
 			result += "\n";
-			java.util.Iterator<TimeSeriesRecord> timeIter = times.iterator();
-			while(timeIter.hasNext()){
-				TimeSeriesRecord time = timeIter.next();
+			for(LogoTime logoTime : times.keySet()){
+				TimeSeriesRecord time = times.get(logoTime);
 				result += time.time.dump(false,false,false);
 				for(String colName : columns.keySet()){
 					result += "," + columns.get(colName).data.get(time.dataIndex);
@@ -426,6 +461,33 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				this.monthDay = (new MonthDay()).parse(dateString, this.fmt);
 				break;
 			}
+		}
+		int compareTo(LogoTime that){
+			switch(this.dateType){
+			case DATETIME:
+				return this.datetime.compareTo(that.datetime);
+			case DATE:
+				return this.date.compareTo(that.date);
+			case DAY:
+				return this.monthDay.compareTo(that.monthDay);
+			}
+			return -999;
+		}
+		public Boolean isCloserToAThanB(LogoTime timeA, LogoTime timeB){
+			DateTime refDateTime = new DateTime(ISOChronology.getInstanceUTC());
+			Long millisToA = null, millisToB = null;
+			switch(this.dateType){
+			case DATETIME:
+				millisToA = Math.abs((new Duration(timeA.datetime.toDateTime(refDateTime),this.datetime.toDateTime(refDateTime))).getMillis());
+				millisToB = Math.abs((new Duration(timeB.datetime.toDateTime(refDateTime),this.datetime.toDateTime(refDateTime))).getMillis());
+			case DATE:
+				millisToA = Math.abs((new Duration(timeA.date.toDateTime(refDateTime),this.date.toDateTime(refDateTime))).getMillis());
+				millisToB = Math.abs((new Duration(timeB.date.toDateTime(refDateTime),this.date.toDateTime(refDateTime))).getMillis());
+			case DAY:
+				millisToA = Math.abs((new Duration(timeA.monthDay.toLocalDate(2000).toDateTime(refDateTime),this.monthDay.toLocalDate(2000).toDateTime(refDateTime))).getMillis());
+				millisToB = Math.abs((new Duration(timeB.monthDay.toLocalDate(2000).toDateTime(refDateTime),this.monthDay.toLocalDate(2000).toDateTime(refDateTime))).getMillis());
+			}
+			return millisToA < millisToB;
 		}
 		/* 
 		 * parseDateString
