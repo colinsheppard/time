@@ -10,8 +10,14 @@ to setup
   print "============================"
   print ""
   
-  set time-series time:load-ts "/Users/critter/Dropbox/netlogo/time/examples/time-series-data.csv"
+  set time-series time:ts-load "/Users/critter/Dropbox/netlogo/time/examples/time-series-data.csv"
   print time-series
+  
+  print time:ts-get time-series time:create "2000-01-01 10:00:00" "flow"
+  print time:ts-get time-series time:create "2000-01-01 10:20:00" "flow"
+  print time:ts-get time-series time:create "2000-01-01 10:30:00" "flow"
+  print time:ts-get time-series time:create "2000-01-01 10:30:00.001" "flow"
+  
 end
 
 to go

@@ -14,11 +14,9 @@ to setup
   ;; Create the 'schedule' which should be stored as a global
   set schedule time:create-schedule
   
-  time:anchor-schedule schedule time:create "2000-01-01" 1 "day"
+  ; Optionally anchor the schedule to a date/time
+  ;time:anchor-schedule schedule time:create "2000-01-01" 1 "day"
   
-  let test time:create "01-01"
-  print time:plus test 1 "hour"
-  print test
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Now schedule some events (turtles or other agents must first be created to be assigned an event)
   ;; 
@@ -26,7 +24,7 @@ to setup
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
   ;; Schedule all of the turtles to peform the "go-forward" procudure at tick 1
-  ;time:add-event schedule turtles task go-forward 1
+  time:add-event schedule turtles task go-forward 1
   ;time:add-event schedule turtles task go-forward time:create "2000-01-2"
  
    ;; Schedule all of the turtles to peform the "go-forward" procudure at tick 1 in random order
@@ -66,7 +64,7 @@ to go
   
   ;; Schedule the stop action. Note, the turtle being passed to this event is essentially a dummy agent (no actual agent is 
   ;; needed) but it must still be alive at the time that this event comes up or it won't get executed.
-  time:add-event schedule one-of turtles task stop-this-train go-until-tick
+  ;time:add-event schedule one-of turtles task stop-this-train go-until-tick
   
   time:go schedule
 end
@@ -77,6 +75,10 @@ to go-until
 end
 
 to stop-this-train
+  print "stopping"
+  call-stop
+end
+to call-stop
   stop
 end
 @#$#@#$#@

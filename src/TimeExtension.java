@@ -113,8 +113,14 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		/**********************
 		/* TIME SERIES PRIMITIVES
 		/**********************/
-		// time:load-time-series
-		primManager.addPrimitive("load-ts", new LoadTimeSeries());
+		// time:load-ts
+		primManager.addPrimitive("ts-load", new TimeSeriesLoad());
+		// time:get
+		primManager.addPrimitive("ts-get", new TimeSeriesGet());
+		// time:get-exact
+		primManager.addPrimitive("ts-get-exact", new TimeSeriesGetExact());
+		// time:get-interp
+		primManager.addPrimitive("ts-get-interp", new TimeSeriesGetInterp());
 	}
 	public void clearAll() {
 		schedules.clear();
@@ -476,16 +482,20 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public Boolean isCloserToAThanB(LogoTime timeA, LogoTime timeB){
 			DateTime refDateTime = new DateTime(ISOChronology.getInstanceUTC());
 			Long millisToA = null, millisToB = null;
+			
 			switch(this.dateType){
 			case DATETIME:
 				millisToA = Math.abs((new Duration(timeA.datetime.toDateTime(refDateTime),this.datetime.toDateTime(refDateTime))).getMillis());
 				millisToB = Math.abs((new Duration(timeB.datetime.toDateTime(refDateTime),this.datetime.toDateTime(refDateTime))).getMillis());
+				break;
 			case DATE:
 				millisToA = Math.abs((new Duration(timeA.date.toDateTime(refDateTime),this.date.toDateTime(refDateTime))).getMillis());
 				millisToB = Math.abs((new Duration(timeB.date.toDateTime(refDateTime),this.date.toDateTime(refDateTime))).getMillis());
+				break;
 			case DAY:
 				millisToA = Math.abs((new Duration(timeA.monthDay.toLocalDate(2000).toDateTime(refDateTime),this.monthDay.toLocalDate(2000).toDateTime(refDateTime))).getMillis());
 				millisToB = Math.abs((new Duration(timeB.monthDay.toLocalDate(2000).toDateTime(refDateTime),this.monthDay.toLocalDate(2000).toDateTime(refDateTime))).getMillis());
+				break;
 			}
 			return millisToA < millisToB;
 		}
@@ -1122,6 +1132,16 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 		return (String) obj;
 	}
+	private static LogoTimeSeries getTimeSeriesFromArgument(Argument args[], Integer argIndex) throws ExtensionException, LogoException {
+		LogoTimeSeries ts = null;
+		Object obj = args[argIndex].get();
+		if (obj instanceof LogoTimeSeries) {
+			ts = (LogoTimeSeries)obj;
+		}else{
+			throw new ExtensionException("time: was expecting a LogoTimeSeries object as argument "+(argIndex+1)+", found this instead: " + Dump.logoObject(obj));
+		}
+		return ts;
+	}
 	private static Integer roundDouble(Double d){
 		return ((Long)Math.round(d)).intValue();
 	}
@@ -1383,8 +1403,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 		if(isGoUntil && untilTick > tickCounter.ticks()) tickCounter.tick(untilTick-tickCounter.ticks());
 	}
-
-	public static class LoadTimeSeries extends DefaultReporter{
+	public static class TimeSeriesLoad extends DefaultReporter{
 		public Syntax getSyntax() {
 			return Syntax.reporterSyntax(new int[]{Syntax.StringType()},Syntax.WildcardType());
 		}
@@ -1394,7 +1413,40 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			return ts;
 		}
 	}
-
+	public static class TimeSeriesGet extends DefaultReporter{
+		public Syntax getSyntax() {
+			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType(),Syntax.WildcardType(),Syntax.StringType()},Syntax.WildcardType());
+		}
+		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
+			LogoTimeSeries ts = getTimeSeriesFromArgument(args, 0);
+			LogoTime time = getTimeFromArgument(args, 1);
+			String columnName = getStringFromArgument(args, 2);
+			if(debug)printToConsole(context, "logotime type:"+time.dateType);
+			return ts.getByTime(time, columnName, GetTSMethod.NEAREST);
+		}
+	}
+	public static class TimeSeriesGetExact extends DefaultReporter{
+		public Syntax getSyntax() {
+			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType(),Syntax.WildcardType(),Syntax.StringType()},Syntax.WildcardType());
+		}
+		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
+			LogoTimeSeries ts = getTimeSeriesFromArgument(args, 0);
+			LogoTime time = getTimeFromArgument(args, 1);
+			String columnName = getStringFromArgument(args, 2);
+			return ts.getByTime(time, columnName, GetTSMethod.EXACT);
+		}
+	}
+	public static class TimeSeriesGetInterp extends DefaultReporter{
+		public Syntax getSyntax() {
+			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType(),Syntax.WildcardType(),Syntax.StringType()},Syntax.WildcardType());
+		}
+		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
+			LogoTimeSeries ts = getTimeSeriesFromArgument(args, 0);
+			LogoTime time = getTimeFromArgument(args, 1);
+			String columnName = getStringFromArgument(args, 2);
+			return ts.getByTime(time, columnName, GetTSMethod.LINEAR_INTERP);
+		}
+	}
 	private static void printToConsole(Context context, String msg) throws ExtensionException{
 		try {
 			ExtensionContext extcontext = (ExtensionContext) context;
@@ -1404,7 +1456,3 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 	}
 }
-
-
-
-
