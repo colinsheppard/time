@@ -18,6 +18,10 @@ to setup
   print time:ts-get time-series time:create "2000-01-01 10:30:00" "flow"
   print time:ts-get time-series time:create "2000-01-01 10:30:00.001" "flow"
   
+  print time:ts-get-interp time-series time:create "2000-01-01 10:30:00" "flow"
+  print time:ts-get-interp time-series time:create "2000-01-03 00:30:00" "temp"
+  
+  print time:ts-get-row-exact time-series time:create "2000-01-03 00:30:00"
 end
 
 to go
