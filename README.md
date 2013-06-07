@@ -346,6 +346,16 @@ Add a repeating event to *logoschedule*.  This behaves almost identical to *time
 
 ---------------------------------------
 
+**time:clear**
+
+*time:clear logoschedule*
+
+Clear all events from *logoschedule*.
+
+    time:clear logoschedule
+
+---------------------------------------
+
 **time:go** 
 
 *time:go logoschedule*
@@ -376,6 +386,56 @@ Reports the number of events in the schedule.
       time:go logoschedule
     ]
 
+---------------------------------------
+
+**time:ts-load** 
+
+*time:ts-load filepath*
+
+Loads time series data from a text file (comma or tab separated) and reports a LogoTimeSeries object.  The first line of the file is assumed to be a header line, the data in the LogoTimeSeries object is accessible by name.  Do not use "all" or "ALL" for a header name as this keyword is reserved (see time:ts-get below).  The first column of the file must be dates of datetimes that can be parsed by this extension (see the [behavior section](#behavior) for acceptable string formats).  Finally, if the date/time stamps do not appear in chronological order in the text file, they will be automatically sorted into order when loaded.
+
+    let ts time:ts-load "time-series-data.csv"
+
+---------------------------------------
+
+**time:ts-get** 
+
+*time:ts-get logotimeseries logotime column-name*
+
+Reports the value from the *column-name* column of the *logotimeseries* in the row matching *logotime*.  If there is not an exact match with *logotime*, the row with the nearest date/time will be used.  If "ALL" or "all" is specified as the column name, then the entire row, including the logotime, is returned as a list.
+
+    print time:ts-get ts (time:create "2000-01-01 10:00:00") "flow"
+    ;; prints the value from the flow column in the row containing a time stamp of 2000-01-01 10:00:00
+
+---------------------------------------
+
+**time:ts-get-interp** 
+
+*time:ts-get-interp logotimeseries logotime column-name*
+
+Behaves almost identical to time:ts-get, but if there is not an exact match with the date/time stamp, then the value is linearly interpolated between the two nearest values.  This command will throw an exception if the values in the column are strings instead of numeric.  
+
+    print time:ts-get-interp ts ()time:create "2000-01-01 10:30:00") "flow"
+
+---------------------------------------
+
+**time:ts-get-exact** 
+
+*time:ts-get-exact logotimeseries logotime column-name*
+
+Behaves almost identical to time:ts-get, but if there is not an exact match with the date/time stamp, then an exception is thrown.  
+
+    print time:ts-get-exact ts (time:create "2000-01-01 10:30:00") "flow"
+
+---------------------------------------
+
+**time:ts-get-range** 
+
+*time:ts-get-range logotimeseries logotime1 logotime2 column-name*
+
+Reports a list of all of the values from the *column-name* column of the *logotimeseries* in the rows between *logotime1* and *logotime2* (inclusively).  If "ALL" or "all" is specified as the column name, then a list of lists is reported, with one sub-list for each column in *logotimeseries*, including the date/time column.
+
+    print time:ts-get-range time-series time:create "2000-01-02 12:30:00" time:create "2000-01-03 00:30:00" "all"
 
 ## Building
 
