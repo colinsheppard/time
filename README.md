@@ -417,7 +417,7 @@ Reports the number of events in the schedule.
 
 *time:ts-load filepath*
 
-Loads time series data from a text file (comma or tab separated) and reports a LogoTimeSeries object.  The first line of the file is assumed to be a header line, the data in the LogoTimeSeries object is accessible by name.  Do not use "all" or "ALL" for a header name as this keyword is reserved (see time:ts-get below).  The first column of the file must be dates of datetimes that can be parsed by this extension (see the [behavior section](#behavior) for acceptable string formats).  Finally, if the date/time stamps do not appear in chronological order in the text file, they will be automatically sorted into order when loaded.
+Loads time series data from a text file (comma or tab separated) and reports a LogoTimeSeries object.  The first line of the file is assumed to be a header line, the data in the LogoTimeSeries object is accessible by name.  Do not use "all" or "ALL" for a column name as this keyword is reserved (see time:ts-get below).  The first column of the file must be timestamps that can be parsed by this extension (see the [behavior section](#behavior) for acceptable string formats).  Finally, if the timestamps do not appear in chronological order in the text file, they will be automatically sorted into order when loaded.
 
     let ts time:ts-load "time-series-data.csv"
 
