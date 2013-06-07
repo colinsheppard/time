@@ -116,15 +116,15 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		/**********************
 		/* TIME SERIES PRIMITIVES
 		/**********************/
-		// time:load-ts
+		// time:ts-load
 		primManager.addPrimitive("ts-load", new TimeSeriesLoad());
-		// time:get
+		// time:ts-get
 		primManager.addPrimitive("ts-get", new TimeSeriesGet());
-		// time:get-interp
+		// time:ts-get-interp
 		primManager.addPrimitive("ts-get-interp", new TimeSeriesGetInterp());
-		// time:get-exact
+		// time:ts-get-exact
 		primManager.addPrimitive("ts-get-exact", new TimeSeriesGetExact());
-		// time:get-range
+		// time:ts-get-range
 		primManager.addPrimitive("ts-get-range", new TimeSeriesGetRange());
 	}
 	public void clearAll() {
