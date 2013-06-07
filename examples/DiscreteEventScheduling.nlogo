@@ -26,7 +26,7 @@ to setup
   ;; Schedule all of the turtles to peform the "go-forward" procudure at tick 1
   time:add-event schedule turtles task go-forward 1
   ;time:add-event schedule turtles task go-forward time:create "2000-01-2"
- 
+  
    ;; Schedule all of the turtles to peform the "go-forward" procudure at tick 1 in random order
    ;  time:add-event-shuffled schedule turtles task go-forward 1
    ;  time:add-event-shuffled schedule turtles task go-forward time:create "2000-01-2"
@@ -43,6 +43,8 @@ to setup
 ;  time:repeat-event schedule one-of turtles task go-forward 3.25 1.0
 ;  time:repeat-event schedule one-of turtles task go-forward (time:create "2000-01-2") 1.0
 
+  ;; You can always clear the schedule 
+  time:clear schedule
 end
 
 ;; Note: in this example model, go-forward occurs inside a turtle context, so self refers to the turtle performing the event

@@ -86,6 +86,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		primManager.addPrimitive("is-between", new IsBetween());
 		// time:difference-between
 		primManager.addPrimitive("difference-between", new DifferenceBetween());
+		// time:clear
+		primManager.addPrimitive("clear", new Clear());
 
 		/********************************************
 		/* DISCRETE EVENT SIMULATION PRIMITIVES
@@ -453,6 +455,9 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public boolean recursivelyEqual(Object arg0) {
 			return equals(arg0);
 		}
+		public void clear() {
+			schedule.clear();
+		}
 	}
 	/*
 	 * The LogoEventComparator first compares based on tick (which is a Double) and then on id 
@@ -474,7 +479,6 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			}
 		}
 	}
-
 	private static class LogoTime implements org.nlogo.api.ExtensionObject {
 		public DateType			dateType = null;
 		public LocalDateTime 	datetime = null;
@@ -993,7 +997,6 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			}
 		}
 	}
-
 	public static class NewLogoTime extends DefaultReporter {
 		public Syntax getSyntax() {
 			return Syntax.reporterSyntax(new int[]{Syntax.StringType()},
@@ -1143,7 +1146,6 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			throw new ExtensionException("illegal time period type: "+sType);
 		}
 	}
-
 	/*
 	 * Convenience methods, to error check and extract a object from an Argument. 
 	 */
@@ -1258,7 +1260,6 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			sched.anchorSchedule(getTimeFromArgument(args, 1),getDoubleFromArgument(args, 2),stringToPeriodType(getStringFromArgument(args, 3)));
 		}
 	}
-
 	public static class FirstEvent extends DefaultReporter {
 		public Syntax getSyntax() {
 			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType()},
@@ -1270,7 +1271,6 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			return sched.schedule.first();
 		}
 	}
-
 	public static class NextEvent extends DefaultReporter {
 		public Syntax getSyntax() {
 			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType()},
@@ -1284,7 +1284,6 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			return toReturn;
 		}
 	}
-
 	public static class GetSize extends DefaultReporter {
 		public Syntax getSyntax() {
 			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType()},
@@ -1297,7 +1296,6 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			return new Double(sched.schedule.size());
 		}
 	}
-
 	public static class AddEvent extends DefaultCommand {
 		public Syntax getSyntax() {
 			return Syntax.commandSyntax(new int[]{Syntax.WildcardType(),
@@ -1309,7 +1307,6 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			addEvent(args,context,AddType.DEFAULT);
 		}
 	}
-
 	public static class AddEventShuffled extends DefaultCommand {
 		public Syntax getSyntax() {
 			return Syntax.commandSyntax(new int[]{Syntax.WildcardType(),
@@ -1321,7 +1318,6 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			addEvent(args,context,AddType.SHUFFLE);
 		}
 	}
-
 	public static class RepeatEvent extends DefaultCommand {
 		public Syntax getSyntax() {
 			return Syntax.commandSyntax(new int[]{Syntax.WildcardType(),
@@ -1334,7 +1330,6 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			addEvent(args,context,AddType.REPEAT);
 		}
 	}
-
 	private static void addEvent(Argument args[], Context context, AddType addType) throws ExtensionException, LogoException {
 		String primName = null;
 		Double eventTick = null;
@@ -1386,7 +1381,14 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		LogoEvent event = (new TimeExtension()).new LogoEvent(agentSet,args[2].getCommandTask(),eventTick,repeatInterval,shuffleAgentSet);
 		sched.schedule.add(event);
 	}
-
+	public static class Clear extends DefaultCommand {
+		public Syntax getSyntax() {
+			return Syntax.commandSyntax(new int[]{Syntax.WildcardType()});
+		}
+		public void perform(Argument args[], Context context) throws ExtensionException, LogoException {
+			getScheduleFromArguments(args, 0).clear();
+		}
+	}
 	public static class Go extends DefaultCommand {
 		public Syntax getSyntax() {
 			return Syntax.commandSyntax(new int[]{Syntax.WildcardType()});
@@ -1395,7 +1397,6 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			performScheduledTasks(args, context);
 		}
 	}
-
 	public static class GoUntil extends DefaultCommand {
 		public Syntax getSyntax() {
 			return Syntax.commandSyntax(new int[]{Syntax.WildcardType(),
