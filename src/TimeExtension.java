@@ -7,6 +7,7 @@ import java.util.NoSuchElementException;
 import java.util.TreeSet;
 import java.util.TreeMap;
 import java.util.LinkedHashMap;
+import java.util.Vector;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -121,12 +122,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		primManager.addPrimitive("ts-get-interp", new TimeSeriesGetInterp());
 		// time:get-exact
 		primManager.addPrimitive("ts-get-exact", new TimeSeriesGetExact());
-		// time:get-row
-		primManager.addPrimitive("ts-get-row", new TimeSeriesGetRow());
-		// time:get-row-interp
-		primManager.addPrimitive("ts-get-row-interp", new TimeSeriesGetRowInterp());
-		// time:get-row-exact
-		primManager.addPrimitive("ts-get-row-exact", new TimeSeriesGetRowExact());
+		// time:get-range
+		primManager.addPrimitive("ts-get-range", new TimeSeriesGetRange());
 	}
 	public void clearAll() {
 		schedules.clear();
@@ -247,35 +244,74 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			}else{
 				columnList.add(columnName);
 			}
-			for(String colName : columnList){
-				if(times.get(time)!=null){
-					resultList.add(columns.get(colName).data.get(times.get(time).dataIndex));
+			LogoTime finalKey = null, higherKey = null, lowerKey = null;
+			if(times.get(time)!=null){
+				finalKey = time;
+			}else{
+				higherKey = times.higherKey(time);
+				lowerKey = times.lowerKey(time);
+				if(higherKey == null){
+					finalKey = lowerKey;
+				}else if(lowerKey == null){
+					finalKey = higherKey;
 				}else{
-					LogoTime higherKey = times.higherKey(time);
-					LogoTime lowerKey = times.lowerKey(time);
-					if(higherKey == null){
-						resultList.add(columns.get(colName).data.get(times.get(lowerKey).dataIndex));
-					}else if(lowerKey == null){
-						resultList.add(columns.get(colName).data.get(times.get(higherKey).dataIndex));
-					}else{
-						switch(getMethod){
-						case EXACT:
-							resultList.add(columns.get(colName).data.get(times.get(time).dataIndex));
-							break;
-						case NEAREST:
-							resultList.add(time.isCloserToAThanB(lowerKey, higherKey) ? 
-									columns.get(colName).data.get(times.get(lowerKey).dataIndex) : 
-									columns.get(colName).data.get(times.get(higherKey).dataIndex));
-							break;
-						case LINEAR_INTERP:
-							if(columns.get(colName).data.get(0) instanceof String)throw new ExtensionException("Cannot interpolate between string values, use time:get instead.");
-							resultList.add( (Double)columns.get(colName).data.get(times.get(lowerKey).dataIndex) + 
-									((Double)columns.get(colName).data.get(times.get(higherKey).dataIndex) - (Double)columns.get(colName).data.get(times.get(lowerKey).dataIndex)) *
-									lowerKey.getDifferenceBetween(PeriodType.MILLI, time) / lowerKey.getDifferenceBetween(PeriodType.MILLI, higherKey) );
-							break;
-						}
+					switch(getMethod){
+					case EXACT:
+						finalKey = time;
+						break;
+					case NEAREST:
+						finalKey = time.isCloserToAThanB(lowerKey, higherKey) ? lowerKey : higherKey;
+						break;
+					case LINEAR_INTERP:
+						finalKey = time;
+						break;
 					}
 				}
+			}
+			if(columnName.equals("ALL_-_COLUMNS"))resultList.add(finalKey);
+			for(String colName : columnList){
+				if(getMethod==GetTSMethod.LINEAR_INTERP){
+					if(columns.get(colName).data.get(0) instanceof String)throw new ExtensionException("Cannot interpolate between string values, use time:get instead.");
+					resultList.add( (Double)columns.get(colName).data.get(times.get(lowerKey).dataIndex) + 
+						((Double)columns.get(colName).data.get(times.get(higherKey).dataIndex) - (Double)columns.get(colName).data.get(times.get(lowerKey).dataIndex)) *
+						lowerKey.getDifferenceBetween(PeriodType.MILLI, time) / lowerKey.getDifferenceBetween(PeriodType.MILLI, higherKey) );
+				}else{
+					resultList.add(columns.get(colName).data.get(times.get(finalKey).dataIndex));
+				}
+			}
+			if(resultList.size()==1){
+				return resultList.get(0);
+			}else{
+				return LogoList.fromJava(resultList);
+			}
+		}
+		public Object getRangeByTime(LogoTime timeLow, LogoTime timeHigh, String columnName) throws ExtensionException{
+			if(!timeLow.isBefore(timeHigh)){
+				LogoTime timeTemp = timeLow;
+				timeLow = timeHigh;
+				timeHigh = timeTemp;
+			}
+			ArrayList<String> columnList = new ArrayList<String>(columns.size());
+			ArrayList<LogoList> resultList = new ArrayList<LogoList>(columns.size());
+			if(columnName.equals("ALL_-_COLUMNS")){
+				columnList.addAll(columns.keySet());
+			}else if(!columns.containsKey(columnName)){
+				throw new ExtensionException("The LogoTimeSeries does not contain the column "+columnName);
+			}else{
+				columnList.add(columnName);
+			}
+			LogoTime lowerKey = timeLow;
+			if(times.get(lowerKey) == null) lowerKey = times.higherKey(timeLow);
+			LogoTime higherKey = timeHigh;
+			if(times.get(higherKey) == null) higherKey = times.lowerKey(timeHigh);
+			if(lowerKey == null || higherKey == null){
+				return(new LogoList(null));
+			}
+			if(columnName.equals("ALL_-_COLUMNS")){
+				resultList.add(LogoList.fromJava(times.subMap(lowerKey, higherKey).keySet()));
+			}
+			for(String colName : columnList){
+				resultList.add(LogoList.fromJava(columns.get(colName).data.subList(times.get(lowerKey).dataIndex, times.get(higherKey).dataIndex+1)));
 			}
 			if(resultList.size()==1){
 				return resultList.get(0);
@@ -1442,6 +1478,9 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			LogoTimeSeries ts = getTimeSeriesFromArgument(args, 0);
 			LogoTime time = getTimeFromArgument(args, 1);
 			String columnName = getStringFromArgument(args, 2);
+			if(columnName.equals("ALL") || columnName.equals("all")){
+				columnName = "ALL_-_COLUMNS";
+			}
 			return ts.getByTime(time, columnName, GetTSMethod.NEAREST);
 		}
 	}
@@ -1453,6 +1492,9 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			LogoTimeSeries ts = getTimeSeriesFromArgument(args, 0);
 			LogoTime time = getTimeFromArgument(args, 1);
 			String columnName = getStringFromArgument(args, 2);
+			if(columnName.equals("ALL") || columnName.equals("all")){
+				columnName = "ALL_-_COLUMNS";
+			}
 			return ts.getByTime(time, columnName, GetTSMethod.EXACT);
 		}
 	}
@@ -1464,37 +1506,25 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			LogoTimeSeries ts = getTimeSeriesFromArgument(args, 0);
 			LogoTime time = getTimeFromArgument(args, 1);
 			String columnName = getStringFromArgument(args, 2);
+			if(columnName.equals("ALL") || columnName.equals("all")){
+				columnName = "ALL_-_COLUMNS";
+			}
 			return ts.getByTime(time, columnName, GetTSMethod.LINEAR_INTERP);
 		}
 	}
-	public static class TimeSeriesGetRow extends DefaultReporter{
+	public static class TimeSeriesGetRange extends DefaultReporter{
 		public Syntax getSyntax() {
-			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType(),Syntax.WildcardType()},Syntax.WildcardType());
+			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType(),Syntax.WildcardType(),Syntax.WildcardType(),Syntax.StringType()},Syntax.WildcardType());
 		}
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
 			LogoTimeSeries ts = getTimeSeriesFromArgument(args, 0);
-			LogoTime time = getTimeFromArgument(args, 1);
-			return ts.getByTime(time, "ALL_-_COLUMNS", GetTSMethod.NEAREST);
-		}
-	}
-	public static class TimeSeriesGetRowInterp extends DefaultReporter{
-		public Syntax getSyntax() {
-			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType(),Syntax.WildcardType()},Syntax.WildcardType());
-		}
-		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
-			LogoTimeSeries ts = getTimeSeriesFromArgument(args, 0);
-			LogoTime time = getTimeFromArgument(args, 1);
-			return ts.getByTime(time, "ALL_-_COLUMNS", GetTSMethod.LINEAR_INTERP);
-		}
-	}
-	public static class TimeSeriesGetRowExact extends DefaultReporter{
-		public Syntax getSyntax() {
-			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType(),Syntax.WildcardType()},Syntax.WildcardType());
-		}
-		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
-			LogoTimeSeries ts = getTimeSeriesFromArgument(args, 0);
-			LogoTime time = getTimeFromArgument(args, 1);
-			return ts.getByTime(time, "ALL_-_COLUMNS", GetTSMethod.EXACT);
+			LogoTime timeA = getTimeFromArgument(args, 1);
+			LogoTime timeB = getTimeFromArgument(args, 2);
+			String columnName = getStringFromArgument(args, 3);
+			if(columnName.equals("ALL") || columnName.equals("all")){
+				columnName = "ALL_-_COLUMNS";
+			}
+			return ts.getRangeByTime(timeA, timeB, columnName);
 		}
 	}
 	private static void printToConsole(Context context, String msg) throws ExtensionException{
