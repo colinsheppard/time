@@ -927,6 +927,11 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			return true;
 		}
 		public boolean isBetween(LogoTime timeA, LogoTime timeB)throws ExtensionException{
+			if(!timeA.isBefore(timeB)){
+				LogoTime tempA = timeA;
+				timeA = timeB;
+				timeB = tempA;
+			}
 			if(this.dateType != timeA.dateType || this.dateType != timeB.dateType)throw new ExtensionException("time comparisons only work if the LogoTime's are the same variety, but you called with a "+
 					this.dateType.toString()+", a "+timeA.dateType.toString()+", and a "+timeB.dateType.toString());
 			switch(this.dateType){

@@ -114,7 +114,8 @@ to setup
   print "before days"
   print time:is-before (time:create "01-02") (time:create "01-03")
   print "is between"
-  print time:is-between (time:create "2000-03-08")  (time:create "1999-12-02") (time:create "2000-05-03")
+  print time:is-between (time:create "2000-03-08") (time:create "1999-12-02") (time:create "2000-05-03")
+  print time:is-between (time:create "2000-03-08") (time:create "2000-05-03") (time:create "1999-12-02") 
   print ""
   print "============================"
   print ""
