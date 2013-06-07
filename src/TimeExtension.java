@@ -257,8 +257,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				}else{
 					switch(getMethod){
 					case EXACT:
-						finalKey = time;
-						break;
+						throw new ExtensionException("The LogoTime "+time.dump(false, false, false)+" does not exist in the time series.");
 					case NEAREST:
 						finalKey = time.isCloserToAThanB(lowerKey, higherKey) ? lowerKey : higherKey;
 						break;
