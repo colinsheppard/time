@@ -1,4 +1,4 @@
-extensions[dynamic-scheduler]
+extensions[time]
 
 globals[
   schedule
@@ -10,7 +10,7 @@ to setup
   ask patches[
      set pcolor yellow   ; Yellow means the trap has not triggered
   ]
-  set schedule dynamic-scheduler:create
+  set schedule time:create-schedule
 end
 
 to pop 
@@ -25,7 +25,7 @@ to pop
     ; Send 2 balls in air, determine where and when they land
     ask n-of 2 patches in-radius 5[
         ; Set the time when the ball will land on and trigger trap
-        dynamic-scheduler:add schedule self task pop (ticks + (random-float 0.2 * distance myself))
+        time:add-event schedule self task pop (ticks + (random-float 0.2 * distance myself))
     ]
   ]
 end
@@ -33,7 +33,7 @@ end
 to update-custom-plots
       ; Update the plot using *plotxy* which lets us use non-integer x value
       set-current-plot "Balls in air"
-      plotxy ticks (dynamic-scheduler:size-of schedule)
+      plotxy ticks (time:size-of schedule)
       
       set-current-plot "Untriggered traps"
       plotxy ticks count patches with [pcolor = yellow]
@@ -43,11 +43,11 @@ to start
   ; Set off one trap to start the action, pick from yellow patches so this method can
   ; be invoked multiple times
   ask one-of patches with [pcolor = yellow][ 
-    dynamic-scheduler:add schedule self task pop ticks + 1.0
+    time:add-event schedule self task pop ticks + 1.0
   ]
   
   ; Dispatch the schedule
-  dynamic-scheduler:go schedule
+  time:go schedule
   
   ; In the unusual case that all of the traps have been triggered, reset the board
   ; to avoid an error if the user clicks "start" again.
