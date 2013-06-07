@@ -480,7 +480,7 @@ Please visit the [github issue tracker](https://github.com/colinsheppard/Time-Ex
 
 ## Credits
 
-This extension is in part powered by [Joda Time](http://joda-time.sourceforge.net/) and inspired by the [Ecoswarm Time Manager Library](http://www.humboldt.edu/ecomodel/software.htm).
+This extension is in part powered by [Joda Time](http://joda-time.sourceforge.net/) and inspired by the [Ecoswarm Time Manager Library](http://www.humboldt.edu/ecomodel/software.htm).  Steve Railsback provided valuable feedback, testing, and documentation proofing.  Allison Campbell helped benchmark discrete event scheduling versus static scheduling.
 
 ## Terms of Use
 
