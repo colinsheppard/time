@@ -1,4 +1,4 @@
-extensions [dynamic-scheduler]
+extensions [time]
 
 globals[
   schedule  ;; holds the dynamic schedule
@@ -16,11 +16,11 @@ to setup-turtles
 end
 
 to setup-schedule
-  set schedule dynamic-scheduler:create
+  set schedule time:create-schedule
   
   let ind 1
   while[ind <= nactions][
-    dynamic-scheduler:add schedule turtles task go-forward ind
+    time:add-event schedule turtles task go-forward ind
     set ind ind + 1
   ]
 end
@@ -33,11 +33,11 @@ to go-home
   ask turtles [home]
 end
 
-to go-dynamic
+to go-discrete-event
   setup
   reset-timer
-  dynamic-scheduler:go-until schedule nticks;; executes the schedule and clocks along the ticker
-  print (word "dynamic schedule time = " timer)
+  time:go-until schedule nticks;; executes the schedule and clocks along the ticker
+  print (word "discrete event schedule time = " timer)
 end
 
 to go-static
@@ -82,10 +82,10 @@ ticks
 BUTTON
 12
 236
-133
+156
 269
 NIL
-go-dynamic
+go-discrete-event
 NIL
 1
 T
@@ -178,7 +178,7 @@ TEXTBOX
 24
 1224
 1518
-This model was designed to benchmark traditional agent scheduling against dynamic scheduling using the dynamic-scheduler extension.  \n\nDynamic scheduling is most useful for models where agents spend a lot of time *not* doing anything but yet they know at what future tick they will need to do something.  Sometimes in a netlogo model, you have to test a certain condition or set of conditions for all agents every tick (usually in the form of an \"ask\") in order to decide whether the agents should act or not.  But for some models, you might know in advance exactly when a particular agent needs to act, but yet you still have to test some set of conditions until the time is ripe.  Dynamic scheduling cuts all of those superfluous test out and the action is performed only when needed, with no testing and very little overhead.\n\nFor example, if an agent is a state machine and spends most of the time in the state \"at rest\" and has a predicatable schedule that knows that the agent should transition to the state \"awake\" at tick 105, then using a dynamic scheduler allows you to schedule the \"wake up\" procedure for tick 105 and avoid testing conditions in the meantime.\n\nTo simulate the benefit of dynamic scheduling versus \"static\" scheduling, this model implements the exact same model using both techniques.  \n\nUse the sliders to set:\n\n-nturtles: the number of turtles, \n-nticks: the number of total ticks in the simulation,\n-nactions: how many times does each turtle do something (in this model, \"something\" is to move forward nsteps),\n-nsteps: how many steps does each turtle take when it moves forward. \n\nThe model behaves as follows:\n\n-For the first 'naction' ticks, all of the turtles do a simple action, they move forward by 'nsteps'.  \n-The total simulation runs out to 'nticks'.  \n-With the static scheduler, every agent is asked to check whether or not it's appropriate to move foward at that time.  \n-With the dynamic scheduler, the agents are scheduled during setup to move forward during the appropriate ticks and nothing is scheduled thereafter.\n-At the end of a single run, the amount of time it took to do the whole run is written to the console.\n\nVarying the values in the sliders will allow you to get a sense for how much overhead is involved in just running a simple if statement during those ticks when the turtles aren't doing anything.
+This model was designed to benchmark traditional agent scheduling against discrete event scheduling using the time extension.  \n\nDiscrete event scheduling is most useful for models where agents spend a lot of time *not* doing anything but yet they know at what future tick they will need to do something.  Sometimes in a netlogo model, you have to test a certain condition or set of conditions for all agents every tick (usually in the form of an \"ask\") in order to decide whether the agents should act or not.  But for some models, you might know in advance exactly when a particular agent needs to act, but yet you still have to test some set of conditions until the time is ripe.  Discrete event scheduling cuts all of those superfluous test out and the action is performed only when needed, with no testing and very little overhead.\n\nFor example, if an agent is a state machine and spends most of the time in the state \"at rest\" and has a predicatable schedule that knows that the agent should transition to the state \"awake\" at tick 105, then using a discrete event scheduler allows you to schedule the \"wake up\" procedure for tick 105 and avoid testing conditions in the meantime.\n\nTo simulate the benefit of discrete event scheduling versus \"static\" scheduling, this model implements the exact same model using both techniques.  \n\nUse the sliders to set:\n\n-nturtles: the number of turtles, \n-nticks: the number of total ticks in the simulation,\n-nactions: how many times does each turtle do something (in this model, \"something\" is to move forward nsteps),\n-nsteps: how many steps does each turtle take when it moves forward. \n\nThe model behaves as follows:\n\n-For the first 'naction' ticks, all of the turtles do a simple action, they move forward by 'nsteps'.  \n-The total simulation runs out to 'nticks'.  \n-With the static scheduler, every agent is asked to check whether or not it's appropriate to move foward at that time.  \n-With the discrete event scheduler, the agents are scheduled during setup to move forward during the appropriate ticks and nothing is scheduled thereafter.\n-At the end of a single run, the amount of time it took to do the whole run is written to the console.\n\nVarying the values in the sliders will allow you to get a sense for how much overhead is involved in just running a simple if statement during those ticks when the turtles aren't doing anything.
 11
 0.0
 1

@@ -20,11 +20,13 @@ to setup
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Now schedule some events (turtles or other agents must first be created to be assigned an event)
   ;; 
-  ;; The following has 3 different examples of scheduling turtles, uncomment each to try them out.
+  ;; The following has several different examples of scheduling turtles, uncomment each to try them out.
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
   ;; Schedule all of the turtles to peform the "go-forward" procudure at tick 1
   time:add-event schedule turtles task go-forward 1
+  
+  ;; If the schedule is anchored, then use a LogoTime instead of a tick number to schedule the event
   ;time:add-event schedule turtles task go-forward time:create "2000-01-2"
   
    ;; Schedule all of the turtles to peform the "go-forward" procudure at tick 1 in random order
@@ -56,18 +58,20 @@ to go-forward
   ]
 end
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; There are two ways to set the schedule into action, "go" and "go-until", go will continue to dispatch events until the
 ;; stop primitive is called or the schedule runs out of events.  go-until will stop execution at a specified tick (taken as
 ;; an argument).  Be careful using "go" if events recur either through using the repeat primitive or if events get scheduled
 ;; dynamically.  It's usually best to either use go-until or schedule an event that stops execution at some point.  The stop
 ;; button won't work with this extension to halt activity while a schedule is being dispatched.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 to go
   setup
-  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Schedule the stop action. Note, the turtle being passed to this event is essentially a dummy agent (no actual agent is 
   ;; needed) but it must still be alive at the time that this event comes up or it won't get executed.
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
   ;time:add-event schedule one-of turtles task stop-this-train go-until-tick
-  
   time:go schedule
 end
 
