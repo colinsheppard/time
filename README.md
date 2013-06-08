@@ -1,5 +1,6 @@
 # NetLogo Time Extension
 
+* [Quickstart](#quickstart)
 * [What is it?](#what-is-it)
 * [Installation](#installation)
 * [Examples](#examples)
@@ -10,6 +11,42 @@
 * [Feedback](#feedback-bugs-feature-requests)
 * [Credits](#credits)
 * [Terms of use](#terms-of-use)
+
+## Quickstart
+
+1 [Install the time extension](#installation)
+
+2 Include the extension in your NetLogo model (at the top):
+
+    extensions [time]
+
+3 Create a global date/time and initialize in the setup procedure:
+
+    globals[dt]
+    to setup
+      set dt time:create "2000/01/01 10:00"
+    end
+
+4 From the console, execute setup and then print a formatted version of your date/time to the console:
+
+	setup
+    print time:show dt "EEEE, MMMM d, yyyy"
+    ;; prints "Sunday, January 2, 2000"
+
+5 Print the hour of the day, the day of the week, and the day of the year:
+
+	print time:get "hour" dt		;; prints 10
+	print time:get "dayofweek" dt 	;; prints 6
+	print time:get "dayofyear" dt	;; prints 1
+
+5 Add 3 days to your date/time and print the date/time object to the screen:
+
+    set dt time:plus dt 3 "days"
+	print dt
+
+6 Compare your date/time to some other date/time
+
+	ifelse time:is-after dt time:create "2000-01-01 12:00" [print "yes"][print "no"]
 
 ## What is it?
 
