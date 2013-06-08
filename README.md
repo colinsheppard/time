@@ -46,7 +46,7 @@
 
 6 Compare your date/time to some other date/time
 
-	ifelse time:is-after dt time:create "2000-01-01 12:00" [print "yes"][print "no"]
+	ifelse time:is-after dt (time:create "2000-01-01 12:00") [print "yes"][print "no"]
 
 ## What is it?
 
