@@ -116,6 +116,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		/**********************
 		/* TIME SERIES PRIMITIVES
 		/**********************/
+		// time:ts-create
+		primManager.addPrimitive("ts-create", new TimeSeriesCreate());
 		// time:ts-load
 		primManager.addPrimitive("ts-load", new TimeSeriesLoad());
 		// time:ts-get
@@ -182,6 +184,11 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		LinkedHashMap<String,TimeSeriesColumn> columns = new LinkedHashMap<String,TimeSeriesColumn>();
 		Integer numRows = 0;
 
+		LogoTimeSeries(LogoList colNames) throws ExtensionException{
+			for(Object colName : colNames){
+				columns.put(colName.toString(), new TimeSeriesColumn());
+			}
+		}
 		LogoTimeSeries(String filename) throws ExtensionException{
 			parseTimeSeriesFile(filename);
 		}
@@ -1169,6 +1176,13 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 		return (Double) obj;
 	}
+	private static LogoList getListFromArgument(Argument args[], Integer argIndex) throws ExtensionException, LogoException {
+		Object obj = args[argIndex].get();
+		if (!(obj instanceof LogoList)) {
+			throw new ExtensionException("time: was expecting a list as argument "+(argIndex+1)+", found this instead: " + Dump.logoObject(obj));
+		}
+		return (LogoList) obj;
+	}
 	private static Integer getIntFromArgument(Argument args[], Integer argIndex) throws ExtensionException, LogoException {
 		Object obj = args[argIndex].get();
 		if (obj instanceof Double) {
@@ -1464,6 +1478,23 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			event = sched.schedule.isEmpty() ? null : sched.schedule.first();
 		}
 		if(isGoUntil && untilTick > tickCounter.ticks()) tickCounter.tick(untilTick-tickCounter.ticks());
+	}
+	public static class TimeSeriesCreate extends DefaultReporter{
+		public Syntax getSyntax() {
+			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType()},Syntax.WildcardType());
+		}
+		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
+			LogoList columnList;
+			try{
+				columnList = getListFromArgument(args, 0);
+			}catch(ExtensionException e){
+				String colName = getStringFromArgument(args, 0);
+				columnList = new LogoList(null);
+				columnList.add(colName);
+			}
+			LogoTimeSeries ts = new LogoTimeSeries(columnList);
+			return ts;
+		}
 	}
 	public static class TimeSeriesLoad extends DefaultReporter{
 		public Syntax getSyntax() {
