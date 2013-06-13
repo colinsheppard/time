@@ -1489,8 +1489,9 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				columnList = getListFromArgument(args, 0);
 			}catch(ExtensionException e){
 				String colName = getStringFromArgument(args, 0);
-				columnList = new LogoList(null);
-				columnList.add(colName);
+				ArrayList<String> cols = new ArrayList<String>();
+				cols.add(colName);
+				columnList = LogoList.fromJava(cols);
 			}
 			LogoTimeSeries ts = new LogoTimeSeries(columnList);
 			return ts;
