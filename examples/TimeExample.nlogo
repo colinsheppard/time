@@ -3,6 +3,7 @@ globals[
   tick-datetime
   tick-date
   tick-day
+  ts
 ] 
 to setup
   ;;print __dump-extensions 
@@ -12,6 +13,12 @@ to setup
   print "============================"
   print ""
   
+  set ts time:ts-create ["flow" "temp"]
+  time:ts-add-row ts ["2000-01-08" 5 4]
+  time:ts-add-row ts ["2000-01-01" 6 7]
+  print(ts)
+  
+  stop
   ;; A logotime can be one of three varieties: a DATETIME, a DATE, and a DAY
   ;; The variety is inferred by the length of the string passed to time:create
   ;; 

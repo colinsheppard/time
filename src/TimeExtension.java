@@ -3,6 +3,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.TreeSet;
 import java.util.TreeMap;
@@ -128,6 +129,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		primManager.addPrimitive("ts-get-exact", new TimeSeriesGetExact());
 		// time:ts-get-range
 		primManager.addPrimitive("ts-get-range", new TimeSeriesGetRange());
+		// time:ts-add-row
+		primManager.addPrimitive("ts-add-row", new TimeSeriesAddRow());
 	}
 	public void clearAll() {
 		schedules.clear();
@@ -191,6 +194,18 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 		LogoTimeSeries(String filename) throws ExtensionException{
 			parseTimeSeriesFile(filename);
+		}
+		public void add(LogoTime time, List<Object> list) throws ExtensionException{
+			int index = times.size();
+			TimeSeriesRecord record = new TimeSeriesRecord(time, index);
+			int i = 0;
+			for(String colName : columns.keySet()){
+				columns.get(colName).add(list.get(i++).toString());
+			}
+			times.put(time, record);
+		}
+		public Integer getNumColumns(){
+			return columns.size();
 		}
 		public void parseTimeSeriesFile(String filename) throws ExtensionException{
 			File dataFile = new File(filename);
@@ -1562,6 +1577,26 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				columnName = "ALL_-_COLUMNS";
 			}
 			return ts.getRangeByTime(timeA, timeB, columnName);
+		}
+	}
+	public static class TimeSeriesAddRow extends DefaultCommand{
+		public Syntax getSyntax() {
+			return Syntax.commandSyntax(new int[]{Syntax.WildcardType(),Syntax.WildcardType()});
+		}
+		public void perform(Argument args[], Context context) throws ExtensionException, LogoException {
+			LogoTimeSeries ts = getTimeSeriesFromArgument(args, 0);
+			LogoList list = getListFromArgument(args, 1);
+			Object timeObj = list.get(0);
+			LogoTime time = null;
+			if (timeObj instanceof String) {
+				time = new LogoTime(timeObj.toString());
+			}else if (timeObj instanceof LogoTime) {
+				time = (LogoTime)timeObj;
+			}else{			
+				throw new ExtensionException("time: was expecting a LogoTime object as the first item in the list passed as argument 2, found this instead: " + Dump.logoObject(timeObj));
+			}
+			if(list.size() != (ts.getNumColumns()+1)) throw new ExtensionException("time: cannot add "+(list.size()-1)+" values to a time series with "+ts.getNumColumns()+" columns.");
+			ts.add(time,list.subList(1, list.size()));
 		}
 	}
 	private static void printToConsole(Context context, String msg) throws ExtensionException{
