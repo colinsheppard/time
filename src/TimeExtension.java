@@ -13,10 +13,13 @@ import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
@@ -121,6 +124,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		primManager.addPrimitive("ts-create", new TimeSeriesCreate());
 		// time:ts-load
 		primManager.addPrimitive("ts-load", new TimeSeriesLoad());
+		// time:ts-write
+		primManager.addPrimitive("ts-write", new TimeSeriesWrite());
 		// time:ts-get
 		primManager.addPrimitive("ts-get", new TimeSeriesGet());
 		// time:ts-get-interp
@@ -206,6 +211,31 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 		public Integer getNumColumns(){
 			return columns.size();
+		}
+		public void write(String filename) throws ExtensionException{
+			File dataFile = new File(filename);
+			FileWriter fw;
+			try {
+				fw = new FileWriter(dataFile.getAbsoluteFile());
+				BufferedWriter bw = new BufferedWriter(fw);
+				bw.write("TIMESTAMP");
+				for(String colName : columns.keySet()){
+					bw.write("," + colName);
+				}
+				bw.write("\n");
+				for(LogoTime logoTime : times.keySet()){
+					TimeSeriesRecord time = times.get(logoTime);
+					bw.write(time.time.dump(false,false,false));
+					for(String colName : columns.keySet()){
+						bw.write("," + columns.get(colName).data.get(time.dataIndex));
+					}
+					bw.write("\n");
+				}
+				bw.flush();
+				bw.close();
+			} catch (IOException e) {
+				throw new ExtensionException(e.getMessage());
+			}
 		}
 		public void parseTimeSeriesFile(String filename) throws ExtensionException{
 			File dataFile = new File(filename);
@@ -1577,6 +1607,16 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				columnName = "ALL_-_COLUMNS";
 			}
 			return ts.getRangeByTime(timeA, timeB, columnName);
+		}
+	}
+	public static class TimeSeriesWrite extends DefaultCommand{
+		public Syntax getSyntax() {
+			return Syntax.commandSyntax(new int[]{Syntax.WildcardType(),Syntax.StringType()});
+		}
+		public void perform(Argument args[], Context context) throws ExtensionException, LogoException {
+			LogoTimeSeries ts = getTimeSeriesFromArgument(args, 0);
+			String filename = getStringFromArgument(args, 1);
+			ts.write(filename);
 		}
 	}
 	public static class TimeSeriesAddRow extends DefaultCommand{

@@ -17,6 +17,7 @@ to setup
   time:ts-add-row ts ["2000-01-08" 5 4]
   time:ts-add-row ts ["2000-01-01" 6 7]
   print(ts)
+  time:ts-write ts "new-ts-file.csv"
   
   stop
   ;; A logotime can be one of three varieties: a DATETIME, a DATE, and a DAY
