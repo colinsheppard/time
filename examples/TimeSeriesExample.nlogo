@@ -1,6 +1,7 @@
 extensions [time]
 globals[
   time-series
+  ts
 ] 
 to setup
   ;;print __dump-extensions 
@@ -10,7 +11,7 @@ to setup
   print "============================"
   print ""
   
-  set time-series time:ts-load "/Users/critter/Dropbox/netlogo/time/examples/time-series-data.csv"
+  set time-series time:ts-load "time-series-data.csv"
   print time-series
   
   print time:ts-get time-series time:create "2000-01-01 01:30:00" "flow"
@@ -22,6 +23,11 @@ to setup
   print time:ts-get-interp time-series time:create "2000-01-03 00:30:00" "all"
 
   print time:ts-get-range time-series time:create "2000-01-02 12:30:00" time:create "2000-01-03 00:30:00" "all"
+
+  set ts time:ts-create ["flow" "temp"]
+  time:ts-add-row ts ["2000-01-08" 5 4]
+  time:ts-add-row ts ["2000-01-01" 6 7]
+  time:ts-write ts "new-ts-file.csv"
 end
 
 to go

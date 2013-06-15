@@ -197,8 +197,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				columns.put(colName.toString(), new TimeSeriesColumn());
 			}
 		}
-		LogoTimeSeries(String filename) throws ExtensionException{
-			parseTimeSeriesFile(filename);
+		LogoTimeSeries(String filename, ExtensionContext context) throws ExtensionException{
+			parseTimeSeriesFile(filename, context);
 		}
 		public void add(LogoTime time, List<Object> list) throws ExtensionException{
 			int index = times.size();
@@ -242,8 +242,13 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				throw new ExtensionException(e.getMessage());
 			}
 		}
-		public void parseTimeSeriesFile(String filename) throws ExtensionException{
-			File dataFile = new File(filename);
+		public void parseTimeSeriesFile(String filename, ExtensionContext context) throws ExtensionException{
+			File dataFile;
+			if(filename.charAt(0)=='/' || filename.charAt(0)=='\\'){
+				dataFile = new File(filename);
+			}else{
+				dataFile = new File(context.workspace().getModelDir()+"/"+filename);
+			}
 			FileInputStream fstream;
 			try {
 				fstream = new FileInputStream(dataFile);
@@ -256,13 +261,16 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			String delim = null, strLine = null;
 			String[] lineData;
 
-			// Read the header line and infer the delimiter (tab or comma)
-			try {
-				strLine = br.readLine();
-			} catch (IOException e) {
-				throw new ExtensionException(e.getMessage());
+			// Read the header line after skipping commented lines and infer the delimiter (tab or comma)
+			strLine = ";";
+			while(strLine.trim().charAt(0)==';'){
+				try {
+					strLine = br.readLine();
+				} catch (IOException e) {
+					throw new ExtensionException(e.getMessage());
+				}
+				if(strLine==null)throw new ExtensionException("File "+dataFile+" is blank.");
 			}
-			if(strLine==null)throw new ExtensionException("File "+dataFile+" is blank.");
 			Boolean hasTab = strLine.contains("\t");
 			Boolean hasCom = strLine.contains(",");
 			if(hasTab && hasCom){
@@ -1550,7 +1558,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
 			String filename = getStringFromArgument(args, 0);
-			LogoTimeSeries ts = new LogoTimeSeries(filename);
+			LogoTimeSeries ts = new LogoTimeSeries(filename, (ExtensionContext) context);
 			return ts;
 		}
 	}
