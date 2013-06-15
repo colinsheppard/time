@@ -212,8 +212,13 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public Integer getNumColumns(){
 			return columns.size();
 		}
-		public void write(String filename) throws ExtensionException{
-			File dataFile = new File(filename);
+		public void write(String filename, ExtensionContext context) throws ExtensionException{
+			File dataFile;
+			if(filename.charAt(0)=='/' || filename.charAt(0)=='\\'){
+				dataFile = new File(filename);
+			}else{
+				dataFile = new File(context.workspace().getModelDir()+"/"+filename);
+			}
 			FileWriter fw;
 			try {
 				fw = new FileWriter(dataFile.getAbsoluteFile());
@@ -389,10 +394,10 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			return result;
 		}
 		public String getExtensionName() {
-			return null;
+			return "time";
 		}
 		public String getNLTypeName() {
-			return null;
+			return "LogoTimeSeries";
 		}
 		public boolean recursivelyEqual(Object arg0) {
 			return false;
@@ -743,15 +748,12 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				break;
 			}
 		}
-
 		public String getExtensionName() {
 			return "time";
 		}
-
 		public String getNLTypeName() {
 			return "logotime";
 		}
-
 		public boolean recursivelyEqual(Object arg0) {
 			return equals(arg0);
 		}
@@ -1616,7 +1618,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public void perform(Argument args[], Context context) throws ExtensionException, LogoException {
 			LogoTimeSeries ts = getTimeSeriesFromArgument(args, 0);
 			String filename = getStringFromArgument(args, 1);
-			ts.write(filename);
+			ts.write(filename,(ExtensionContext)context);
 		}
 	}
 	public static class TimeSeriesAddRow extends DefaultCommand{
