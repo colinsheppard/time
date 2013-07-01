@@ -1,8 +1,4 @@
 extensions [time]
-  
-globals[
-  schedule  ;; holds the dynamic schedule
-]
 
 to setup
   ;;print __dump-extensions 
@@ -11,11 +7,8 @@ to setup
   
   create-turtles 5
   
-  ;; Create the 'schedule' which should be stored as a global
-  set schedule time:create-schedule
-  
   ; Optionally anchor the schedule to a date/time
-  ;time:anchor-schedule schedule time:create "2000-01-01" 1 "day"
+  ;time:anchor-schedule time:create "2000-01-01" 1 "day"
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Now schedule some events (turtles or other agents must first be created to be assigned an event)
@@ -24,29 +17,29 @@ to setup
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
   ;; Schedule all of the turtles to peform the "go-forward" procudure at tick 1
-  time:add-event schedule turtles task go-forward 1
+  time:schedule-event turtles task go-forward 1
   
   ;; If the schedule is anchored, then use a LogoTime instead of a tick number to schedule the event
-  ;time:add-event schedule turtles task go-forward time:create "2000-01-2"
+  ;time:schedule-event turtles task go-forward time:create "2000-01-2"
   
    ;; Schedule all of the turtles to peform the "go-forward" procudure at tick 1 in random order
-   ;  time:add-event-shuffled schedule turtles task go-forward 1
-   ;  time:add-event-shuffled schedule turtles task go-forward time:create "2000-01-2"
+   ;  time:schedule-event-shuffled turtles task go-forward 1
+   ;  time:schedule-event-shuffled turtles task go-forward time:create "2000-01-2"
    
   ;; Schedule individual turtles to go forward at whatever tick we want, it's ok to add events 
   ;; to the schedule out of order, they will be performed in order
-;  time:add-event schedule one-of turtles task go-forward 2.0
-;  time:add-event schedule one-of turtles task go-forward 2.5
-;  time:add-event schedule one-of turtles task go-forward 2.9
-;  time:add-event schedule one-of turtles task go-forward 2.2
+;  time:schedule-event one-of turtles task go-forward 2.0
+;  time:schedule-event one-of turtles task go-forward 2.5
+;  time:schedule-event one-of turtles task go-forward 2.9
+;  time:schedule-event one-of turtles task go-forward 2.2
   
   ;; Use the repeat primitive (which is identical to add but takes an additional argument: the repeat interval used
   ;; to reschedule the event immediately after it has been performed) 
-;  time:repeat-event schedule one-of turtles task go-forward 3.25 1.0
-;  time:repeat-event schedule one-of turtles task go-forward (time:create "2000-01-2") 1.0
+;  time:schedule-repeating-event one-of turtles task go-forward 3.25 1.0
+;  time:schedule-repeating-event one-of turtles task go-forward (time:create "2000-01-2") 1.0
 
   ;; You can always clear the schedule 
-  time:clear schedule
+  ;;time:clear-schedule
 end
 
 ;; Note: in this example model, go-forward occurs inside a turtle context, so self refers to the turtle performing the event
@@ -54,38 +47,26 @@ to go-forward
   print (word self " going forward at " ticks)
   fd 2
   if turtles-reschedule-themselves[
-    time:add-event schedule self task go-forward ticks + 10
+    time:schedule-event self task go-forward ticks + 10
   ]
 end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; There are two ways to set the schedule into action, "go" and "go-until", go will continue to dispatch events until the
-;; stop primitive is called or the schedule runs out of events.  go-until will stop execution at a specified tick (taken as
-;; an argument).  Be careful using "go" if events recur either through using the repeat primitive or if events get scheduled
-;; dynamically.  It's usually best to either use go-until or schedule an event that stops execution at some point.  The stop
-;; button won't work with this extension to halt activity while a schedule is being dispatched.
+;; There are two ways to set the schedule into action, "go" and "go-until", go will continue to dispatch events 
+;; until the schedule runs out of events.  go-until will stop execution at a specified tick (taken as an argument).  
+;; 
+;; Be careful using "go" if events recur either through using the repeat primitive or if events get scheduled
+;; dynamically.  It's usually best to either use go-until.  The stop button won't work with this extension to 
+;; halt activity while a schedule is being dispatched.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 to go
   setup
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;; Schedule the stop action. Note, the turtle being passed to this event is essentially a dummy agent (no actual agent is 
-  ;; needed) but it must still be alive at the time that this event comes up or it won't get executed.
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
-  ;time:add-event schedule one-of turtles task stop-this-train go-until-tick
-  time:go schedule
+  time:go
 end
 
 to go-until
   setup
-  time:go-until schedule go-until-tick
-end
-
-to stop-this-train
-  print "stopping"
-  call-stop
-end
-to call-stop
-  stop
+  time:go-until go-until-tick
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -173,7 +154,7 @@ SWITCH
 328
 turtles-reschedule-themselves
 turtles-reschedule-themselves
-1
+0
 1
 -1000
 

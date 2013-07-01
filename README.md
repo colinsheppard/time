@@ -14,61 +14,115 @@
 
 ## Quickstart
 
-1 [Install the time extension](#installation)
+[Install the time extension](#installation)
 
-2 Include the extension in your NetLogo model (at the top):
+Include the extension in your NetLogo model (at the top):
 
     extensions [time]
 
-3 Create a global date/time and initialize in the setup procedure:
+**Date/Time Utilities**
+
+Create a global date/time and initialize in the setup procedure:
 
     globals[dt]
     to setup
       set dt time:create "2000/01/01 10:00"
     end
 
-4 From the console, execute setup and then print a formatted version of your date/time to the console:
+From the console, execute setup and then print a formatted version of your date/time to the console:
 
 	setup
     print time:show dt "EEEE, MMMM d, yyyy"
     ;; prints "Sunday, January 2, 2000"
 
-5 Print the hour of the day, the day of the week, and the day of the year:
+Print the hour of the day, the day of the week, and the day of the year:
 
 	print time:get "hour" dt		;; prints 10
 	print time:get "dayofweek" dt 	;; prints 6
 	print time:get "dayofyear" dt	;; prints 1
 
-5 Add 3 days to your date/time and print the date/time object to the screen:
+Add 3 days to your date/time and print the date/time object to the screen:
 
     set dt time:plus dt 3 "days"
 	print dt
 
-6 Compare your date/time to some other date/time
+Compare your date/time to some other date/time:
 
 	ifelse time:is-after dt (time:create "2000-01-01 12:00") [print "yes"][print "no"]
 
+**Time Series Tool**
+
+[Download this example time series file](https://github.com/colinsheppard/Time-Extension/raw/master/examples/time-series-data.csv) and place in the same directory as your NetLogo model.  Here are the first 10 lines of the file:
+
+    ; meta data at the top of the file 
+	; is skipped when preceded by 
+	; a semi-colon
+	timestamp,flow,temp
+	2000-01-01 00:00:00,1000,10
+	2000-01-01 01:00:00,1010,11
+	2000-01-01 03:00:00,1030,13
+	2000-01-01 04:00:00,1040,14
+	2000-01-01 05:00:00,1050,15
+	…
+	…
+
+Create a global to store a LogoTimeSeries object.  In your setup procedure, load the data from the CSV file:
+
+    globals[time-series]
+	
+	set time-series time:ts-load "time-series-data.csv"
+ 
+
+   
+Create a LogoTime and use it to extract the value from the "flow" column that is nearest in time to that object:
+
+    let current-time time:create "2000-01-01 01:20:00"
+
+    let current-flow time:ts-get time-series current-time "flow"
+
+    ;; By default, the nearest record in the time series is retrieved (in this case 1010), 
+	;; you can alternatively require an exact match or do linear interpolation.
+
+**Discrete Event Scheduler**
+
+Create a few turtles and schedule them to go forward at tick 10, then schedule one of them to also go forward at tick 5.
+
+    create-turtles 5
+
+    time:schedule-event turtles (task fd) 10
+    time:schedule-event (turtle 1) (task fd) 5
+
+Execute the discrete event schedule (all events will be executed in order of time):
+
+    time:go
+
+    ;; turtle 1 will go foward at tick 5, 
+    ;; then all 5 turtles will go forward at tick 10
+
+
 ## What is it?
 
-This package contains the NetLogo **time extension**, which provides NetLogo with a set of common date and time operations and discrete event scheduling capabilities.  
+This package contains the NetLogo **time extension**, which provides NetLogo with three kinds of capabilities for models that use discrete-event simulation or represent time explicitly. The package provides tools for common date and time operations, discrete event scheduling, and using time-series input data.
 
 **Dates and Times**
 
-This extension is powered by the [Joda Time API for Java](http://joda-time.sourceforge.net/), and while this README describes some of the subtle details of how dates and times are treated, it is recommended that you review at least the front page of Joda Time's website and preferably the "Key Concepts" topics in the navigation menu.  This documentation will make use of the terminology established by Joda Time (e.g. there's a meaningful difference between an *interval*, a *duration*, and a *period*.)
+The extension provides tools for representing time explicitly, especially by linking NetLogo’s ticks to a specific time interval. It allows users to do things such as starting a simulation on 1 January of 2010 and end on 31 December 2015, have each tick represent 6 hours, and check whether the current simulation date is between 1 and 15 March.
+
+This extension is powered by the [Joda Time API for Java](http://joda-time.sourceforge.net/), which has very sophisticated and comprehensive date/time facilities.  A subset of these capabilities have been extended to NetLogo.  The **time extension** makes it easy to convert string representations of dates and date/times to a **LogoTime** object which can then be used to do many common time manipulations such as incrementing the time by some amount (e.g. add 3.5 days to 2001-02-22 10:00 to get 2001-02-25 22:00).
 
 **Time Series Utilities**
 
-Modelers commonly need to use time series data in NetLogo.  The **time extension** provides some very convenient primitives for handling time series data.  With a single command, you can load an entire time series data set from a text file.  The first column in that text file holds dates or datetimes.  The remaining columns can be numeric or string values.  You then access the data by time and by column heading, akin to saying "get the flow from May 8, 2008".
+Modelers commonly need to use time series data in NetLogo.  The **time extension** provides convenient primitives for handling time series data.  With a single command, you can load an entire time series data set from a text file.  The first column in that text file holds dates or datetimes.  The remaining columns can be numeric or string values.  You then access the data by time and by column heading, akin to saying "get the flow from May 8, 2008".
+
+Users can also create and record a time series of events within their model, access that series during simulations, and export it to a file for analysis. For example, a market model could create a time series object into which is recorded the date and time, trader, price, and size of each trade. The time series utilities let model code get (for example) the mean price over the previous day or week, and save all the trades to a file at the end of a run.
 
 **Discrete Event Scheduling**
 
 *Note:*  Formerly this capability was published as the **Dynamic Scheduler Extension**, but that extension has been merged into the **time extension** in order to integrate the functionality of both.
 
-The **time extension** enables a different approach to scheduling actions in NetLogo.  Traditionally, a NetLogo modeler puts a series of actions or procedure calls into the "go" procedure, which is executed once each tick.  Sometimes it is more natural or more efficient to instead say "have agent X execute procedure Y at time Z".  This is what discrete event scheduling (also know as "dynamic scheduling"") enables.
+The **time extension** enables a different approach to scheduling actions in NetLogo.  Traditionally, a NetLogo modeler puts a series of actions or procedure calls into the "go" procedure, which is executed once each tick.  Sometimes it is more natural or more efficient to instead say "have agent X execute procedure Y at time Z".  This is what discrete event scheduling (also know as "dynamic scheduling"") enables.  Discrete event simulation has a long history and extensive literature, and this extension makes it much easier to use in NetLogo.
 
-**When is discrete event scheduling useful?**
-
-Discrete event scheduling is most useful for models where agents spend a lot of time sitting idle despite knowing when they need to act next. Sometimes in a NetLogo model, you end up testing a certain condition or set of conditions for every agent on every tick (usually in the form of an “ask”), just waiting for the time to be ripe.... this can get cumbersome and expensive.  In some models, you might know in advance exactly when a particular agent needs to act. Dynamic scheduling cuts out all of those superfluous tests.  The action is performed only when needed, with no condition testing and very little overhead.
+*When is discrete event scheduling useful?* Discrete event scheduling is most useful for models where agents spend a lot of time sitting idle despite knowing when they need to act next. Sometimes in a NetLogo model, you end up testing a certain condition or set of conditions for every agent on every tick (usually in the form of an “ask”), just waiting for the time to be ripe.... this can get cumbersome and expensive.  In some models, you might know in advance exactly when a particular agent needs to act. Dynamic scheduling cuts out all of those superfluous tests.  The action is performed only when needed, with no condition testing and very little overhead.
 
 For example, if an agent is a state machine and spends most of the time in the state “at rest” and has a predictable schedule that knows that the agent should transition to the state “awake” at tick 105, then using a dynamic scheduler allows you to avoid code that looks like: "if ticks = 105 \[ do-something \]", which has to be evaluated every tick!
 
@@ -90,7 +144,7 @@ For more information on NetLogo extensions:
 
 ## Examples
 
-See the example models in the extension subfolder "examples" for a demonstration of usage.
+See the example models in the extension subfolder "examples" for thorough demonstrations of usage.
 
 ## Data Types
 
@@ -98,9 +152,11 @@ The **time extension** introduces some new data types (more detail about these i
 
 * **LogoTime** - A LogoTime object stores a time stamp; it can track a full date and time, or just a date (with no associated time).
 
-* **LogoEvent** - A LogoEvent encapsulates a who, a what, and a when.  It allows you to define, for example, that you want turtle 7 to execute the go-forward procedure at tick 10.
+* **LogoTimeSeries** - A LogoTimeSeries object stores a table of data indexed by LogoTime.  The time series can be read in from a file or recorded by the code during a simulation.
 
-* **LogoSchedule** - A LogoSchedule object stores a sorted list of LogoEvents and manages the dispatch (execution) of those events.
+* **LogoEvent** - A LogoEvent encapsulates a who, a what, and a when.  It allows you to define, for example, that you want turtle 7 to execute the go-forward procedure at tick 10.  When scheduling an event using the **time extension** you pass the who, what, and when as arguments (e.g. "time:schedule-event (turtle 1) td 5").
+
+* **Discrete Event Schedule** - A discrete event schedule is a sorted list of LogoEvents that is maintained by this extension and manages the dispatch (execution) of those events.  Users do not need to manipulate or manage this schedule directly, but it is useful to understand that it stores and executes LogoEvents when the "time:go" or "time:go-until" commands are issued.  As the schedule is executed, the **time extension** automatically updates the NetLogo ticks to match the current event in the schedule.
 
 ## Behavior
 
@@ -111,7 +167,9 @@ The **time extension** has the following notable behavior:
   * A DATE is a fully specified day in time but lacks any information about the time of day (e.g. January 2, 2000).
   * A DAY is a generic date that does not specify a year (e.g. January 2).<br/>
 
-  The behavior of the **time extension** primitives depend on which variety of LogoTime you are storing.  For example, the difference between two DATETIMES will have millisecond resolution, while the difference between two DATES or two DAYS will only have resolution to the nearest whole day.
+  The behavior of the **time extension** primitives depend on which variety of LogoTime you are storing.  For example, the difference between two DATETIMES will have millisecond resolution, while the difference between two DATES or two DAYS will only have resolution to the nearest whole day.  
+
+  As another example, a DAY representing 01/01 is always considered to be before 12/31.  Because there's no wrapping around for DAYs, they are only useful if your entire model occurs within one year and doesn't pass from December to January.  If you need to wrap, use a DATE and pick a year for your model, even if there's no basis in reality for that year.
 
 * **You create LogoTime objects by passing a string** - The time:create primitive was designed to both follow the standard used by joda-time, and to make date time parsing more convenient by allowing a wider range of delimiters and formats.  For example, the following are all valid DATETIME strings: 
   * "2000-01-02T03:04:05.678"
@@ -137,7 +195,7 @@ The **time extension** has the following notable behavior:
 
   Note that if you do not include a time in your string, the **time extension** will assume you want a DATE.  If you want a DATETIME that happens to be at midnight, specify the time as zeros: "2000-01-02 00:00".
 
-* **Time extension recognizes "period types"** - In order to make it easy to specify a time period like 2 "days" or 4 "weeks", the **time extension** will accept strings to specify a period type.  The following is a table of the period types and strings that **time** recognizes (note: any of these period type strings can be pluralized and are case **in**sensitive):
+* **Time extension recognizes "period types"** - In order to make it easy to specify a time period like "2 days" or "4 weeks", the **time extension** will accept strings to specify a period type.  The following is a table of the period types and strings that **time** recognizes (note: any of these period type strings can be pluralized and are case **in**sensitive):
   
   | PERIOD TYPE | Valid string specifiers		|
   | ------------|-----------------------------------------|
@@ -160,13 +218,17 @@ The **time extension** has the following notable behavior:
 
 * **Decimal versus whole number time periods** - In this extension, decimal values can be used by the *plus* and *anchor-to-ticks* primitives for seconds, minutes, hours, days, and weeks (milliseconds can't be fractional because they are the base unit of time).  These units are treated as *durations* because they can unambiguously be converted from a decimal number to a whole number of milliseconds.  But there is ambiguity in how many milliseconds there are in 1 month or 1 year, so month and year increments are treated as *periods* which are by definition whole number valued. So if you use the *time:plus* primitive to add 1 month to the date "2012-02-02", you will get "2012-03-02"; and if you add another month you get "2012-04-02" even though February and March have different numbers of days.  If you try to use a fractional number of months or years, it will be rounded to the nearest integer and then added. If you want to increment a time variable by one and a half 365-day years, then just increment by 1.5 * 365 days instead of 1.5 years.
 
-* **LogoEvents are dispatched in order, and ties go to the first created** - If multiple LogoEvents are scheduled for the exact same time, they are dispatched (executed) in the order in which they were added to the LogoSchedule.
+* **LogoEvents are dispatched in order, and ties go to the first created** - If multiple LogoEvents are scheduled for the exact same time, they are dispatched (executed) in the order in which they were added to the discrete event schedule.
 
 * **LogoEvents can be created for an agentset** - When an agentset is scheduled to perform a task, the individual agents execute the procedure in a non-random order, which is different from *ask* which shuffles the agents.  Of note is that this is the only way I'm aware of to accomplish an unsorted *ask*, in NetLogo while still allowing for the death and creation of agents during execution.  Some simple benchmarking indicates that not shuffling can reduce execution time by ~15%.  To shuffle the order, use the *add-shuffled* primitive, which will execute the actions in random order with low overhead.
 
 * **LogoEvents won't break if an agent dies** - If an agent is scheduled to perform a task in the future but dies before the event is dispatched, the event will be silently skipped.
 
-* **LogoEvents can be scheduled to occur at a LogoTime** - LogoTimes are acceptable alternatives to specifying tick numbers for when events should occur.  However, for this to work the LogoSchedule must be "anchored" to a reference time so it knows a relationship between ticks and time.  See *time:anchor-schedule** below for an example of anchoring.
+* **LogoEvents can be scheduled to occur at a LogoTime** - LogoTimes are acceptable alternatives to specifying tick numbers for when events should occur.  However, for this to work the discrete event schedule must be "anchored" to a reference time so it knows a relationship between ticks and time.  See *time:anchor-schedule** below for an example of anchoring.
+
+* **LogoTimeSeries must have unique LogoTimes** - The LogoTimes in the timestamp column of the LogoTimeSeries must be unique.  In other words, there cannot be more than one row indexed by a particular timestamp. If you add a row to a LogoTimeSeries using a LogoTime already in the table, the data in the table will be overwritten by the new row.
+
+* **LogoTimeSeries must have unique LogoTimes** - The LogoTimes in the timestamp column of the LogoTimeSeries must be unique.  In other words, there cannot be more than one row indexed by a particular timestamp. 
 
 ## Primitives
 
@@ -340,112 +402,108 @@ Reports a new LogoTime object which is "anchored" to the native time tracking me
 
 ---------------------------------------
 
-
-**time:create-schedule**
-
-*time:create-schedule*
-
-Reports a LogoSchedule, a custom data type included with this extension, which is used to store events and dispatch them.  All other primitives associated with discrete event scheduling take a LogoSchedule data type as the first argument, so it's usually necessary to store the schedule as a global variable.
-
-More than one LogoSchedule can be created, though this is discouraged. See the note about multiple schedules below at *time:go*.
-
-    set logoschedule time:create-schedule
-
----------------------------------------
-
 **time:anchor-schedule**
 
-*time:anchor-schedule logoschedule logotime number period-type*
+*time:anchor-schedule logotime number period-type*
 
-Anchors *logoschedule* to the native time tracking mechanism in NetLogo (i.e the value of *ticks*).  Once anchored, LogoTimes can be used for discrete event scheduling (e.g. schedule agent 3 to perform some task on June 10, 2013).  The value of the *logotime* argument is assumed to be the time at tick zero.  The *number* and *period-type* arguments describe the worth of one tick (e.g. a tick can be worth 1 day, 2 hours, 90 seconds, etc.)
+Anchors the discrete event schedule to the native time tracking mechanism in NetLogo (i.e the value of *ticks*).  Once anchored, LogoTimes can be used for discrete event scheduling (e.g. schedule agent 3 to perform some task on June 10, 2013).  The value of the *logotime* argument is assumed to be the time at tick zero.  The *number* and *period-type* arguments describe the worth of one tick (e.g. a tick can be worth 1 day, 2 hours, 90 seconds, etc.)
 
-    time:anchor-schedule logoschedule time:create "2013-05-30" 1 "hour"
-
----------------------------------------
-
-**time:add-event** 
-
-*time:add-event logoschedule agent task tick-or-time*  
-*time:add-event logoschedule agentset task tick-or-time*
-
-Add an event to *logoschedule*.  The order in which events are added to a schedule is not important; they will be dispatched in order of the times specified as the last argument of this command. An *agent* or an *agentset* can be passed as the second argument along with a *task* as the third. The task is executed by the agent(s) at *tick-or-time* (either a number indicating the tick or a LogoTime), which is a time greater than or equal to the present moment (*>= ticks*).  The task is a NetLogo task variable, created via the NetLogo primitive *task*; this task can be created previously, or within the *time:add-event* statement via text such as *task a-procedure* or *task [ commands ]*.   
-
-If *tick-or-time* is a LogoTime, then *logoschedule* must be anchored.  If <em>tick-or-time</em> is in the past (less than the current tick/time), a run-time error is raised. (The *is-after* primitive can be used to defend against this error: add an event to the schedule only if its scheduled time is after the current time.)
-
-Once an event has been added to a logoschedule, there is no way to remove or cancel it.
-
-    time:add logoschedule turtles task go-forward 1.0
-    time:add logoschedule turtles task [ fd 1 ] 1.0
+    time:anchor-schedule time:create "2013-05-30" 1 "hour"
 
 ---------------------------------------
 
-**time:add-event-shuffled** 
+**time:schedule-event** 
 
-*time:add-event-shuffled logoschedule agent task tick-or-time*  
-*time:add-event-shuffled logoschedule agentset task tick-or-time*
+*time:schedule-event agent task tick-or-time*  
+*time:schedule-event agentset task tick-or-time*
 
-Add an event to *logoschedule* and shuffle the agentset during execution.  This is identical to *time:add* but the individuals in the agentset execute the action in randomized order.
+Add an event to the discrete event schedule.  The order in which events are added to the schedule is not important; they will be dispatched in order of the times specified as the last argument of this command. An *agent* or an *agentset* can be passed as the first argument along with a *task* as the second. The task is executed by the agent(s) at *tick-or-time* (either a number indicating the tick or a LogoTime), which is a time greater than or equal to the present moment (*>= ticks*).  The task is a NetLogo task variable, created via the NetLogo primitive *task*; this task can be created previously, or within the *time:schedule-event* statement via text such as *task a-procedure* or *task [ commands ]*.   
 
-    time:add-shuffled logoschedule turtles task go-forward 1.0
+If *tick-or-time* is a LogoTime, then the discrete event schedule must be anchored (see time:anchor-schedule).  If <em>tick-or-time</em> is in the past (less than the current tick/time), a run-time error is raised. (The *is-after* primitive can be used to defend against this error: add an event to the schedule only if its scheduled time is after the current time.)
 
----------------------------------------
+Once an event has been added to the discrete event schedule, there is no way to remove or cancel it.
 
-**time:repeat-event** 
-
-*time:repeat-event logoschedule agent task tick-or-time interval-number*  
-*time:repeat-event logoschedule agentset task tick-or-time-number interval-number*
-
-Add a repeating event to *logoschedule*.  This primitive behaves almost identically to *time:add-event* except that after the event is dispatched it is immediately rescheduled *interval-number* ticks into the future using the same *agent* (or *agentset*) and *task*. 
-
-    time:repeat-event logoschedule turtles task go-forward 2.5 1.0
+    time:add turtles task go-forward 1.0
+    time:add turtles task [ fd 1 ] 1.0
 
 ---------------------------------------
 
-**time:clear**
+**time:schedule-event-shuffled** 
 
-*time:clear logoschedule*
+*time:schedule-event-shuffled agent task tick-or-time*  
+*time:schedule-event-shuffled agentset task tick-or-time*
 
-Clear all events from *logoschedule*.
+Add an event to the discrete event schedule and shuffle the agentset during execution.  This is identical to *time:schedule-event* but the individuals in the agentset execute the action in randomized order.
 
-    time:clear logoschedule
+    time:add-shuffled turtles task go-forward 1.0
+
+---------------------------------------
+
+**time:schedule-repeating-event** 
+
+*time:schedule-repeating-event agent task tick-or-time interval-number*  
+*time:schedule-repeating-event agentset task tick-or-time-number interval-number*
+
+Add a repeating event to the discrete event schedule.  This primitive behaves almost identically to *time:schedule-event* except that after the event is dispatched it is immediately rescheduled *interval-number* ticks into the future using the same *agent* (or *agentset*) and *task*. 
+
+    time:schedule-repeating-event turtles task go-forward 2.5 1.0
+
+---------------------------------------
+
+**time:schedule-repeating-event-shuffled** 
+
+*time:schedule-repeating-event-shuffled agent task tick-or-time interval-number*  
+*time:schedule-repeating-event-shuffled agentset task tick-or-time-number interval-number*
+
+Add a repeating event to the discrete event schedule and shuffle the agentset during execution.  This is identical to *time:schedule-repeating-event* but the individuals in the agentset execute the action in randomized order. 
+
+    time:schedule-repeating-event-shuffled turtles task go-forward 2.5 1.0
+
+---------------------------------------
+
+**time:clear-schedule**
+
+*time:clear-schedule*
+
+Clear all events from the discrete event schedule.
+
+    time:clear-schedule
 
 ---------------------------------------
 
 **time:go** 
 
-*time:go logoschedule*
+*time:go*
 
-Dispatch all of the events in *logoschedule*.  When each event is executed, NetLogo’s tick counter (and any logotime variables anchored to ticks) is updated to that event’s time.  It's important to note that this command will continue to dispatch events until *logoschedule* is empty.  If repeating events are in *logoschedule* or if procedures in *logoschedule* end up scheduling new events, it's possible for this to become an infinite loop.  See the example model "DiscreteEventScheduling.nlogo" for an example of how to stop a LogoSchedule.
+Dispatch all of the events in the discrete event schedule.  When each event is executed, NetLogo’s tick counter (and any LogoTime variables anchored to ticks) is updated to that event’s time.  It's important to note that this command will continue to dispatch events until the discrete event schedule is empty.  If repeating events are in the discrete event schedule or if procedures in the schedule end up scheduling new events, it's possible for this to become an infinite loop.
 
-Important note about multiple schedules: When the *time:go* primitive is executed, all the events on its *logoschedule* are dispatched for execution before anything else happens in the model. That means the model’s tick counter will be advanced to the last event in the schedule, which important to understand if some parts of the model are executed on ticks. If multiple logoschedules have been created, events on one schedule will not be dispatched when the *time:go* primitive is executed for a different schedule. 
-
-    time:go logoschedule
+    time:go
 
 ---------------------------------------
 
 **time:go-until** 
 
-*time:go-until logoschedule halt-tick-or-time*
+*time:go-until halt-tick-or-time*
 
-Dispatch all of the events in *logoschedule* that are scheduled for times up until *halt-tick-or-time*.  If the temporal extent of your model is known in advance, this variant of *time:go* is the recommended way to dispatch your model. This primitive can also be used to execute all the events scheduled before the next whole tick, which is useful if other model actions take place on whole ticks.
+Dispatch all of the events in the discrete event schedule that are scheduled for times up until *halt-tick-or-time*.  If the temporal extent of your model is known in advance, this variant of *time:go* is the recommended way to dispatch your model. This primitive can also be used to execute all the events scheduled before the next whole tick, which is useful if other model actions take place on whole ticks.
 
-    time:go-until logoschedule 100.0
+    time:go-until 100.0
     ;; Execute events up to tick 100
 
-    time:go-until logoschedule time:plus t-datetime 1.0 "hour" 
+    time:go-until time:plus t-datetime 1.0 "hour" 
     ;; Execute events within the next hour; t-datetime is the current time.
 
 
 ---------------------------------------
 
-**time:size-of** 
+**time:size-of-schedule** 
 
-*time:size-of logoschedule*
+*time:size-of-schedule*
 
-Reports the number of events in the schedule.
+Reports the number of events in the discrete event schedule.
 
-    if time:size-of logoschedule > 0[
-      time:go logoschedule
+    if time:size-of-schedule > 0[
+      time:go
     ]
 
 ---------------------------------------
@@ -454,9 +512,17 @@ Reports the number of events in the schedule.
 
 *time:ts-load filepath*
 
-Loads time series data from a text file (comma or tab separated) and reports a LogoTimeSeries object.  The first line of the file is assumed to be a header line, the data in the LogoTimeSeries object is accessible by name.  Do not use "all" or "ALL" for a column name as this keyword is reserved (see time:ts-get below).  The first column of the file must be timestamps that can be parsed by this extension (see the [behavior section](#behavior) for acceptable string formats).  Finally, if the timestamps do not appear in chronological order in the text file, they will be automatically sorted into order when loaded.
+Loads time series data from a text input file (comma or tab separated) and reports a new LogoTimeSeries object that contains the data.  
 
     let ts time:ts-load "time-series-data.csv"
+
+Each input file and LogoTimeSeries object can contain one or more variables, which are accessed by the column names provided on the first line of the file.  The first line of the file must therefore start with the the word “time” or “date” (this word is actually unimportant as it is ignored), followed by the names of the variables (columns) in the file.  Do not use "all" or "ALL" for a column name as this keyword is reserved (see time:ts-get below).  
+
+The first column of the file must be timestamps that can be parsed by this extension (see the [behavior section](#behavior) for acceptable string formats).  Finally, if the timestamps do not appear in chronological order in the text file, they will be automatically sorted into order when loaded.
+
+The first line(s) of an input file can include comments delineated by semicolons, just as NetLogo code can.An example file of hourly river flow and water temperature data looks like:     ; Flow and temperature data for Big Muddy River    timestamp,flow,temperature    2000-01-01 00:00:00,1000,10    2000-01-01 01:00:00,1010,11    2000-01-01 03:00:00,1030,13
+
+---------------------------------------**time:ts-create** *time:ts-create column-name-list*Reports a new, empty LogoTimeSeries. The number of data columns and their names are defined by the number and values of *column-name-list* parameter, which must be a list of strings. The first column, which contains dates or times, is created automatically.    let turtle-move-times (time:ts-create ["turtle-show" "new-xcor" "new-ycor"])---------------------------------------**time:ts-add** *time:ts-add logotimeseries row-list*Adds a record to an existing LogoTimeSeries. The *row-list* should be a list The value of *logotime* must be a valid DATETIME or DATE, and the number of *columnX-value* parameters must equal the number of columns in the LogoTimeSeries object.  The logotime and column values    ;; A turtle records the time and destination each time it moves    ;; model-time is a DATETIME variable anchored to ticks.    time:ts-add-row turtle-move-times (sentence model-time who xcor ycor)(COLIN, ARE TICKS NOT AN ALLOWABLE TIMESTAMP FOR TIMESERIES OBJECTS?DO WE NEED TO CLARIFY THAT VALUES ADDED HERE MUST BE NUMBERS, NOT OTHER KINDS OF NETLOGO VARIABLES?)
 
 ---------------------------------------
 
