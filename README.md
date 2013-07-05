@@ -6,11 +6,11 @@
 * [Examples](#examples)
 * [Behavior](#behavior)
 * [Primitives](#primitives)
-  * [Date/Time Utilities](#date/time-utilities)
+  * [Date/Time Utilities](#datetime-utilities)
   * [Time Series Tool](#time-series-tool)
   * [Discrete Event Scheduler](#discrete-event-scheduler)
 * [Building](#building)
-* [Author](#author)
+* [Authors](#authors)
 * [Feedback](#feedback-bugs-feature-requests)
 * [Credits](#credits)
 * [Terms of use](#terms-of-use)
@@ -608,7 +608,7 @@ If compilation succeeds, `time.jar` will be created.
 
 ## Authors
 
-Colin Sheppard and Steve Railsback)
+Colin Sheppard and Steve Railsback
 
 ## Feedback? Bugs? Feature Requests?
 
