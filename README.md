@@ -6,6 +6,9 @@
 * [Examples](#examples)
 * [Behavior](#behavior)
 * [Primitives](#primitives)
+  * [Date/Time Utilities](#date/time-utilities)
+  * [Time Series Tool](#time-series-tool)
+  * [Discrete Event Scheduler](#discrete-event-scheduler)
 * [Building](#building)
 * [Author](#author)
 * [Feedback](#feedback-bugs-feature-requests)
@@ -99,6 +102,7 @@ Execute the discrete event schedule (all events will be executed in order of tim
     ;; turtle 1 will go foward at tick 5, 
     ;; then all 5 turtles will go forward at tick 10
 
+[back to top](#netlogo-time-extension)
 
 ## What is it?
 
@@ -128,6 +132,8 @@ For example, if an agent is a state machine and spends most of the time in the s
 
 A second common use of discrete event scheduling is when it is important to keep track of exactly when events occur in continuous time, so the simplifying assumption that all events happen only at regular ticks is not appropriate. One classic example is queuing models (e.g., how long customers have to stand in line for a bank teller), which use a continuous random number distribution (e.g., an exponential distribution) to determine when the next agent enters the queue.
 
+[back to top](#netlogo-time-extension)
+
 ## Installation
 
 First, [download the latest version of the extension](https://github.com/colinsheppard/Time-Extension/tags). Note that the latest version of this extension was compiled against NetLogo 5.0.4; if you are using a different version of NetLogo you might consider building your own jar file ([see building section below](#building)).
@@ -141,6 +147,8 @@ Rename the lib directory "time" and move it to the "extensions" directory inside
 
 For more information on NetLogo extensions:
 [http://ccl.northwestern.edu/netlogo/docs/extensions.html](http://ccl.northwestern.edu/netlogo/docs/extensions.html)
+
+[back to top](#netlogo-time-extension)
 
 ## Examples
 
@@ -157,6 +165,8 @@ The **time extension** introduces some new data types (more detail about these i
 * **LogoEvent** - A LogoEvent encapsulates a who, a what, and a when.  It allows you to define, for example, that you want turtle 7 to execute the go-forward procedure at tick 10.  When scheduling an event using the **time extension** you pass the who, what, and when as arguments (e.g. "time:schedule-event (turtle 1) td 5").
 
 * **Discrete Event Schedule** - A discrete event schedule is a sorted list of LogoEvents that is maintained by this extension and manages the dispatch (execution) of those events.  Users do not need to manipulate or manage this schedule directly, but it is useful to understand that it stores and executes LogoEvents when the "time:go" or "time:go-until" commands are issued.  As the schedule is executed, the **time extension** automatically updates the NetLogo ticks to match the current event in the schedule.
+
+[back to top](#netlogo-time-extension)
 
 ## Behavior
 
@@ -218,6 +228,10 @@ The **time extension** has the following notable behavior:
 
 * **Decimal versus whole number time periods** - In this extension, decimal values can be used by the *plus* and *anchor-to-ticks* primitives for seconds, minutes, hours, days, and weeks (milliseconds can't be fractional because they are the base unit of time).  These units are treated as *durations* because they can unambiguously be converted from a decimal number to a whole number of milliseconds.  But there is ambiguity in how many milliseconds there are in 1 month or 1 year, so month and year increments are treated as *periods* which are by definition whole number valued. So if you use the *time:plus* primitive to add 1 month to the date "2012-02-02", you will get "2012-03-02"; and if you add another month you get "2012-04-02" even though February and March have different numbers of days.  If you try to use a fractional number of months or years, it will be rounded to the nearest integer and then added. If you want to increment a time variable by one and a half 365-day years, then just increment by 1.5 * 365 days instead of 1.5 years.
 
+* **LogoTimeSeries must have unique LogoTimes** - The LogoTimes in the timestamp column of the LogoTimeSeries must be unique.  In other words, there cannot be more than one row indexed by a particular timestamp. If you add a row to a LogoTimeSeries using a LogoTime already in the table, the data in the table will be overwritten by the new row.
+
+* **LogoTimeSeries columns are numeric or string valued** - The data columns in a LogoTimeSeries will be typed as numbers or strings depending on the value in the first row of the input file (or the first row added using *time:ts-add-row*).  A number added to a string column will be encoded as a string and a string added to a number column will throw an error. 
+
 * **LogoEvents are dispatched in order, and ties go to the first created** - If multiple LogoEvents are scheduled for the exact same time, they are dispatched (executed) in the order in which they were added to the discrete event schedule.
 
 * **LogoEvents can be created for an agentset** - When an agentset is scheduled to perform a task, the individual agents execute the procedure in a non-random order, which is different from *ask* which shuffles the agents.  Of note is that this is the only way I'm aware of to accomplish an unsorted *ask*, in NetLogo while still allowing for the death and creation of agents during execution.  Some simple benchmarking indicates that not shuffling can reduce execution time by ~15%.  To shuffle the order, use the *add-shuffled* primitive, which will execute the actions in random order with low overhead.
@@ -226,11 +240,11 @@ The **time extension** has the following notable behavior:
 
 * **LogoEvents can be scheduled to occur at a LogoTime** - LogoTimes are acceptable alternatives to specifying tick numbers for when events should occur.  However, for this to work the discrete event schedule must be "anchored" to a reference time so it knows a relationship between ticks and time.  See *time:anchor-schedule** below for an example of anchoring.
 
-* **LogoTimeSeries must have unique LogoTimes** - The LogoTimes in the timestamp column of the LogoTimeSeries must be unique.  In other words, there cannot be more than one row indexed by a particular timestamp. If you add a row to a LogoTimeSeries using a LogoTime already in the table, the data in the table will be overwritten by the new row.
-
-* **LogoTimeSeries must have unique LogoTimes** - The LogoTimes in the timestamp column of the LogoTimeSeries must be unique.  In other words, there cannot be more than one row indexed by a particular timestamp. 
+[back to top](#netlogo-time-extension)
 
 ## Primitives
+
+### Date/Time Utilities
 
 **time:create**
 
@@ -400,7 +414,62 @@ Reports a new LogoTime object which is "anchored" to the native time tracking me
     print (word "tick-date " tick-date)  ;; prints "tick-datetime {{time:logotime 2000-01-06}}""
     print (word "tick-day " tick-day)  ;; prints "tick-day {{time:logotime 07-02}}"" 
 
+[back to top](#netlogo-time-extension)
+
 ---------------------------------------
+---------------------------------------
+
+### Time Series Tool
+
+**time:ts-create** *time:ts-create column-name-list*Reports a new, empty LogoTimeSeries. The number of data columns and their names are defined by the number and values of *column-name-list* parameter, which must be a list of strings. The first column, which contains dates or times, is created automatically.    let turtle-move-times (time:ts-create ["turtle-show" "new-xcor" "new-ycor"])---------------------------------------**time:ts-add** *time:ts-add logotimeseries row-list*Adds a record to an existing LogoTimeSeries. The *row-list* should be a list containing a LogoTime as the first element and the rest of the data corresponding to the number of columns in the LogoTimeSeries object.  Columns are either numberic or string valued (note: if you add a string to a numeric column an error occurs).    ;; A turtle records the time and destination each time it moves    ;; model-time is a DATETIME variable anchored to ticks.    time:ts-add-row turtle-move-times (sentence model-time who xcor ycor)
+
+---------------------------------------
+
+**time:ts-get** 
+
+*time:ts-get logotimeseries logotime column-name*
+
+Reports the value from the *column-name* column of the *logotimeseries* in the row matching *logotime*.  If there is not an exact match with *logotime*, the row with the nearest date/time will be used.  If "ALL" or "all" is specified as the column name, then the entire row, including the logotime, is returned as a list.
+
+    print time:ts-get ts (time:create "2000-01-01 10:00:00") "flow"
+    ;; prints the value from the flow column in the row containing a time stamp of 2000-01-01 10:00:00
+
+---------------------------------------
+
+**time:ts-get-interp** 
+
+*time:ts-get-interp logotimeseries logotime column-name*
+
+Behaves almost identical to time:ts-get, but if there is not an exact match with the date/time stamp, then the value is linearly interpolated between the two nearest values.  This command will throw an exception if the values in the column are strings instead of numeric.  
+
+    print time:ts-get-interp ts ()time:create "2000-01-01 10:30:00") "flow"
+
+---------------------------------------
+
+**time:ts-get-exact** 
+
+*time:ts-get-exact logotimeseries logotime column-name*
+
+Behaves almost identical to time:ts-get, but if there is not an exact match with the date/time stamp, then an exception is thrown.  
+
+    print time:ts-get-exact ts (time:create "2000-01-01 10:30:00") "flow"
+
+---------------------------------------
+
+**time:ts-get-range** 
+
+*time:ts-get-range logotimeseries logotime1 logotime2 column-name*
+
+Reports a list of all of the values from the *column-name* column of the *logotimeseries* in the rows between *logotime1* and *logotime2* (inclusively).  If "ALL" or "all" is specified as the column name, then a list of lists is reported, with one sub-list for each column in *logotimeseries*, including the date/time column.
+
+    print time:ts-get-range time-series time:create "2000-01-02 12:30:00" time:create "2000-01-03 00:30:00" "all"
+
+[back to top](#netlogo-time-extension)
+
+---------------------------------------
+---------------------------------------
+
+### Discrete Event Scheduler
 
 **time:anchor-schedule**
 
@@ -440,13 +509,17 @@ Add an event to the discrete event schedule and shuffle the agentset during exec
 ---------------------------------------
 
 **time:schedule-repeating-event** 
+**time:schedule-repeating-event-with-period** 
 
 *time:schedule-repeating-event agent task tick-or-time interval-number*  
 *time:schedule-repeating-event agentset task tick-or-time-number interval-number*
+*time:schedule-repeating-event-with-period agent task tick-or-time period-duration period-type-string*  
+*time:schedule-repeating-event-with-period agentset task tick-or-time-number period-duration period-type-string*
 
-Add a repeating event to the discrete event schedule.  This primitive behaves almost identically to *time:schedule-event* except that after the event is dispatched it is immediately rescheduled *interval-number* ticks into the future using the same *agent* (or *agentset*) and *task*. 
+Add a repeating event to the discrete event schedule.  This primitive behaves almost identically to *time:schedule-event* except that after the event is dispatched it is immediately rescheduled *interval-number* ticks into the future using the same *agent* (or *agentset*) and *task*. If the schedule is anchored (see time:anchor-schedule), then *time:schedule-repeating-event-with-period* can be used to expressed the repeat interval as a period (e.g. 1 "day" or 2.5 "hours").
 
     time:schedule-repeating-event turtles task go-forward 2.5 1.0
+	time:schedule-repeating-event-with-period turtles task go-forward 2.5 1.0 "hours"
 
 ---------------------------------------
 
@@ -455,9 +528,10 @@ Add a repeating event to the discrete event schedule.  This primitive behaves al
 *time:schedule-repeating-event-shuffled agent task tick-or-time interval-number*  
 *time:schedule-repeating-event-shuffled agentset task tick-or-time-number interval-number*
 
-Add a repeating event to the discrete event schedule and shuffle the agentset during execution.  This is identical to *time:schedule-repeating-event* but the individuals in the agentset execute the action in randomized order. 
+Add a repeating event to the discrete event schedule and shuffle the agentset during execution.  This is identical to *time:schedule-repeating-event* but the individuals in the agentset execute the action in randomized order.  If the schedule is anchored (see time:anchor-schedule), then *time:schedule-repeating-event-shuffled-with-period* can be used to expressed the repeat interval as a period (e.g. 1 "day" or 2.5 "hours").
 
     time:schedule-repeating-event-shuffled turtles task go-forward 2.5 1.0
+	time:schedule-repeating-event-shuffled-with-period turtles task go-forward 2.5 1.0 "month"
 
 ---------------------------------------
 
@@ -522,48 +596,7 @@ The first column of the file must be timestamps that can be parsed by this exten
 
 The first line(s) of an input file can include comments delineated by semicolons, just as NetLogo code can.An example file of hourly river flow and water temperature data looks like:     ; Flow and temperature data for Big Muddy River    timestamp,flow,temperature    2000-01-01 00:00:00,1000,10    2000-01-01 01:00:00,1010,11    2000-01-01 03:00:00,1030,13
 
----------------------------------------**time:ts-create** *time:ts-create column-name-list*Reports a new, empty LogoTimeSeries. The number of data columns and their names are defined by the number and values of *column-name-list* parameter, which must be a list of strings. The first column, which contains dates or times, is created automatically.    let turtle-move-times (time:ts-create ["turtle-show" "new-xcor" "new-ycor"])---------------------------------------**time:ts-add** *time:ts-add logotimeseries row-list*Adds a record to an existing LogoTimeSeries. The *row-list* should be a list The value of *logotime* must be a valid DATETIME or DATE, and the number of *columnX-value* parameters must equal the number of columns in the LogoTimeSeries object.  The logotime and column values    ;; A turtle records the time and destination each time it moves    ;; model-time is a DATETIME variable anchored to ticks.    time:ts-add-row turtle-move-times (sentence model-time who xcor ycor)(COLIN, ARE TICKS NOT AN ALLOWABLE TIMESTAMP FOR TIMESERIES OBJECTS?DO WE NEED TO CLARIFY THAT VALUES ADDED HERE MUST BE NUMBERS, NOT OTHER KINDS OF NETLOGO VARIABLES?)
-
----------------------------------------
-
-**time:ts-get** 
-
-*time:ts-get logotimeseries logotime column-name*
-
-Reports the value from the *column-name* column of the *logotimeseries* in the row matching *logotime*.  If there is not an exact match with *logotime*, the row with the nearest date/time will be used.  If "ALL" or "all" is specified as the column name, then the entire row, including the logotime, is returned as a list.
-
-    print time:ts-get ts (time:create "2000-01-01 10:00:00") "flow"
-    ;; prints the value from the flow column in the row containing a time stamp of 2000-01-01 10:00:00
-
----------------------------------------
-
-**time:ts-get-interp** 
-
-*time:ts-get-interp logotimeseries logotime column-name*
-
-Behaves almost identical to time:ts-get, but if there is not an exact match with the date/time stamp, then the value is linearly interpolated between the two nearest values.  This command will throw an exception if the values in the column are strings instead of numeric.  
-
-    print time:ts-get-interp ts ()time:create "2000-01-01 10:30:00") "flow"
-
----------------------------------------
-
-**time:ts-get-exact** 
-
-*time:ts-get-exact logotimeseries logotime column-name*
-
-Behaves almost identical to time:ts-get, but if there is not an exact match with the date/time stamp, then an exception is thrown.  
-
-    print time:ts-get-exact ts (time:create "2000-01-01 10:30:00") "flow"
-
----------------------------------------
-
-**time:ts-get-range** 
-
-*time:ts-get-range logotimeseries logotime1 logotime2 column-name*
-
-Reports a list of all of the values from the *column-name* column of the *logotimeseries* in the rows between *logotime1* and *logotime2* (inclusively).  If "ALL" or "all" is specified as the column name, then a list of lists is reported, with one sub-list for each column in *logotimeseries*, including the date/time column.
-
-    print time:ts-get-range time-series time:create "2000-01-02 12:30:00" time:create "2000-01-03 00:30:00" "all"
+[back to top](#netlogo-time-extension)
 
 ## Building
 
@@ -573,21 +606,22 @@ Use the NETLOGO environment variable to tell the Makefile which NetLogoLite.jar 
 
 If compilation succeeds, `time.jar` will be created.  
 
-## Author
+## Authors
 
-Colin Sheppard
+Colin Sheppard and Steve Railsback)
 
 ## Feedback? Bugs? Feature Requests?
 
-Please visit the [github issue tracker](https://github.com/colinsheppard/Time-Extension/issues?state=open) to submit comments, bug reports, or requests for features.  I'm also more than willing to accept pull requests.
+Please visit the [github issue tracker](https://github.com/colinsheppard/Time-Extension/issues?state=open) to submit comments, bug reports, or feature requests.  I'm also more than willing to accept pull requests.
 
 ## Credits
 
-This extension is in part powered by [Joda Time](http://joda-time.sourceforge.net/) and inspired by the [Ecoswarm Time Manager Library](http://www.humboldt.edu/ecomodel/software.htm).  Steve Railsback provided valuable feedback, testing, and documentation proofing.  Allison Campbell helped benchmark discrete event scheduling versus static scheduling.
+This extension is in part powered by [Joda Time](http://joda-time.sourceforge.net/) and inspired by the [Ecoswarm Time Manager Library](http://www.humboldt.edu/ecomodel/software.htm).  Allison Campbell helped benchmark discrete event scheduling versus static scheduling.
 
 ## Terms of Use
 
 [![CC0](http://i.creativecommons.org/p/zero/1.0/88x31.png)](http://creativecommons.org/publicdomain/zero/1.0/)
 
-The NetLogo dynamic scheduler extension is in the public domain.  To the extent possible under law, Colin Sheppard has waived all copyright and related or neighboring rights.
+The NetLogo dynamic scheduler extension is in the public domain.  To the extent possible under law, Colin Sheppard and Steve Railsback have waived all copyright and related or neighboring rights.
 
+[back to top](#netlogo-time-extension)
