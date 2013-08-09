@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 
 import org.nlogo.agent.AgentSet.Iterator;
 import org.nlogo.agent.ArrayAgentSet;
+import org.nlogo.agent.Observer;
 import org.nlogo.agent.TickCounter;
 import org.nlogo.agent.TreeAgentSet;
 import org.nlogo.agent.World;
@@ -423,7 +424,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			return equals(arg0);
 		}
 		public String dump(boolean arg0, boolean arg1, boolean arg2) {
-			return tick + ((agents==null)?"":agents.toString()) + ((task==null)?"":task.toString()) + ((repeatInterval==null)?"":repeatInterval.toString());
+			return tick + ((agents==null)?"observer":agents.toString()) + ((task==null)?"":task.toString()) + ((repeatInterval==null)?"":repeatInterval.toString());
 		}
 	}
 	private static class LogoSchedule implements org.nlogo.api.ExtensionObject {
@@ -477,7 +478,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				if(args.length<4)throw new ExtensionException("time:repeat-shuffled must have 4 or 5 arguments: schedule agent task tick/time number (period-type)");
 				break;
 			}
-			if (!(args[0].get() instanceof Agent) && !(args[0].get() instanceof AgentSet)) throw new ExtensionException("time:"+primName+" expecting an agent or agentset as the first argument");
+			if (!(args[0].get() instanceof Agent) && !(args[0].get() instanceof AgentSet) && !((args[0].get() instanceof String) && args[0].get().toString().toLowerCase().equals("observer"))) 
+				throw new ExtensionException("time:"+primName+" expecting an agent, agentset, or the string \"observer\" as the first argument");
 			if (!(args[1].get() instanceof CommandTask)) throw new ExtensionException("time:"+primName+" expecting a command task as the second argument");
 			if(args[2].get().getClass().equals(Double.class)){
 				eventTick = args[2].getDoubleValue();
@@ -507,11 +509,13 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				org.nlogo.agent.Agent theAgent = (org.nlogo.agent.Agent)args[0].getAgent();
 				agentSet = new ArrayAgentSet(theAgent.getAgentClass(),1,false,(World) theAgent.world());
 				agentSet.add(theAgent);
-			}else{
+			}else if(args[0].get() instanceof AgentSet){
 				agentSet = (org.nlogo.agent.AgentSet) args[0].getAgentSet();
+			}else{
+				// leave agentSet as null to signal observer should be used
 			}
-			if(debug)printToConsole(context,"scheduling agents: "+agentSet+" task: "+args[1].getCommandTask().toString()+" tick: "+eventTick+" shuffled: "+shuffleAgentSet );
 			LogoEvent event = (new TimeExtension()).new LogoEvent(agentSet,args[1].getCommandTask(),eventTick,repeatInterval,shuffleAgentSet);
+			if(debug)printToConsole(context,"scheduling event: "+event.dump(false, false, false));
 			scheduleTree.add(event);
 		}
 		public void performScheduledTasks(Argument args[], Context context) throws ExtensionException, LogoException {
@@ -527,7 +531,13 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				if(debug)printToConsole(context,"performing event-id: "+event.id+" for agent: "+event.agents+" at tick:"+event.tick);
 				tickCounter.tick(event.tick-tickCounter.ticks());
 
-				if(event.shuffleAgentSet){
+				if(event.agents == null){
+					org.nlogo.nvm.Context nvmContext = new org.nlogo.nvm.Context(extcontext.nvmContext().job,
+																					(org.nlogo.agent.Agent)extcontext.getAgent().world().observer(),
+																					extcontext.nvmContext().ip,
+																					extcontext.nvmContext().activation);
+					event.task.perform(nvmContext, emptyArgs);
+				}else if(event.shuffleAgentSet){
 					Iterator iter = event.agents.shufflerator(extcontext.nvmContext().job.random);
 					while(iter.hasNext()){
 						org.nlogo.nvm.Context nvmContext = new org.nlogo.nvm.Context(extcontext.nvmContext().job,iter.next(),extcontext.nvmContext().ip,extcontext.nvmContext().activation);
