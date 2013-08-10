@@ -1,59 +1,72 @@
-extensions[time]
+extensions [time]
 
-globals[
-  schedule
-]
+globals
+ [
+   sim-time  ; the current simulation time
+   pop-log   ; a log of times at which traps pop
+ ]
+
+patches-own [trigger-time] ; The non-integer time at which trap triggers
 
 to setup
+
   clear-all
   reset-ticks
-  ask patches[
+  ask patches
+   [
      set pcolor yellow   ; Yellow means the trap has not triggered
-  ]
-  set schedule time:create-schedule
+     ; set trigger-time -1 ; Initialize trigger time to before model starts
+   ]
+   
+  ; Initialize the simulation time
+  set sim-time time:create "2010-01-01 12:00:00"
+  set sim-time time:anchor-to-ticks sim-time 1.0 "second" 
+  time:anchor-schedule sim-time 1.0 "second"
 end
 
-to pop 
-  if pcolor = yellow[ ; This test avoids popping a patch that happens to be
-                      ; scheduled to be hit by more than one ball
-    set pcolor red    ; Show the snap
-    wait 0.01         ; So we can see things happen on the View
-    set pcolor black  ; Black means the trap has triggered
- 
-    update-custom-plots
- 
+to start  ; Starts a simulation
+  
+  ; Set off one trap to start the action
+  time:schedule-event (one-of patches) task pop sim-time
+  
+  ; Execute the schedule
+  time:go
+  
+end
+
+to pop  ; Executed by a trap when a ball lands on it
+
+    ; Stop if trap has already popped
+    if pcolor = black [ stop ]
+   
+    set pcolor red   ; Show the snap
+    display          ; So we can see things happen on the View
+                     ; Set View updates to ??? on-ticks?
+    set pcolor black ; Black means the trap has triggered
+    
     ; Send 2 balls in air, determine where and when they land
-    ask n-of 2 patches in-radius 5[
-        ; Set the time when the ball will land on and trigger trap
-        time:add-event schedule self task pop (ticks + (random-float 0.2 * distance myself))
+    repeat 2 
+    [
+      let trap-ball-lands-on one-of (patches in-radius 5)
+      let ball-travel-time random-float 0.2
+      let ball-arrival-time time:plus sim-time ball-travel-time "seconds"
+      time:schedule-event trap-ball-lands-on task pop ball-arrival-time
     ]
-  ]
+    
+    ; Finally, update outputs
+    update-output
 end
 
-to update-custom-plots
-      ; Update the plot using *plotxy* which lets us use non-integer x value
-      set-current-plot "Balls in air"
-      plotxy ticks (time:size-of schedule)
-      
-      set-current-plot "Untriggered traps"
-      plotxy ticks count patches with [pcolor = yellow]
-end
-
-to start
-  ; Set off one trap to start the action, pick from yellow patches so this method can
-  ; be invoked multiple times
-  ask one-of patches with [pcolor = yellow][ 
-    time:add-event schedule self task pop ticks + 1.0
-  ]
+to update-output
   
-  ; Dispatch the schedule
-  time:go schedule
+  ; Plot the number of balls in the air = "pops" scheduled but not executed
+  set-current-plot "Balls in air"
+  plotxy ticks time:size-of-schedule
+ 
+  ; Plot number of traps remaining untriggered
+  set-current-plot "Untriggered traps"
+  plotxy ticks count patches with [pcolor = yellow]
   
-  ; In the unusual case that all of the traps have been triggered, reset the board
-  ; to avoid an error if the user clicks "start" again.
-  if count patches with [pcolor = yellow] = 0 [
-    setup
-  ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW

@@ -17,7 +17,7 @@ to setup
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
   ;; Schedule all of the turtles to peform the "go-forward" procudure at tick 1
-  ;time:schedule-event turtles task go-forward 1
+  time:schedule-event turtles task go-forward 1
   
   ;; If the schedule is anchored, then use a LogoTime instead of a tick number to schedule the event
   ;time:schedule-event turtles task go-forward time:create "2000-01-2"
@@ -36,7 +36,7 @@ to setup
   ;; Use the repeat primitive (which is identical to add but takes an additional argument: the repeat interval used
   ;; to reschedule the event immediately after it has been performed) 
 ;  time:schedule-repeating-event (one-of turtles) (task go-forward) 3.25 1.0
-  time:schedule-repeating-event-with-period (one-of turtles) (task go-forward) 3.25 2.0 "hours"
+  ;time:schedule-repeating-event-with-period (one-of turtles) (task go-forward) 3.25 2.0 "hours"
 
   ;; You can always clear the schedule 
   ;;time:clear-schedule
@@ -154,7 +154,7 @@ SWITCH
 328
 turtles-reschedule-themselves
 turtles-reschedule-themselves
-1
+0
 1
 -1000
 
@@ -184,7 +184,7 @@ go-until-tick
 go-until-tick
 0
 200
-24
+42
 1
 1
 NIL
