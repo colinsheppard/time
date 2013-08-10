@@ -483,8 +483,8 @@ Anchors the discrete event schedule to the native time tracking mechanism in Net
 
 **time:schedule-event** 
 
-*time:schedule-event agent task tick-or-time*  
-*time:schedule-event agentset task tick-or-time*
+*time:schedule-event agent task tick-or-time*  <br/>
+*time:schedule-event agentset task tick-or-time*<br/>
 *time:schedule-event "observer" task tick-or-time*  
 
 Add an event to the discrete event schedule.  The order in which events are added to the schedule is not important; they will be dispatched in order of the times specified as the last argument of this command. An *agent*, an *agentset*, or the string "observer" can be passed as the first argument along with a *task* as the second. The task is executed by the agent(s) or the observer at *tick-or-time* (either a number indicating the tick or a LogoTime), which is a time greater than or equal to the present moment (*>= ticks*).  The task is a NetLogo task variable, created via the NetLogo primitive *task*; this task can be created previously, or within the *time:schedule-event* statement via text such as *task a-procedure* or *task [ commands ]*.   
@@ -493,9 +493,9 @@ If *tick-or-time* is a LogoTime, then the discrete event schedule must be anchor
 
 Once an event has been added to the discrete event schedule, there is no way to remove or cancel it.
 
-    time:add turtles task go-forward 1.0
-    time:add turtles task [ fd 1 ] 1.0
-    time:add "observer" task [ print "hello world" ] 1.0
+    time:schedule-event turtles task go-forward 1.0
+    time:schedule-event turtles task [ fd 1 ] 1.0
+    time:schedule-event "observer" task [ print "hello world" ] 1.0
 
 ---------------------------------------
 
@@ -505,18 +505,18 @@ Once an event has been added to the discrete event schedule, there is no way to 
 
 Add an event to the discrete event schedule and shuffle the agentset during execution.  This is identical to *time:schedule-event* but the individuals in the agentset execute the action in randomized order.
 
-    time:add-shuffled turtles task go-forward 1.0
+    time:schedule-event-shuffled turtles task go-forward 1.0
 
 ---------------------------------------
 
-**time:schedule-repeating-event** 
+**time:schedule-repeating-event** <br/>
 **time:schedule-repeating-event-with-period** 
 
-*time:schedule-repeating-event agent task tick-or-time interval-number*  
-*time:schedule-repeating-event agentset task tick-or-time-number interval-number*
-*time:schedule-repeating-event agent "observer" tick-or-time interval-number*  
-*time:schedule-repeating-event-with-period agent task tick-or-time period-duration period-type-string*  
-*time:schedule-repeating-event-with-period agentset task tick-or-time-number period-duration period-type-string*
+*time:schedule-repeating-event agent task tick-or-time interval-number*  <br/>
+*time:schedule-repeating-event agentset task tick-or-time-number interval-number*<br/>
+*time:schedule-repeating-event agent "observer" tick-or-time interval-number*  <br/>
+*time:schedule-repeating-event-with-period agent task tick-or-time period-duration period-type-string*  <br/>
+*time:schedule-repeating-event-with-period agentset task tick-or-time-number period-duration period-type-string*<br/>
 *time:schedule-repeating-event-with-period "observer" task tick-or-time period-duration period-type-string*  
 
 Add a repeating event to the discrete event schedule.  This primitive behaves almost identically to *time:schedule-event* except that after the event is dispatched it is immediately rescheduled *interval-number* ticks into the future using the same *agent* (or *agentset*) and *task*. If the schedule is anchored (see time:anchor-schedule), then *time:schedule-repeating-event-with-period* can be used to expressed the repeat interval as a period (e.g. 1 "day" or 2.5 "hours").
@@ -526,10 +526,10 @@ Add a repeating event to the discrete event schedule.  This primitive behaves al
 
 ---------------------------------------
 
-**time:schedule-repeating-event-shuffled** 
+**time:schedule-repeating-event-shuffled** <br/>
 **time:schedule-repeating-event-shuffled-with-period** 
 
-*time:schedule-repeating-event-shuffled agentset task tick-or-time-number interval-number*
+*time:schedule-repeating-event-shuffled agentset task tick-or-time-number interval-number*<br/>
 *time:schedule-repeating-event-shuffled-with-period agentset task tick-or-time-number interval-number*
 
 Add a repeating event to the discrete event schedule and shuffle the agentset during execution.  This is identical to *time:schedule-repeating-event* but the individuals in the agentset execute the action in randomized order.  If the schedule is anchored (see time:anchor-schedule), then *time:schedule-repeating-event-shuffled-with-period* can be used to expressed the repeat interval as a period (e.g. 1 "day" or 2.5 "hours").
