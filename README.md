@@ -136,14 +136,9 @@ A second common use of discrete event scheduling is when it is important to keep
 
 ## Installation
 
-First, [download the latest version of the extension](https://github.com/colinsheppard/Time-Extension/tags). Note that the latest version of this extension was compiled against NetLogo 5.0.4; if you are using a different version of NetLogo you might consider building your own jar file ([see building section below](#building)).
+First, [download the latest version of the extension](https://github.com/colinsheppard/Time-Extension/releases). Note that the latest version of this extension was compiled against NetLogo 5.0.4; if you are using a different version of NetLogo you might consider building your own jar file ([see building section below](#building)).
 
-Unzip the archive and look under the lib directory; there should be two jar files:
-
-* time.jar
-* joda-time-2.2.jar
-
-Rename the lib directory "time" and move it to the "extensions" directory inside your NetLogo application folder (i.e. [NETLOGO]/extensions/time/).  Or you can place the time directory under the same directory holding the NetLogo model in which you want to use this extension.
+Unzip the archive and move the "time" directory to the "extensions" directory inside your NetLogo application folder (i.e. [NETLOGO]/extensions/).  Or you can place the time directory under the same directory holding the NetLogo model in which you want to use this extension.
 
 For more information on NetLogo extensions:
 [http://ccl.northwestern.edu/netlogo/docs/extensions.html](http://ccl.northwestern.edu/netlogo/docs/extensions.html)
@@ -631,7 +626,7 @@ Use the NETLOGO environment variable to tell the Makefile which NetLogoLite.jar 
 
     NETLOGO=/Applications/NetLogo\\\ 5.0 make
 
-If compilation succeeds, `time.jar` will be created.  
+If compilation succeeds, `time.jar` will be created.  See [Installation](#installation) for instructions on where to put your compiled extension.
 
 ## Authors
 
