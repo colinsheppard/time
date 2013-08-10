@@ -485,7 +485,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				eventTick = args[2].getDoubleValue();
 			}else if(args[2].get().getClass().equals(LogoTime.class)){
 				if(!this.isAnchored())throw new ExtensionException("A LogoEvent can only be scheduled to occur at a LogoTime if the discrete event schedule has been anchored to a LogoTime, see time:anchor-schedule");
-				eventTick = this.timeToTick(getTimeFromArgument(args, 3));
+				eventTick = this.timeToTick(getTimeFromArgument(args, 2));
 			}else{
 				throw new ExtensionException("time:"+primName+" expecting a number or logotime as the third argument");
 			}
@@ -1413,7 +1413,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	}
 	public static class GetSize extends DefaultReporter {
 		public Syntax getSyntax() {
-			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType()},
+			return Syntax.reporterSyntax(new int[]{},
 					Syntax.NumberType());
 		}
 		public Object report(Argument args[], Context context)
@@ -1619,7 +1619,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			if (timeObj instanceof String) {
 				time = new LogoTime(timeObj.toString());
 			}else if (timeObj instanceof LogoTime) {
-				time = (LogoTime)timeObj;
+				// Create a new logotime since they are mutable
+				time = new LogoTime((LogoTime)timeObj);
 			}else{			
 				throw new ExtensionException("time: was expecting a LogoTime object as the first item in the list passed as argument 2, found this instead: " + Dump.logoObject(timeObj));
 			}
