@@ -176,7 +176,17 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			for(String colName : columns.keySet()){
 				columns.get(colName).add(list.get(i++).toString());
 			}
-			times.put(time, record);
+			try{
+				times.put(time, record);
+			}catch(NullPointerException e){
+				if(time.dateType != ((LogoTime)times.keySet().toArray()[0]).dateType){
+					throw new ExtensionException("Cannot add a row with a LogoTime of type "+time.dateType.toString()+
+							" to a LogoTimeSeries of type "+((LogoTime)times.keySet().toArray()[0]).dateType.toString()+
+							".  Note, the first row added to the LogoTimeSeries object determines the data types for all columns.");
+				}else{
+					throw e;
+				}
+			}
 		}
 		public Integer getNumColumns(){
 			return columns.size();
