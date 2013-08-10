@@ -396,6 +396,8 @@ Reports the amount of time between *logotime1* and *logotime2* in units of *peri
 
 Reports a new LogoTime object which is "anchored" to the native time tracking mechanism in NetLogo (i.e the value of *ticks*).  Once anchored, this LogoTime object will always hold the value of the current time as tracked by *ticks*.  Any of the three varieties of LogoTime can be achored to the tick.  The time value of the *logotime* argument is assumed to be the time at tick zero.  The *number* and *period-type* arguments describe the time represented by one tick (e.g. a tick can be worth 1 day or 2 hours or 90 seconds, etc.)
 
+Note: time:anchor-to-ticks is a one-way coupling.  Changes to the value of *ticks* (e.g. when using the *tick* or *tick-advance* commands) will be reflected in the anchored LogoTime, but do not expect changes the value of *ticks* after making changes to the anchored LogoTime.  Instead, use the discrete event scheduling capability and the *time:anchor-schedule* command to influence the value of *ticks* through the use of LogoTimes.
+
     set tick-datetime time:anchor-to-ticks (time:create "2000-01-02 03:04:05.678") 1 "hour"
     set tick-date time:anchor-to-ticks (time:create "2000-01-02") 2 "days"
     set tick-day time:anchor-to-ticks (time:create "01-02") 3 "months"
