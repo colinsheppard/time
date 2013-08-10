@@ -396,7 +396,7 @@ Reports the amount of time between *logotime1* and *logotime2* in units of *peri
 
 Reports a new LogoTime object which is "anchored" to the native time tracking mechanism in NetLogo (i.e the value of *ticks*).  Once anchored, this LogoTime object will always hold the value of the current time as tracked by *ticks*.  Any of the three varieties of LogoTime can be achored to the tick.  The time value of the *logotime* argument is assumed to be the time at tick zero.  The *number* and *period-type* arguments describe the time represented by one tick (e.g. a tick can be worth 1 day or 2 hours or 90 seconds, etc.)
 
-Note: time:anchor-to-ticks is a one-way coupling.  Changes to the value of *ticks* (e.g. when using the *tick* or *tick-advance* commands) will be reflected in the anchored LogoTime, but do not expect changes the value of *ticks* after making changes to the anchored LogoTime.  Instead, use the discrete event scheduling capability and the *time:anchor-schedule* command to influence the value of *ticks* through the use of LogoTimes.
+Note: *time:anchor-to-ticks* is a one-way coupling.  Changes to the value of *ticks* (e.g. when using the *tick* or *tick-advance* commands) will be reflected in the anchored LogoTime, but do not expect changes to the value of *ticks* after making changes to the anchored LogoTime.  Instead, use the discrete event scheduling capability and the *time:anchor-schedule* command to influence the value of *ticks* through the use of LogoTimes.
 
     set tick-datetime time:anchor-to-ticks (time:create "2000-01-02 03:04:05.678") 1 "hour"
     set tick-date time:anchor-to-ticks (time:create "2000-01-02") 2 "days"
@@ -406,17 +406,38 @@ Note: time:anchor-to-ticks is a one-way coupling.  Changes to the value of *tick
     tick
     print (word "tick " ticks)  ;; prints "tick 1" 
     print (word "tick-datetime " tick-datetime)  ;; prints "tick-dateime {{time:logotime 2000-01-02 04:04:05.678}}"
-    print (word "tick-date " tick-date)  ;; prints "tick-datetime {{time:logotime 2000-01-04}}"
+    print (word "tick-date " tick-date)  ;; prints "tick-date {{time:logotime 2000-01-04}}"
     print (word "tick-day " tick-day)  ;; prints "tick-day {{time:logotime 04-02}}"
 
 
     tick
     print (word "tick " ticks)  ;; prints "tick 2" 
     print (word "tick-datetime " tick-datetime)  ;; prints "tick-dateime {{time:logotime 2000-01-02 05:04:05.678}}"
-    print (word "tick-date " tick-date)  ;; prints "tick-datetime {{time:logotime 2000-01-06}}""
+    print (word "tick-date " tick-date)  ;; prints "tick-date {{time:logotime 2000-01-06}}""
     print (word "tick-day " tick-day)  ;; prints "tick-day {{time:logotime 07-02}}"" 
 
 [back to top](#netlogo-time-extension)
+
+---------------------------------------
+
+**time:copy**
+
+*time:copy logotime*
+
+Returns a new LogoTime object that holds the same date/time as the *logotime* argument.  The copy will not be anchored regardless of the argument, making this the recommended way to store a snapshot of an anchored LogoTime.
+
+    set tick-date time:anchor-to-ticks (time:create "2000-01-02") 2 "days"
+    reset-ticks
+    tick
+    print (word "tick " ticks)  ;; prints "tick 1" 
+    print (word "tick-date " tick-date)  ;; prints "tick-date {{time:logotime 2000-01-04}}"
+
+    set store-date time:copy tick-date
+
+    tick
+    print (word "tick " ticks)  ;; prints "tick 1" 
+    print (word "tick-date " tick-date)  ;; prints "tick-date {{time:logotime 2000-01-06}}"
+    print (word "store-date " store-date)  ;; prints "store-date {{time:logotime 2000-01-04}}"
 
 ---------------------------------------
 ---------------------------------------

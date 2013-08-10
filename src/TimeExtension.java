@@ -74,6 +74,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		primManager.addPrimitive("plus", new Plus());
 		primManager.addPrimitive("show", new Show());
 		primManager.addPrimitive("get", new Get());
+		primManager.addPrimitive("copy", new Copy());
 		primManager.addPrimitive("is-before", new IsBefore());
 		primManager.addPrimitive("is-after", new IsAfter());
 		primManager.addPrimitive("is-equal", new IsEqual());
@@ -1343,6 +1344,16 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			PeriodType periodType = stringToPeriodType(getStringFromArgument(args, 0));
 			LogoTime time = getTimeFromArgument(args, 1);
 			return time.get(periodType).doubleValue();
+		}
+	}
+	public static class Copy extends DefaultReporter {
+		public Syntax getSyntax() {
+			return Syntax.reporterSyntax(new int[]{Syntax.WildcardType()},
+					Syntax.WildcardType());
+		}
+		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
+			LogoTime time = getTimeFromArgument(args, 0);
+			return new LogoTime(time);
 		}
 	}
 	public static class Plus extends DefaultReporter {
