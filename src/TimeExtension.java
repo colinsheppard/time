@@ -1312,10 +1312,11 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
 			LogoTime time = getTimeFromArgument(args, 0);
-			time.setAnchor(getDoubleFromArgument(args, 1),
+			LogoTime newTime = new LogoTime(time);
+			newTime.setAnchor(getDoubleFromArgument(args, 1),
 					stringToPeriodType(getStringFromArgument(args, 2)),
 					((ExtensionContext)context).workspace().world());
-			return time;
+			return newTime;
 		}
 	}
 	public static class Show extends DefaultReporter {
