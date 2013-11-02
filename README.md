@@ -498,7 +498,7 @@ Behaves almost identical to time:ts-get, but if there is not an exact match with
 
 *time:ts-get-range logotimeseries logotime1 logotime2 column-name*
 
-Reports a list of all of the values from the *column-name* column of the *logotimeseries* in the rows between *logotime1* and *logotime2* (inclusively).  If "ALL" or "all" is specified as the column name, then a list of lists is reported, with one sub-list for each column in *logotimeseries*, including the date/time column.
+Reports a list of all of the values from the *column-name* column of the *logotimeseries* in the rows between *logotime1* and *logotime2* (inclusively).  If "ALL" or "all" is specified as the column name, then a list of lists is reported, with one sub-list for each column in *logotimeseries*, including the date/time column.  If "LOGOTIME" or "logotime" is specified as the column name, then the date/time column is returned.
 
     print time:ts-get-range time-series time:create "2000-01-02 12:30:00" time:create "2000-01-03 00:30:00" "all"
 
@@ -519,9 +519,28 @@ The first column of the file must be timestamps that can be parsed by this exten
 
 The first line(s) of an input file can include comments delineated by semicolons, just as NetLogo code can.
 
-An example file of hourly river flow and water temperature data looks like: 
+The following is an example of hourly river flow and water temperature data that is formatted correctly: 
 
     ; Flow and temperature data for Big Muddy River
+    timestamp,flow,temperature
+    2000-01-01 00:00:00,1000,10
+    2000-01-01 01:00:00,1010,11
+    2000-01-01 03:00:00,1030,13
+
+[back to top](#netlogo-time-extension)
+
+---------------------------------------
+
+**time:ts-write** 
+
+*time:ts-write logotimeseries filepath*
+
+Writes the time series data to a text file in CSV (comma-separated) format.
+
+    time:ts-write ts "time-series-output.csv"
+
+The column names will be written as the header line, for example:
+
     timestamp,flow,temperature
     2000-01-01 00:00:00,1000,10
     2000-01-01 01:00:00,1010,11
