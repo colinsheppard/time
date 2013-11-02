@@ -439,7 +439,27 @@ Returns a new LogoTime object that holds the same date/time as the *logotime* ar
 
 ### Time Series Tool
 
-**time:ts-create** *time:ts-create column-name-list*Reports a new, empty LogoTimeSeries. The number of data columns and their names are defined by the number and values of *column-name-list* parameter, which must be a list of strings. The first column, which contains dates or times, is created automatically.    let turtle-move-times (time:ts-create ["turtle-show" "new-xcor" "new-ycor"])---------------------------------------**time:ts-add** *time:ts-add logotimeseries row-list*Adds a record to an existing LogoTimeSeries. The *row-list* should be a list containing a LogoTime as the first element and the rest of the data corresponding to the number of columns in the LogoTimeSeries object.  Columns are either numeric or string valued (note: if you add a string to a numeric column an error occurs).    ;; A turtle records the time and destination each time it moves    ;; model-time is a DATETIME variable anchored to ticks.    time:ts-add-row turtle-move-times (sentence model-time who xcor ycor)
+
+**time:ts-create** 
+
+*time:ts-create column-name-list*
+
+Reports a new, empty LogoTimeSeries. The number of data columns and their names are defined by the number and values of *column-name-list* parameter, which must be a list of strings. The first column, which contains dates or times, is created automatically.
+
+    let turtle-move-times (time:ts-create ["turtle-show" "new-xcor" "new-ycor"])
+
+---------------------------------------
+
+**time:ts-add** 
+
+*time:ts-add logotimeseries row-list*
+
+Adds a record to an existing LogoTimeSeries. The *row-list* should be a list containing a LogoTime as the first element and the rest of the data corresponding to the number of columns in the LogoTimeSeries object.  Columns are either numeric or string valued (note: if you add a string to a numeric column an error occurs).
+
+    ;; A turtle records the time and destination each time it moves
+    ;; model-time is a DATETIME variable anchored to ticks.
+    time:ts-add-row turtle-move-times (sentence model-time who xcor ycor)
+
 
 ---------------------------------------
 
@@ -460,7 +480,7 @@ Reports the value from the *column-name* column of the *logotimeseries* in the r
 
 Behaves almost identical to time:ts-get, but if there is not an exact match with the date/time stamp, then the value is linearly interpolated between the two nearest values.  This command will throw an exception if the values in the column are strings instead of numeric.  
 
-    print time:ts-get-interp ts ()time:create "2000-01-01 10:30:00") "flow"
+    print time:ts-get-interp ts (time:create "2000-01-01 10:30:00") "flow"
 
 ---------------------------------------
 
@@ -482,8 +502,32 @@ Reports a list of all of the values from the *column-name* column of the *logoti
 
     print time:ts-get-range time-series time:create "2000-01-02 12:30:00" time:create "2000-01-03 00:30:00" "all"
 
-[back to top](#netlogo-time-extension)
 
+---------------------------------------
+
+**time:ts-load** 
+
+*time:ts-load filepath*
+
+Loads time series data from a text input file (comma or tab separated) and reports a new LogoTimeSeries object that contains the data.  
+
+    let ts time:ts-load "time-series-data.csv"
+
+Each input file and LogoTimeSeries object can contain one or more variables, which are accessed by the column names provided on the first line of the file.  The first line of the file must therefore start with the the word “time” or “date” (this word is actually unimportant as it is ignored), followed by the names of the variables (columns) in the file.  Do not use "all" or "ALL" for a column name as this keyword is reserved (see time:ts-get below).  
+
+The first column of the file must be timestamps that can be parsed by this extension (see the [behavior section](#behavior) for acceptable string formats).  Finally, if the timestamps do not appear in chronological order in the text file, they will be automatically sorted into order when loaded.
+
+The first line(s) of an input file can include comments delineated by semicolons, just as NetLogo code can.
+
+An example file of hourly river flow and water temperature data looks like: 
+
+    ; Flow and temperature data for Big Muddy River
+    timestamp,flow,temperature
+    2000-01-01 00:00:00,1000,10
+    2000-01-01 01:00:00,1010,11
+    2000-01-01 03:00:00,1030,13
+
+[back to top](#netlogo-time-extension)
 ---------------------------------------
 ---------------------------------------
 
@@ -603,20 +647,6 @@ Reports the number of events in the discrete event schedule.
     ]
 
 ---------------------------------------
-
-**time:ts-load** 
-
-*time:ts-load filepath*
-
-Loads time series data from a text input file (comma or tab separated) and reports a new LogoTimeSeries object that contains the data.  
-
-    let ts time:ts-load "time-series-data.csv"
-
-Each input file and LogoTimeSeries object can contain one or more variables, which are accessed by the column names provided on the first line of the file.  The first line of the file must therefore start with the the word “time” or “date” (this word is actually unimportant as it is ignored), followed by the names of the variables (columns) in the file.  Do not use "all" or "ALL" for a column name as this keyword is reserved (see time:ts-get below).  
-
-The first column of the file must be timestamps that can be parsed by this extension (see the [behavior section](#behavior) for acceptable string formats).  Finally, if the timestamps do not appear in chronological order in the text file, they will be automatically sorted into order when loaded.
-
-The first line(s) of an input file can include comments delineated by semicolons, just as NetLogo code can.An example file of hourly river flow and water temperature data looks like:     ; Flow and temperature data for Big Muddy River    timestamp,flow,temperature    2000-01-01 00:00:00,1000,10    2000-01-01 01:00:00,1010,11    2000-01-01 03:00:00,1030,13
 
 [back to top](#netlogo-time-extension)
 
