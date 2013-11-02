@@ -341,6 +341,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			ArrayList<LogoList> resultList = new ArrayList<LogoList>(columns.size());
 			if(columnName.equals("ALL_-_COLUMNS")){
 				columnList.addAll(columns.keySet());
+			}else if(columnName.equals("LOGOTIME")){
+				// do nothing, keep columnList empty
 			}else if(!columns.containsKey(columnName)){
 				throw new ExtensionException("The LogoTimeSeries does not contain the column "+columnName);
 			}else{
@@ -353,7 +355,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			if(lowerKey == null || higherKey == null){
 				return(new LogoList(null));
 			}
-			if(columnName.equals("ALL_-_COLUMNS")){
+			if(columnName.equals("ALL_-_COLUMNS") || columnName.equals("LOGOTIME")){
 				resultList.add(LogoList.fromJava(times.subMap(lowerKey, higherKey).keySet()));
 			}
 			for(String colName : columnList){
@@ -1613,6 +1615,9 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			LogoTime timeA = getTimeFromArgument(args, 1);
 			LogoTime timeB = getTimeFromArgument(args, 2);
 			String columnName = getStringFromArgument(args, 3);
+			if(columnName.equals("logotime")){
+				columnName = "LOGOTIME";
+			}
 			if(columnName.equals("ALL") || columnName.equals("all")){
 				columnName = "ALL_-_COLUMNS";
 			}
