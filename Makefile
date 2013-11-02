@@ -17,7 +17,7 @@ SRCS=$(wildcard src/*.java)
 
 time.jar time.jar.pack.gz: $(SRCS) manifest.txt
 	mkdir -p classes
-	$(JAVA_HOME)/bin/javac -g -encoding us-ascii -source 1.5 -target 1.5 -classpath $(NETLOGO)/NetLogoLite.jar:lib/joda-time-2.2.jar -d classes $(SRCS)
+	$(JAVA_HOME)/bin/javac -g -encoding us-ascii -source 1.5 -target 1.5 -classpath $(NETLOGO)/NetLogoLite.jar:joda-time-2.2.jar -d classes $(SRCS)
 	jar cmf manifest.txt time.jar -C classes .
 	pack200 --modification-time=latest --effort=9 --strip-debug --no-keep-file-order --unknown-attribute=strip time.jar.pack.gz time.jar
 
