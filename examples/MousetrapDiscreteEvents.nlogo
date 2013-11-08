@@ -2,8 +2,11 @@ extensions [time]
 
 globals
  [
-   sim-time  ; the current simulation time
-   pop-log   ; a log of times at which traps pop
+   start-time  ; the time at which the first trap is triggered
+   finish-time ; the time when the last trap is triggered
+   current-time  ; the current simulation time
+   snap-log   ; a log of times at which traps snap
+   ;mean-flight-time ; mean of the uniform distribution for ball flight times (secs) -- on interface
  ]
 
 patches-own [trigger-time] ; The non-integer time at which trap triggers
@@ -19,24 +22,41 @@ to setup
    ]
    
   ; Initialize the simulation time
-  set sim-time time:create "2010-01-01 12:00:00"
-  set sim-time time:anchor-to-ticks sim-time 1.0 "second" 
-  time:anchor-schedule sim-time 1.0 "second"
+  set start-time time:create "2010-01-01 12:00:00"
+  set current-time time:anchor-to-ticks start-time 1.0 "second"
+  time:anchor-schedule start-time 1.0 "second"
+  
+  ; Create a log of times at which traps snap
+  set snap-log (time:ts-create ["trap-xcor" "trap-ycor"])
+  
 end
 
-to start  ; Starts a simulation
+to start  ; Starts a simulation -- which then runs until no more balls are
+          ; in the air.
   
   ; Set off one trap to start the action
-  time:schedule-event (one-of patches) task pop sim-time
+  time:schedule-event (one-of patches) task snap current-time
   
   ; Execute the schedule
   time:go
   
+  ; After the schedule has finished write the log of snap times out to file.
+  ; First, delete the output file if it already exists.
+  if file-exists? "snap-log.csv" [file-delete "snap-log.csv"]
+  ; Then open it.
+  time:ts-write snap-log "snap-log.csv" 
+
+  ; Finally, histogram the trap snap times
+  ; We can only histogram numbers, but the snap-log records times in logotime format.
+  ; So we create a temporary list of snap times in seconds using "map"
+  set-current-plot "Snap time distribution"
+  histogram map [time:get "second" ?] (time:ts-get-range snap-log start-time current-time "logotime")
+  
 end
 
-to pop  ; Executed by a trap when a ball lands on it
+to snap  ; Executed by a trap when a ball lands on it
 
-    ; Stop if trap has already popped
+    ; Stop if trap has already snapped
     if pcolor = black [ stop ]
    
     set pcolor red   ; Show the snap
@@ -48,31 +68,35 @@ to pop  ; Executed by a trap when a ball lands on it
     repeat 2 
     [
       let trap-ball-lands-on one-of (patches in-radius 5)
-      let ball-travel-time random-float 0.2
-      let ball-arrival-time time:plus sim-time ball-travel-time "seconds"
-      time:schedule-event trap-ball-lands-on task pop ball-arrival-time
+      let ball-travel-time random-float (mean-flight-time * 2)
+      let ball-arrival-time time:plus current-time ball-travel-time "seconds"
+      time:schedule-event trap-ball-lands-on task snap ball-arrival-time
     ]
     
     ; Finally, update outputs
     update-output
+    
 end
 
 to update-output
   
-  ; Plot the number of balls in the air = "pops" scheduled but not executed
+  ; Plot the number of balls in the air = "snaps" scheduled but not executed
   set-current-plot "Balls in air"
   plotxy ticks time:size-of-schedule
- 
+  
   ; Plot number of traps remaining untriggered
   set-current-plot "Untriggered traps"
   plotxy ticks count patches with [pcolor = yellow]
   
+  ; Record the snap time, converted to seconds because we don't need the date, hour, etc.
+  time:ts-add-row snap-log (sentence current-time pxcor pycor) 
+  
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-312
+436
 10
-652
+776
 371
 16
 16
@@ -97,10 +121,10 @@ ticks
 30.0
 
 BUTTON
-21
-19
-92
-52
+7
+18
+78
+51
 NIL
 setup
 NIL
@@ -114,10 +138,10 @@ NIL
 1
 
 BUTTON
-20
-68
-83
-101
+91
+18
+154
+51
 NIL
 start
 NIL
@@ -131,10 +155,10 @@ NIL
 1
 
 PLOT
-18
-119
-218
-269
+4
+118
+204
+268
 Balls in air
 Ticks
 Balls in air
@@ -149,10 +173,10 @@ PENS
 "default" 1.0 0 -2674135 true "" ""
 
 PLOT
-18
-277
-218
-427
+4
+276
+204
+426
 Untriggered traps
 Ticks
 Untriggered traps
@@ -166,12 +190,43 @@ false
 PENS
 "default" 1.0 0 -1184463 true "" ""
 
+INPUTBOX
+7
+54
+102
+114
+mean-flight-time
+0.2
+1
+0
+Number
+
+PLOT
+215
+118
+415
+268
+Snap time distribution
+Snap time
+Number of traps
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 1 -16777216 true "" ""
+
 @#$#@#$#@
 # Mousetrap Model
 
 This NetLogo code implements the version of the Mousetrap model described in Section 14.2.5 of _Agent-Based and Individual-Based Modeling_, Railsback & Grimm (2012). This model is completely independent of the Mousetrap model in NetLogo's Models library.
 
 The code is provided as a demonstration of continuous time, or discrete event, scheduling as an alternative to the discrete ticks used in the book's other models.
+
+Prepared by Colin Sheppard and Steve Railsback, 7 Nov 2013.
 @#$#@#$#@
 default
 true
@@ -456,7 +511,7 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.0.1
+NetLogo 5.0.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
