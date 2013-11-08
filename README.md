@@ -600,7 +600,7 @@ Add an event to the discrete event schedule and shuffle the agentset during exec
 *time:schedule-repeating-event-with-period agentset task tick-or-time-number period-duration period-type-string*<br/>
 *time:schedule-repeating-event-with-period "observer" task tick-or-time period-duration period-type-string*  
 
-Add a repeating event to the discrete event schedule.  This primitive behaves almost identically to *time:schedule-event* except that after the event is dispatched it is immediately rescheduled *interval-number* ticks into the future using the same *agent* (or *agentset*) and *task*. If the schedule is anchored (see time:anchor-schedule), then *time:schedule-repeating-event-with-period* can be used to expressed the repeat interval as a period (e.g. 1 "day" or 2.5 "hours").
+Add a repeating event to the discrete event schedule.  This primitive behaves almost identically to *time:schedule-event* except that after the event is dispatched it is immediately rescheduled *interval-number* ticks into the future using the same *agent* (or *agentset*) and *task*. If the schedule is anchored (see time:anchor-schedule), then *time:schedule-repeating-event-with-period* can be used to expressed the repeat interval as a period (e.g. 1 "day" or 2.5 "hours").  Warning: repeating events can cause an infinite loop to occur if you execute the schedule with time:go.  To avoid infinite loops, use time:go-until.
 
     time:schedule-repeating-event turtles task go-forward 2.5 1.0
 	time:schedule-repeating-event-with-period turtles task go-forward 2.5 1.0 "hours"
@@ -613,7 +613,7 @@ Add a repeating event to the discrete event schedule.  This primitive behaves al
 *time:schedule-repeating-event-shuffled agentset task tick-or-time-number interval-number*<br/>
 *time:schedule-repeating-event-shuffled-with-period agentset task tick-or-time-number interval-number*
 
-Add a repeating event to the discrete event schedule and shuffle the agentset during execution.  This is identical to *time:schedule-repeating-event* but the individuals in the agentset execute the action in randomized order.  If the schedule is anchored (see time:anchor-schedule), then *time:schedule-repeating-event-shuffled-with-period* can be used to expressed the repeat interval as a period (e.g. 1 "day" or 2.5 "hours").
+Add a repeating event to the discrete event schedule and shuffle the agentset during execution.  This is identical to *time:schedule-repeating-event* but the individuals in the agentset execute the action in randomized order.  If the schedule is anchored (see time:anchor-schedule), then *time:schedule-repeating-event-shuffled-with-period* can be used to expressed the repeat interval as a period (e.g. 1 "day" or 2.5 "hours").  Warning: repeating events can cause an infinite loop to occur if you execute the schedule with time:go.  To avoid infinite loops, use time:go-until.
 
     time:schedule-repeating-event-shuffled turtles task go-forward 2.5 1.0
     time:schedule-repeating-event-shuffled-with-period turtles task go-forward 2.5 1.0 "month"
