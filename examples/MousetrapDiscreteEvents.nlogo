@@ -48,9 +48,10 @@ to start  ; Starts a simulation -- which then runs until no more balls are
 
   ; Finally, histogram the trap snap times
   ; We can only histogram numbers, but the snap-log records times in logotime format.
-  ; So we create a temporary list of snap times in seconds using "map"
+  ; So we create a temporary list of snap times in seconds using "map".
+  ; Use time:difference-between instead of time:get because time:get reports only integer values.
   set-current-plot "Snap time distribution"
-  histogram map [time:get "second" ?] (time:ts-get-range snap-log start-time current-time "logotime")
+  histogram map [time:difference-between start-time ? "second"] (time:ts-get-range snap-log start-time current-time "logotime")
   
 end
 
@@ -207,17 +208,17 @@ PLOT
 415
 268
 Snap time distribution
-Snap time
+Snap time, seconds
 Number of traps
 0.0
-10.0
+5.0
 0.0
 10.0
 true
 false
 "" ""
 PENS
-"default" 1.0 1 -16777216 true "" ""
+"default" 0.2 1 -16777216 true "" ""
 
 @#$#@#$#@
 # Mousetrap Model

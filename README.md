@@ -369,7 +369,9 @@ Reports a boolean for the test of whether *logotime1* is before/after/equal-to *
 
 *time:difference-between logotime1 logotime2 period-type-string*
 
-Reports the amount of time between *logotime1* and *logotime2* in units of *period-type-string*.  Note that if the period type is YEAR or MONTH, then the reported value will be a whole number based soley on the month and year components of the LogoTimes.  If *logotime2* is smaller (earlier than) *logotime1*, the reported value will be negative.</
+Reports the amount of time between *logotime1* and *logotime2* in units of *period-type-string*.  Note that if the period type is YEAR or MONTH, then the reported value will be a whole number based soley on the month and year components of the LogoTimes.  If *logotime2* is smaller (earlier than) *logotime1*, the reported value will be negative.
+
+This primitive is useful for recording the elapsed time between model events because (unlike time:get) it reports the total number of time units, including fractions of units. For example, if *start-time* is a LogoTime variable for the time a simulation starts and *end-time* is when the simulation stops, then use *show time:difference-between start-time end-time "days"* to see how many days were simulated.
 
 	print time:difference-between (time:create "2000-01-02 00:00") (time:create "2000-02-02 00:00") "days"
 	;;prints "31"
