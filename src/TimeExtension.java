@@ -32,7 +32,6 @@ import org.nlogo.agent.World;
 import org.nlogo.api.*;
 import org.nlogo.nvm.ExtensionContext;
 import org.nlogo.nvm.Workspace.OutputDestination;
-
 import org.joda.time.*;
 import org.joda.time.chrono.ISOChronology;
 import org.joda.time.format.*;
@@ -353,13 +352,19 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			LogoTime higherKey = timeHigh;
 			if(times.get(higherKey) == null) higherKey = times.lowerKey(timeHigh);
 			if(lowerKey == null || higherKey == null){
-				return(new LogoList(null));
-			}
-			if(columnName.equals("ALL_-_COLUMNS") || columnName.equals("LOGOTIME")){
-				resultList.add(LogoList.fromJava(times.subMap(lowerKey, higherKey).keySet()));
-			}
-			for(String colName : columnList){
-				resultList.add(LogoList.fromJava(columns.get(colName).data.subList(times.get(lowerKey).dataIndex, times.get(higherKey).dataIndex+1)));
+				if(columnName.equals("ALL_-_COLUMNS") || columnName.equals("LOGOTIME")){
+					resultList.add(LogoList.fromVector(new scala.collection.immutable.Vector<Object>(0, 0, 0)));
+				}
+				for(String colName : columnList){
+					resultList.add(LogoList.fromVector(new scala.collection.immutable.Vector<Object>(0, 0, 0)));
+				}
+			}else{
+				if(columnName.equals("ALL_-_COLUMNS") || columnName.equals("LOGOTIME")){
+					resultList.add(LogoList.fromJava(times.subMap(lowerKey, higherKey).keySet()));
+				}
+				for(String colName : columnList){
+					resultList.add(LogoList.fromJava(columns.get(colName).data.subList(times.get(lowerKey).dataIndex, times.get(higherKey).dataIndex+1)));
+				}
 			}
 			if(resultList.size()==1){
 				return resultList.get(0);
@@ -382,6 +387,14 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				result += "\n";
 			}
 			return result;
+		}
+		public void ensureDateTypeConsistent(LogoTime time) throws ExtensionException{
+			if(times.size()>0){
+				if(times.firstKey().dateType != time.dateType){
+					throw(new ExtensionException("The LogoTimeSeries contains LogoTimes of type "+times.firstKey().dateType.toString()+
+							" while the LogoTime "+time.toString()+" used in the search is of type "+time.dateType.toString()));
+				}
+			}
 		}
 		public String getExtensionName() {
 			return "time";
@@ -821,6 +834,9 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			this.world = world;
 		}
 		public String dump(boolean arg1, boolean arg2, boolean arg3) {
+			return this.toString();
+		}
+		public String toString(){
 			try {
 				this.updateFromTick();
 			} catch (ExtensionException e) {
@@ -1571,6 +1587,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
 			LogoTimeSeries ts = getTimeSeriesFromArgument(args, 0);
 			LogoTime time = getTimeFromArgument(args, 1);
+			ts.ensureDateTypeConsistent(time);
 			String columnName = getStringFromArgument(args, 2);
 			if(columnName.equals("ALL") || columnName.equals("all")){
 				columnName = "ALL_-_COLUMNS";
@@ -1585,6 +1602,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
 			LogoTimeSeries ts = getTimeSeriesFromArgument(args, 0);
 			LogoTime time = getTimeFromArgument(args, 1);
+			ts.ensureDateTypeConsistent(time);
 			String columnName = getStringFromArgument(args, 2);
 			if(columnName.equals("ALL") || columnName.equals("all")){
 				columnName = "ALL_-_COLUMNS";
@@ -1599,6 +1617,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
 			LogoTimeSeries ts = getTimeSeriesFromArgument(args, 0);
 			LogoTime time = getTimeFromArgument(args, 1);
+			ts.ensureDateTypeConsistent(time);
 			String columnName = getStringFromArgument(args, 2);
 			if(columnName.equals("ALL") || columnName.equals("all")){
 				columnName = "ALL_-_COLUMNS";
@@ -1613,7 +1632,9 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
 			LogoTimeSeries ts = getTimeSeriesFromArgument(args, 0);
 			LogoTime timeA = getTimeFromArgument(args, 1);
+			ts.ensureDateTypeConsistent(timeA);
 			LogoTime timeB = getTimeFromArgument(args, 2);
+			ts.ensureDateTypeConsistent(timeB);
 			String columnName = getStringFromArgument(args, 3);
 			if(columnName.equals("logotime")){
 				columnName = "LOGOTIME";
