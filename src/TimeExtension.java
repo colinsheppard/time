@@ -360,7 +360,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				}
 			}else{
 				if(columnName.equals("ALL_-_COLUMNS") || columnName.equals("LOGOTIME")){
-					resultList.add(LogoList.fromJava(times.subMap(lowerKey, higherKey).keySet()));
+					resultList.add(LogoList.fromJava(times.subMap(lowerKey, true, higherKey, true).keySet()));
 				}
 				for(String colName : columnList){
 					resultList.add(LogoList.fromJava(columns.get(colName).data.subList(times.get(lowerKey).dataIndex, times.get(higherKey).dataIndex+1)));
