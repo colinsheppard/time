@@ -258,6 +258,23 @@ Reports a LogoTime created by parsing the *time-string* argument.  A LogoTime is
 
 ---------------------------------------
 
+**time:create-with-format**
+
+*time:create-with-format time-string format-string*
+
+Like time:create, but reports a LogoTime created by parsing the *time-string* argument using the *format-string* argument as the format specifier.  
+
+    ;; Create a datetime, a date, and a day using American convention for dates: Month/Day/Year
+    let t-datetime time:create-with-format "01-02-2000 03:04:05.678" "MM-dd-YYYY HH:mm:ss.SSS"
+    let t-date time:create-with-format "01/02/2000" "MM/dd/YYYY"
+    let t-day time:create-with-format "01-02" "MM-dd"
+
+See the following link for a full description of the available format options:
+
+[http://joda-time.sourceforge.net/api-release/org/joda/time/format/DateTimeFormat.html](http://joda-time.sourceforge.net/api-release/org/joda/time/format/DateTimeFormat.html)
+
+---------------------------------------
+
 **time:show**
 
 *time:show logotime string-format*
@@ -272,7 +289,7 @@ Reports a string containing the *logotime* formatted according the *string-forma
     print time:show t-datetime "yyyy-MM-dd HH:mm"
     ;; prints "2000-01-02 03:04"
 
-See the following link for a full description of the many available format options:
+See the following link for a full description of the available format options:
 
 [http://joda-time.sourceforge.net/api-release/org/joda/time/format/DateTimeFormat.html](http://joda-time.sourceforge.net/api-release/org/joda/time/format/DateTimeFormat.html)
 
@@ -534,6 +551,20 @@ The following is an example of hourly river flow and water temperature data that
     2000-01-01 03:00:00,1030,13
 
 [back to top](#netlogo-time-extension)
+
+---------------------------------------
+
+**time:ts-load-with-format** 
+
+*time:ts-load filepath format-string*
+
+Identical to time:ts-load except that the first column is parsed based on the *format-string* specifier.
+
+    let ts time:ts-load "time-series-data-custom-date-format.csv" "dd-MM-YYYY HH:mm:ss"
+
+See the following link for a full description of the available format options:
+
+[http://joda-time.sourceforge.net/api-release/org/joda/time/format/DateTimeFormat.html](http://joda-time.sourceforge.net/api-release/org/joda/time/format/DateTimeFormat.html)
 
 ---------------------------------------
 
