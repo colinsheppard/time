@@ -178,9 +178,13 @@ The **time extension** has the following notable behavior:
 
 * **You create LogoTime objects by passing a string** - The time:create primitive was designed to both follow the standard used by joda-time, and to make date time parsing more convenient by allowing a wider range of delimiters and formats.  For example, the following are all valid DATETIME strings: 
   * "2000-01-02T03:04:05.678"
+  * "2000-01-02T3:04:05.678"
   * "2000-01-02 03:04:05"
+  * "2000-01-02 3:04:05"
   * "2000-01-02 03:04"
+  * "2000-01-02 3:04"
   * "2000-01-02 03"
+  * "2000-01-02 3"
   * "2000/01/02 03:04:05.678"
   * "2000-1-02 03:04:05.678"
   * "2000-01-2 03:04:05.678"

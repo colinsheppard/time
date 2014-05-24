@@ -61,6 +61,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	}
 
 	private static final LogoSchedule schedule = new LogoSchedule();
+	private static Context context;
 	private static long nextEvent = 0;
 	private static boolean debug = false;
 
@@ -554,7 +555,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			LogoEvent event = scheduleTree.isEmpty() ? null : scheduleTree.first();
 			ArrayList<org.nlogo.agent.Agent> theAgents = new ArrayList<org.nlogo.agent.Agent>();
 			while(event != null && event.tick <= untilTick){
-				if(debug)printToConsole(context,"performing event-id: "+event.id+" for agent: "+event.agents+" at tick:"+event.tick);
+				if(debug)printToConsole(context,"performing event-id: "+event.id+" for agent: "+event.agents+" at tick:"+event.tick + " ");
 				tickCounter.tick(event.tick-tickCounter.ticks());
 
 				if(event.agents == null){
@@ -738,13 +739,15 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		 * 
 		 * Accommodate shorthand and human readability, allowing substitution of space for 'T' and '/' for '-'.
 		 * Also accommodate all three versions of specifying a full DATETIME (month, day, week -based) but only
-		 * allow one specific way each to specify a DATE and a DAY. Single digit months and days are ok, but single
-		 * digit hours, minutes, and seconds need a preceding zero (e.g. '06', not '6')
+		 * allow one specific way each to specify a DATE and a DAY. Single digit months, days, and hours are ok, but single
+		 * digit minutes and seconds need a preceding zero (e.g. '06', not '6')
 		 * 
 		 * LEGIT
 		 * 2012-11-10T09:08:07.654
+		 * 2012-11-10T9:08:07.654
 		 * 2012/11/10T09:08:07.654
 		 * 2012-11-10 09:08:07.654
+		 * 2012-11-10 9:08:07.654
 		 * 2012/11/10 09:08:07.654
 		 * 2012-11-10 09:08:07		// assumes 0 for millis
 		 * 2012-11-10 09:08			// assumes 0 for seconds and millis
@@ -760,8 +763,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		 * 01-1
 		 * 
 		 * NOT LEGIT
-		 * 2012-11-10 9:08:07.654
-		 * 2012-11-10 09:08:07.654
+		 * 2012-11-10 09:8:07.654
+		 * 2012-11-10 09:08:7.654
 		 */
 		//
 		//
@@ -792,6 +795,12 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				}
 				if(len == 9 || dateString.indexOf('T') == 9){ // day is single digit
 					dateString = dateString.substring(0, 8) + "0" + dateString.substring(8, len);
+					len++;
+				}
+				if(dateString.indexOf('T') == 10 & (dateString.indexOf(':') == 12 || len == 12)){ 
+					// DATETIME without leading 0 on hour, pad it
+					int firstColon = dateString.indexOf(':');
+					dateString = dateString.substring(0, 11) + "0" + dateString.substring(11, len);
 					len++;
 				}
 			}
@@ -1310,6 +1319,12 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			throw new ExtensionException(e);
 		}
 	}
+	public static Context getContext() {
+		return context;
+	}
+	public static void setContext(Context context) {
+		TimeExtension.context = context;
+	}
 	/***********************
 	 * Primitive Classes
 	 ***********************/
@@ -1319,6 +1334,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 					Syntax.WildcardType());
 		}
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
+			TimeExtension.setContext(context); // for debugging
 			LogoTime time = new LogoTime(args[0].getString());
 			return time;
 		}
