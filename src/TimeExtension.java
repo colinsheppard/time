@@ -63,13 +63,14 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	private static final LogoSchedule schedule = new LogoSchedule();
 	private static Context context;
 	private static long nextEvent = 0;
-	private static boolean debug = false;
+	private static boolean debug = true;
 
 	public void load(org.nlogo.api.PrimitiveManager primManager) {
 		/**********************
 		/* TIME PRIMITIVES
 		/**********************/
 		primManager.addPrimitive("create", new NewLogoTime());
+		primManager.addPrimitive("create-with-format", new CreateWithFormat());
 		primManager.addPrimitive("anchor-to-ticks", new Anchor());
 		primManager.addPrimitive("plus", new Plus());
 		primManager.addPrimitive("show", new Show());
@@ -101,6 +102,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		/**********************/
 		primManager.addPrimitive("ts-create", new TimeSeriesCreate());
 		primManager.addPrimitive("ts-load", new TimeSeriesLoad());
+		primManager.addPrimitive("ts-load-with-format", new TimeSeriesLoadWithFormat());
 		primManager.addPrimitive("ts-write", new TimeSeriesWrite());
 		primManager.addPrimitive("ts-get", new TimeSeriesGet());
 		primManager.addPrimitive("ts-get-interp", new TimeSeriesGetInterp());
@@ -167,6 +169,9 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				columns.put(colName.toString(), new TimeSeriesColumn());
 			}
 		}
+		LogoTimeSeries(String filename, String customFormat, ExtensionContext context) throws ExtensionException{
+			parseTimeSeriesFile(filename, customFormat, context);
+		}
 		LogoTimeSeries(String filename, ExtensionContext context) throws ExtensionException{
 			parseTimeSeriesFile(filename, context);
 		}
@@ -223,6 +228,9 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			}
 		}
 		public void parseTimeSeriesFile(String filename, ExtensionContext context) throws ExtensionException{
+			parseTimeSeriesFile(filename,null,context);
+		}
+		public void parseTimeSeriesFile(String filename, String customFormat, ExtensionContext context) throws ExtensionException{
 			File dataFile;
 			if(filename.charAt(0)=='/' || filename.charAt(0)=='\\'){
 				dataFile = new File(filename);
@@ -271,7 +279,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			try{
 				while ((strLine = br.readLine())!=null){
 					lineData = strLine.split(delim);
-					LogoTime newTime = new LogoTime(lineData[0]);
+					LogoTime newTime = new LogoTime(lineData[0],customFormat);
 					times.put(newTime,new TimeSeriesRecord(newTime, numRows++));
 					for(int colInd = 1; colInd <= columns.size(); colInd++){
 						columns.get(columnNames[colInd]).add(lineData[colInd]);
@@ -687,20 +695,50 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			this.dateType = DateType.DAY;
 		}
 		LogoTime(String dateString) throws ExtensionException {
-			dateString = parseDateString(dateString);
-			switch(this.dateType){
-			case DATETIME:
-				this.datetime = (dateString.length() == 0 || dateString.equals("now")) ? new LocalDateTime() : new LocalDateTime(dateString);
-				this.fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
-				break;
-			case DATE:
-				this.date = new LocalDate(dateString);
-				this.fmt = DateTimeFormat.forPattern("yyyy-MM-dd");
-				break;
-			case DAY:
-				this.fmt = DateTimeFormat.forPattern("MM-dd");
-				this.monthDay = (new MonthDay()).parse(dateString, this.fmt);
-				break;
+			this(dateString,null);
+		}
+		LogoTime(String dateString, String customFormat) throws ExtensionException {
+			if(customFormat == null){
+				dateString = parseDateString(dateString);
+				switch(this.dateType){
+				case DATETIME:
+					this.datetime = (dateString.length() == 0 || dateString.equals("now")) ? new LocalDateTime() : new LocalDateTime(dateString);
+					this.fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
+					break;
+				case DATE:
+					this.date = new LocalDate(dateString);
+					this.fmt = DateTimeFormat.forPattern("yyyy-MM-dd");
+					break;
+				case DAY:
+					this.fmt = DateTimeFormat.forPattern("MM-dd");
+					this.monthDay = (new MonthDay()).parse(dateString, this.fmt);
+					break;
+				}
+			}else{
+				if(customFormat.indexOf('H') >= 0 ||
+					customFormat.indexOf('h') >= 0 || 
+					customFormat.indexOf('K') >= 0 || 
+					customFormat.indexOf('k') >= 0){
+					this.dateType = DateType.DATETIME;
+				}else if(customFormat.indexOf('Y') >= 0 || customFormat.indexOf('y') >= 0){
+					this.dateType = DateType.DATE;
+				}else{
+					this.dateType = DateType.DAY;
+				}
+				this.fmt = DateTimeFormat.forPattern(customFormat);
+				switch(this.dateType){
+				case DATETIME:
+					this.datetime = LocalDateTime.parse(dateString, this.fmt);
+					break;
+				case DATE:
+					this.date = LocalDate.parse(dateString, this.fmt);
+					break;
+				case DAY:
+					this.monthDay = MonthDay.parse(dateString, this.fmt);
+					break;
+				}
+				if(debug)printToConsole(getContext(), customFormat);
+				if(debug)printToConsole(getContext(), dateString);
 			}
 		}
 		int compareTo(LogoTime that){
@@ -1335,7 +1373,18 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
 			TimeExtension.setContext(context); // for debugging
-			LogoTime time = new LogoTime(args[0].getString());
+			LogoTime time = new LogoTime(getStringFromArgument(args, 0));
+			return time;
+		}
+	}
+	public static class CreateWithFormat extends DefaultReporter {
+		public Syntax getSyntax() {
+			return Syntax.reporterSyntax(new int[]{Syntax.StringType(),Syntax.StringType()},
+					Syntax.WildcardType());
+		}
+		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
+			TimeExtension.setContext(context); // for debugging
+			LogoTime time = new LogoTime(getStringFromArgument(args, 0),getStringFromArgument(args, 1));
 			return time;
 		}
 	}
@@ -1593,6 +1642,17 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
 			String filename = getStringFromArgument(args, 0);
 			LogoTimeSeries ts = new LogoTimeSeries(filename, (ExtensionContext) context);
+			return ts;
+		}
+	}
+	public static class TimeSeriesLoadWithFormat extends DefaultReporter{
+		public Syntax getSyntax() {
+			return Syntax.reporterSyntax(new int[]{Syntax.StringType(),Syntax.StringType()},Syntax.WildcardType());
+		}
+		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
+			String filename = getStringFromArgument(args, 0);
+			String format = getStringFromArgument(args, 1);
+			LogoTimeSeries ts = new LogoTimeSeries(filename, format, (ExtensionContext) context);
 			return ts;
 		}
 	}

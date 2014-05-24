@@ -28,6 +28,9 @@ to setup
   time:ts-add-row ts ["2000-01-08" 5 4]
   time:ts-add-row ts ["2000-01-01" 6 7]
   time:ts-write ts "new-ts-file.csv"
+  
+  set time-series time:ts-load-with-format "time-series-data-custom-date-format.csv" "dd-MM-YYYY HH:mm:ss"
+   print time-series 
 end
 
 to go
