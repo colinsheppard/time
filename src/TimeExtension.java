@@ -667,7 +667,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public LocalDateTime 	datetime = null;
 		public LocalDate 		date	 = null;
 		public MonthDay 		monthDay = null;
-		private DateTimeFormatter fmt = null;
+		private DateTimeFormatter customFmt = null;
+		private DateTimeFormatter defaultFmt = null;
 		private Boolean 		isAnchored = false;
 		private Double 			tickValue;
 		private PeriodType 		tickType;
@@ -677,43 +678,30 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		private World 			world;
 
 		LogoTime(LogoTime time) throws ExtensionException {
-			this(time.dump(false,false,false));
+			this(time.show(time.defaultFmt));
 		}
 		LogoTime(LocalDateTime dt) {
 			this.datetime = dt;
-			this.fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
+			this.defaultFmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
 			this.dateType = DateType.DATETIME;
 		}
 		LogoTime(LocalDate dt) {
 			this.date = dt;
-			this.fmt = DateTimeFormat.forPattern("yyyy-MM-dd");
+			this.defaultFmt = DateTimeFormat.forPattern("yyyy-MM-dd");
 			this.dateType = DateType.DATE;
 		}
 		LogoTime(MonthDay dt) {
 			this.monthDay = dt;
-			this.fmt = DateTimeFormat.forPattern("MM-dd");
+			this.defaultFmt = DateTimeFormat.forPattern("MM-dd");
 			this.dateType = DateType.DAY;
 		}
 		LogoTime(String dateString) throws ExtensionException {
 			this(dateString,null);
 		}
 		LogoTime(String dateString, String customFormat) throws ExtensionException {
+			// First we parse the string to determine the date type
 			if(customFormat == null){
 				dateString = parseDateString(dateString);
-				switch(this.dateType){
-				case DATETIME:
-					this.datetime = (dateString.length() == 0 || dateString.equals("now")) ? new LocalDateTime() : new LocalDateTime(dateString);
-					this.fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
-					break;
-				case DATE:
-					this.date = new LocalDate(dateString);
-					this.fmt = DateTimeFormat.forPattern("yyyy-MM-dd");
-					break;
-				case DAY:
-					this.fmt = DateTimeFormat.forPattern("MM-dd");
-					this.monthDay = (new MonthDay()).parse(dateString, this.fmt);
-					break;
-				}
 			}else{
 				if(customFormat.indexOf('H') >= 0 ||
 					customFormat.indexOf('h') >= 0 || 
@@ -725,16 +713,43 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				}else{
 					this.dateType = DateType.DAY;
 				}
-				this.fmt = DateTimeFormat.forPattern(customFormat);
+			}
+			// Now initialize the defaultFmt
+			switch(this.dateType){
+			case DATETIME:
+				this.defaultFmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
+				break;
+			case DATE:
+				this.defaultFmt = DateTimeFormat.forPattern("yyyy-MM-dd");
+				break;
+			case DAY:
+				this.defaultFmt = DateTimeFormat.forPattern("MM-dd");
+				break;
+			}
+			// Now create the joda time object
+			if(customFormat == null){
 				switch(this.dateType){
 				case DATETIME:
-					this.datetime = LocalDateTime.parse(dateString, this.fmt);
+					this.datetime = (dateString.length() == 0 || dateString.equals("now")) ? new LocalDateTime() : new LocalDateTime(dateString);
 					break;
 				case DATE:
-					this.date = LocalDate.parse(dateString, this.fmt);
+					this.date = new LocalDate(dateString);
 					break;
 				case DAY:
-					this.monthDay = MonthDay.parse(dateString, this.fmt);
+					this.monthDay = (new MonthDay()).parse(dateString, this.defaultFmt);
+					break;
+				}
+			}else{
+				this.customFmt = DateTimeFormat.forPattern(customFormat);
+				switch(this.dateType){
+				case DATETIME:
+					this.datetime = LocalDateTime.parse(dateString, this.customFmt);
+					break;
+				case DATE:
+					this.date = LocalDate.parse(dateString, this.customFmt);
+					break;
+				case DAY:
+					this.monthDay = MonthDay.parse(dateString, this.customFmt);
 					break;
 				}
 				if(debug)printToConsole(getContext(), customFormat);
@@ -891,11 +906,11 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			}
 			switch(this.dateType){
 			case DATETIME:
-				return datetime.toString(this.fmt);
+				return datetime.toString(this.customFmt == null ? this.defaultFmt : this.customFmt);
 			case DATE:
-				return date.toString(this.fmt);
+				return date.toString(this.customFmt == null ? this.defaultFmt : this.customFmt);
 			case DAY:
-				return monthDay.toString(this.fmt);
+				return monthDay.toString(this.customFmt == null ? this.defaultFmt : this.customFmt);
 			}
 			return "";
 		}
