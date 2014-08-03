@@ -63,7 +63,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	private static final LogoSchedule schedule = new LogoSchedule();
 	private static Context context;
 	private static long nextEvent = 0;
-	private static boolean debug = true;
+	private static boolean debug = false;
 
 	public void load(org.nlogo.api.PrimitiveManager primManager) {
 		/**********************
@@ -421,13 +421,15 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public org.nlogo.nvm.CommandTask task = null;
 		public org.nlogo.agent.AgentSet agents = null;
 		public Double repeatInterval = null;
+		public PeriodType repeatIntervalPeriodType = null;
 		public Boolean shuffleAgentSet = null;
 
-		LogoEvent(org.nlogo.agent.AgentSet agents, CommandTask task, Double tick, Double repeatInterval, Boolean shuffleAgentSet) {
+		LogoEvent(org.nlogo.agent.AgentSet agents, CommandTask task, Double tick, Double repeatInterval, PeriodType repeatIntervalPeriodType, Boolean shuffleAgentSet) {
 			this.agents = agents;
 			this.task = (org.nlogo.nvm.CommandTask) task;
 			this.tick = tick;
 			this.repeatInterval = repeatInterval;
+			this.repeatIntervalPeriodType = repeatIntervalPeriodType;
 			this.shuffleAgentSet = shuffleAgentSet;
 			this.id = nextEvent;
 			nextEvent++;
@@ -441,9 +443,16 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		 * If a repeatInterval is set, this method uses it to update it's tick field and then adds itself to the
 		 * schedule argument.  The return value indicates whether the event was added to the schedule again.
 		 */
-		public Boolean reschedule(){
+		public Boolean reschedule(LogoSchedule callingSchedule) throws ExtensionException{
 			if(repeatInterval == null)return false;
-			this.tick = this.tick + repeatInterval;
+			if(repeatIntervalPeriodType == null){ // in this case we assume that repeatInterval is in the same units as tick
+				this.tick = this.tick + repeatInterval;
+			}else{
+				LogoTime currentTime = callingSchedule.getCurrentTime();
+				if(debug)printToConsole(context, "resheduling: "+ repeatInterval + " " + repeatIntervalPeriodType + " ahead of " + currentTime + " or " + currentTime.getDifferenceBetween(callingSchedule.tickType, currentTime.plus(repeatIntervalPeriodType, repeatInterval))/callingSchedule.tickValue);
+				this.tick = this.tick + currentTime.getDifferenceBetween(callingSchedule.tickType, currentTime.plus(repeatIntervalPeriodType, repeatInterval))/callingSchedule.tickValue;
+				if(debug)printToConsole(context, "event scheduled for tick: " + this.tick); 
+			}
 			return schedule.scheduleTree.add(this);
 		}
 		public boolean equals(Object obj) {
@@ -465,6 +474,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	private static class LogoSchedule implements org.nlogo.api.ExtensionObject {
 		LogoEventComparator comparator = (new TimeExtension()).new LogoEventComparator();
 		TreeSet<LogoEvent> scheduleTree = new TreeSet<LogoEvent>(comparator);
+		TickCounter tickCounter = null;
 		
 		// The following three fields track an anchored schedule
 		LogoTime timeAnchor = null;
@@ -481,9 +491,10 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 		public void anchorSchedule(LogoTime time, Double tickValue, PeriodType tickType){
 			try {
-				timeAnchor = new LogoTime(time);
+				this.timeAnchor = new LogoTime(time);
 				this.tickType = tickType;
 				this.tickValue = tickValue;
+				this.tickCounter = ((ExtensionContext)context).workspace().world().tickCounter;
 			} catch (ExtensionException e) {
 				e.printStackTrace();
 			}
@@ -525,6 +536,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				throw new ExtensionException("time:"+primName+" expecting a number or logotime as the third argument");
 			}
 			if (eventTick < ((ExtensionContext)context).workspace().world().ticks()) throw new ExtensionException("Attempted to schedule an event for tick "+ eventTick +" which is before the present 'moment' of "+((ExtensionContext)context).workspace().world().ticks());
+			
+			TimeExtension.PeriodType repeatIntervalPeriodType = null;
 			Double repeatInterval = null;
 			if(addType == AddType.REPEAT || addType == AddType.REPEAT_SHUFFLED){
 				if (!args[3].get().getClass().equals(Double.class)) throw new ExtensionException("time:repeat expecting a number as the fourth argument");
@@ -532,9 +545,14 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				if (repeatInterval <= 0) throw new ExtensionException("time:repeat the repeat interval must be a positive number");
 				if(args.length == 5){
 					if(!this.isAnchored())throw new ExtensionException("A LogoEvent can only be scheduled to repeat using a period type if the discrete event schedule has been anchored to a LogoTime, see time:anchor-schedule");
-					TimeExtension.PeriodType pType = stringToPeriodType(getStringFromArgument(args, 4));
-					repeatInterval = this.timeAnchor.getDifferenceBetween(this.tickType, this.timeAnchor.plus(pType, repeatInterval))/this.tickValue;
-					printToConsole(context, "from:"+pType+" to:"+this.tickType+" inteval:"+repeatInterval);
+					repeatIntervalPeriodType = stringToPeriodType(getStringFromArgument(args, 4));
+					if(repeatIntervalPeriodType != TimeExtension.PeriodType.MONTH && repeatIntervalPeriodType != TimeExtension.PeriodType.YEAR){
+						repeatInterval = this.timeAnchor.getDifferenceBetween(this.tickType, this.timeAnchor.plus(repeatIntervalPeriodType, repeatInterval))/this.tickValue;
+						if(debug)printToConsole(context, "from:"+repeatIntervalPeriodType+" to:"+this.tickType+" interval:"+repeatInterval);
+						repeatIntervalPeriodType = null;
+					}else{
+						if(debug)printToConsole(context, "repeat every: "+ repeatInterval + " " + repeatIntervalPeriodType);
+					}
 				}
 			}
 			Boolean shuffleAgentSet = (addType == AddType.SHUFFLE || addType == AddType.REPEAT_SHUFFLED);
@@ -549,7 +567,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			}else{
 				// leave agentSet as null to signal observer should be used
 			}
-			LogoEvent event = (new TimeExtension()).new LogoEvent(agentSet,args[1].getCommandTask(),eventTick,repeatInterval,shuffleAgentSet);
+			LogoEvent event = (new TimeExtension()).new LogoEvent(agentSet,args[1].getCommandTask(),eventTick,repeatInterval,repeatIntervalPeriodType,shuffleAgentSet);
 			if(debug)printToConsole(context,"scheduling event: "+event.dump(false, false, false));
 			scheduleTree.add(event);
 		}
@@ -558,7 +576,6 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}	
 		public void performScheduledTasks(Argument args[], Context context, Double untilTick) throws ExtensionException, LogoException {
 			ExtensionContext extcontext = (ExtensionContext) context;
-			TickCounter tickCounter = extcontext.workspace().world().tickCounter;
 			Object[] emptyArgs = new Object[0]; // This extension is only for CommandTasks, so we know there aren't any args to pass in
 			LogoEvent event = scheduleTree.isEmpty() ? null : scheduleTree.first();
 			ArrayList<org.nlogo.agent.Agent> theAgents = new ArrayList<org.nlogo.agent.Agent>();
@@ -603,12 +620,17 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				scheduleTree.remove(event);
 
 				// Reschedule the event if necessary
-				event.reschedule();
+				event.reschedule(this);
 
 				// Grab the next event from the schedule
 				event = scheduleTree.isEmpty() ? null : scheduleTree.first();
 			}
 			if(untilTick < Double.MAX_VALUE && untilTick > tickCounter.ticks()) tickCounter.tick(untilTick-tickCounter.ticks());
+		}
+		public LogoTime getCurrentTime() throws ExtensionException{
+			if(!this.isAnchored())return null;
+			if(debug)printToConsole(context, "current time is: " + this.timeAnchor.plus(this.tickType,tickCounter.ticks() / this.tickValue));
+			return this.timeAnchor.plus(this.tickType,tickCounter.ticks() / this.tickValue);
 		}
 		public String dump(boolean readable, boolean exporting, boolean reference) {
 			StringBuilder buf = new StringBuilder();
