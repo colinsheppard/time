@@ -574,6 +574,12 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public void performScheduledTasks(Argument args[], Context context) throws ExtensionException, LogoException {
 			performScheduledTasks(args,context,Double.MAX_VALUE);
 		}	
+		public void performScheduledTasks(Argument args[], Context context, LogoTime untilTime) throws ExtensionException, LogoException {
+			if(!this.isAnchored())throw new ExtensionException("time:go-until can only accept a LogoTime as a stopping time if the schedule is anchored using time:anchore-schedule");
+			if(debug)printToConsole(context,"timeAnchor: "+this.timeAnchor+" tickType: "+this.tickType+" tickValue:"+this.tickValue + " untilTime:" + untilTime);
+			Double untilTick = this.timeAnchor.getDifferenceBetween(this.tickType, untilTime)/this.tickValue;
+			performScheduledTasks(args,context,untilTick);
+		}
 		public void performScheduledTasks(Argument args[], Context context, Double untilTick) throws ExtensionException, LogoException {
 			ExtensionContext extcontext = (ExtensionContext) context;
 			Object[] emptyArgs = new Object[0]; // This extension is only for CommandTasks, so we know there aren't any args to pass in
@@ -1648,10 +1654,21 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	}
 	public static class GoUntil extends DefaultCommand {
 		public Syntax getSyntax() {
-			return Syntax.commandSyntax(new int[]{Syntax.NumberType()});
+			return Syntax.commandSyntax(new int[]{Syntax.WildcardType()});
 		}
 		public void perform(Argument args[], Context context) throws ExtensionException, LogoException {
-			schedule.performScheduledTasks(args, context, getDoubleFromArgument(args, 0));
+			LogoTime untilTime = null;
+			Double untilTick = null;
+			try{
+				untilTime = getTimeFromArgument(args, 0);
+			}catch(ExtensionException e){
+				untilTick = getDoubleFromArgument(args, 0);
+			}
+			if(untilTime == null){
+				schedule.performScheduledTasks(args, context, untilTick);
+			}else{
+				schedule.performScheduledTasks(args, context, untilTime);
+			}
 		}
 	}
 	public static class TimeSeriesCreate extends DefaultReporter{
