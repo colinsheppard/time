@@ -232,7 +232,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 		public void parseTimeSeriesFile(String filename, String customFormat, ExtensionContext context) throws ExtensionException{
 			File dataFile;
-			if(filename.charAt(0)=='/' || filename.charAt(0)=='\\'){
+			if(filename.charAt(0)=='/' || filename.charAt(0)=='\\' || filename.charAt(1)==':' || context.workspace().getModelDir()==null){
 				dataFile = new File(filename);
 			}else{
 				dataFile = new File(context.workspace().getModelDir()+"/"+filename);
