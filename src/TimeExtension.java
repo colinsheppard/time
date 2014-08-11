@@ -285,6 +285,9 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 						columns.get(columnNames[colInd]).add(lineData[colInd]);
 					}
 				}
+				br.close();
+				in.close();
+				fstream.close();
 			}catch (IOException e){
 				throw new ExtensionException(e.getMessage());
 			}
