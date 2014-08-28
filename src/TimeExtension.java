@@ -783,8 +783,8 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 					this.monthDay = MonthDay.parse(dateString, this.customFmt);
 					break;
 				}
-				if(debug)printToConsole(getContext(), customFormat);
-				if(debug)printToConsole(getContext(), dateString);
+				//if(debug)printToConsole(getContext(), customFormat);
+				//if(debug)printToConsole(getContext(), dateString);
 			}
 		}
 		int compareTo(LogoTime that){
