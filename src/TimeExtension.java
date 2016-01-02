@@ -37,7 +37,6 @@ import org.joda.time.*;
 import org.joda.time.chrono.ISOChronology;
 import org.joda.time.format.*;
 
-
 public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 
 	public enum AddType {
@@ -97,6 +96,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		primManager.addPrimitive("go", new Go());
 		primManager.addPrimitive("go-until", new GoUntil());
 		primManager.addPrimitive("clear-schedule", new ClearSchedule());
+		primManager.addPrimitive("show-schedule", new ShowSchedule());
 
 		/**********************
 		/* TIME SERIES PRIMITIVES
@@ -476,7 +476,16 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			return equals(arg0);
 		}
 		public String dump(boolean arg0, boolean arg1, boolean arg2) {
-			return tick + ((agents==null)?"observer":agents.toString()) + ((task==null)?"":task.toString()) + ((repeatInterval==null)?"":repeatInterval.toString());
+			String result = tick + "\t";
+			if(agents!=null){
+				for(Agent agent : agents.agents()){
+					result += agent.toString() + ";";
+				}
+				result = result.substring(0, result.length()-1);
+			}
+			String[] splitArr = task.procedure().nameToken.toString().split(":");
+			result += "\t" + ((task==null)?"": (splitArr.length>1 ? splitArr[1].substring(0, splitArr[1].length()-1)+" " : "")+task.procedure().displayName);
+			return result;
 		}
 	}
 	private static class LogoSchedule implements org.nlogo.api.ExtensionObject {
@@ -657,10 +666,10 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			}
 			if (!(reference && exporting)) {
 				buf.append(" [ ");
-				java.util.Iterator iter = scheduleTree.iterator();
+				java.util.Iterator<LogoEvent> iter = scheduleTree.iterator();
 				while(iter.hasNext()){
 					buf.append(((LogoEvent)iter.next()).dump(true, true, true));
-					buf.append(" ");
+					buf.append("\n");
 				}
 				buf.append("]");
 			}
@@ -1477,6 +1486,14 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				fmt = DateTimeFormat.forPattern(fmtString);
 			}
 			return time.show(fmt);
+		}
+	}
+	public static class ShowSchedule extends DefaultReporter {
+		public Syntax getSyntax() {
+			return Syntax.reporterSyntax(new int[]{},Syntax.StringType());
+		}
+		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
+			return schedule.dump(false,false,false);
 		}
 	}
 	public static class Get extends DefaultReporter {
