@@ -971,7 +971,15 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			return equals(arg0);
 		}
 		public String show(DateTimeFormatter fmt){
-			return (this.date == null) ? this.datetime.toString(fmt) : this.date.toString(fmt);
+			switch(this.dateType){
+			case DATETIME:
+				return this.datetime.toString(fmt);
+			case DATE:
+				return this.date.toString(fmt);
+			case DAY:
+				return this.monthDay.toString(fmt);
+			}
+			return "";
 		}
 		public Integer get(PeriodType periodType) throws ExtensionException{
 			Integer result = null;
