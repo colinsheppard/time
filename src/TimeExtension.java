@@ -22,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 
 import org.nlogo.agent.AgentSet.Iterator;
 import org.nlogo.agent.ArrayAgentSet;
@@ -228,14 +229,18 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			}
 		}
 		public void parseTimeSeriesFile(String filename, ExtensionContext context) throws ExtensionException{
-			parseTimeSeriesFile(filename,null,context);
+				parseTimeSeriesFile(filename,null,context);
 		}
 		public void parseTimeSeriesFile(String filename, String customFormat, ExtensionContext context) throws ExtensionException{
 			File dataFile;
 			if(filename.charAt(0)=='/' || filename.charAt(0)=='\\' || filename.charAt(1)==':' || context.workspace().getModelDir()==null){
 				dataFile = new File(filename);
 			}else{
-				dataFile = new File(context.workspace().getModelDir()+"/"+filename);
+				try {
+					dataFile = new File(context.attachCurrentDirectory(filename));
+				} catch (MalformedURLException e) {
+					throw new ExtensionException("Malformed filename URL: "+filename);
+				}
 			}
 			FileInputStream fstream;
 			try {
