@@ -585,12 +585,12 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 		public void performScheduledTasks(Argument args[], Context context, Double untilTick) throws ExtensionException, LogoException {
 			ExtensionContext extcontext = (ExtensionContext) context;
-			Object[] emptyArgs = new Object[0]; // This extension is only for CommandTasks, so we know there aren't any args to pass in
+			Object[] emptyArgs = new Object[1]; // This extension is only for CommandTasks, so we know there aren't any args to pass in
 			LogoEvent event = scheduleTree.isEmpty() ? null : scheduleTree.first();
 			ArrayList<org.nlogo.agent.Agent> theAgents = new ArrayList<org.nlogo.agent.Agent>();
 			while(event != null && event.tick <= untilTick){
 				if(debug)printToConsole(context,"performing event-id: "+event.id+" for agent: "+event.agents+" at tick:"+event.tick + " ");
-				tickCounter.tick(event.tick-tickCounter.ticks());
+				if(tickCounter != null)tickCounter.tick(event.tick-tickCounter.ticks());
 
 				if(event.agents == null){
 					org.nlogo.nvm.Context nvmContext = new org.nlogo.nvm.Context(extcontext.nvmContext().job,
@@ -634,7 +634,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				// Grab the next event from the schedule
 				event = scheduleTree.isEmpty() ? null : scheduleTree.first();
 			}
-			if(untilTick < Double.MAX_VALUE && untilTick > tickCounter.ticks()) tickCounter.tick(untilTick-tickCounter.ticks());
+			if(tickCounter != null && untilTick < Double.MAX_VALUE && untilTick > tickCounter.ticks()) tickCounter.tick(untilTick-tickCounter.ticks());
 		}
 		public LogoTime getCurrentTime() throws ExtensionException{
 			if(!this.isAnchored())return null;
