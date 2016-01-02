@@ -1,44 +1,48 @@
 extensions [time]
 
 to setup
-  ;;print __dump-extensions 
+  ;;print __dump-extensions
   ;;print __dump-extension-prims
   __clear-all-and-reset-ticks
-  
+
   create-turtles 5
-  
+
   ; Optionally anchor the schedule to a date/time
   time:anchor-schedule time:create "2000-01-01 00:00" 0.5 "day"
-  
+
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Now schedule some events (turtles or other agents must first be created to be assigned an event)
-  ;; 
+  ;;
   ;; The following has several different examples of scheduling turtles, uncomment each to try them out.
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  
+
   ;; Schedule all of the turtles to peform the "go-forward" procudure at tick 1
-  time:schedule-event turtles task go-forward 1
-  
+  ;time:schedule-event turtles task go-forward 1
+
   ;; If the schedule is anchored, then use a LogoTime instead of a tick number to schedule the event
   ;time:schedule-event turtles task go-forward time:create "2000-01-2"
-  
+
    ;; Schedule all of the turtles to peform the "go-forward" procudure at tick 1 in random order
-   ;  time:schedule-event-shuffled turtles task go-forward 1
+   time:schedule-event-shuffled turtles (task [fd 2]) 1
+
    ;  time:schedule-event-shuffled turtles task go-forward time:create "2000-01-2"
-   
-  ;; Schedule individual turtles to go forward at whatever tick we want, it's ok to add events 
+
+  ;; Schedule individual turtles to go forward at whatever tick we want, it's ok to add events
   ;; to the schedule out of order, they will be performed in order
-;  time:schedule-event one-of turtles task go-forward 2.0
-;  time:schedule-event one-of turtles task go-forward 2.5
-;  time:schedule-event one-of turtles task go-forward 2.9
-;  time:schedule-event one-of turtles task go-forward 2.2
-  
+  time:schedule-event one-of turtles task go-forward 2.0
+  time:schedule-event one-of turtles task go-forward 2.5
+  time:schedule-event one-of turtles task go-forward 2.9
+  time:schedule-event one-of turtles task go-forward 2.2
+
   ;; Use the repeat primitive (which is identical to add but takes an additional argument: the repeat interval used
-  ;; to reschedule the event immediately after it has been performed) 
+  ;; to reschedule the event immediately after it has been performed)
 ;  time:schedule-repeating-event (one-of turtles) (task go-forward) 3.25 1.0
   ;time:schedule-repeating-event-with-period (one-of turtles) (task go-forward) 3.25 2.0 "hours"
 
-  ;; You can always clear the schedule 
+  ;; See what's on your schedule
+  print time:show-schedule
+
+  ;; You can always clear the schedule
   ;;time:clear-schedule
 end
 
@@ -52,11 +56,11 @@ to go-forward
 end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; There are two ways to set the schedule into action, "go" and "go-until", go will continue to dispatch events 
-;; until the schedule runs out of events.  go-until will stop execution at a specified tick (taken as an argument).  
-;; 
+;; There are two ways to set the schedule into action, "go" and "go-until", go will continue to dispatch events
+;; until the schedule runs out of events.  go-until will stop execution at a specified tick (taken as an argument).
+;;
 ;; Be careful using "go" if events recur either through using the repeat primitive or if events get scheduled
-;; dynamically.  It's usually best to either use go-until.  The stop button won't work with this extension to 
+;; dynamically.  It's usually best to either use go-until.  The stop button won't work with this extension to
 ;; halt activity while a schedule is being dispatched.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 to go
@@ -519,7 +523,7 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.0.1
+NetLogo 5.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
@@ -527,9 +531,9 @@ NetLogo 5.0.1
 @#$#@#$#@
 default
 0.0
--0.2 0 1.0 0.0
+-0.2 0 0.0 1.0
 0.0 1 1.0 0.0
-0.2 0 1.0 0.0
+0.2 0 0.0 1.0
 link direction
 true
 0
