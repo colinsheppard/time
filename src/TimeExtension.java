@@ -544,7 +544,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			if (!(args[0].get() instanceof Agent) && !(args[0].get() instanceof AgentSet) && !((args[0].get() instanceof String) && args[0].get().toString().toLowerCase().equals("observer"))) 
 				throw new ExtensionException("time:"+primName+" expecting an agent, agentset, or the string \"observer\" as the first argument");
 			if (!(args[1].get() instanceof CommandTask)) throw new ExtensionException("time:"+primName+" expecting a command task as the second argument");
-			if(((org.nlogo.nvm.Task)args[1].get()).formals().length > 0) throw new ExtensionException("time:"+primName+" expecting a command task (i.e. a task which expects no arguments of its own) as the second argument, but found a task which expects its own arguments, try wrapping this task with a procedure or surround it with braces (e.g. task [fd 2]).");
+			if(((org.nlogo.nvm.Task)args[1].get()).formals().length > 0) throw new ExtensionException("time:"+primName+" expecting as the second argument a command task that takes no arguments of its own, but found a task which expects its own arguments, this kind of task is unsupported by the time extension.");
 			if(args[2].get().getClass().equals(Double.class)){
 				eventTick = args[2].getDoubleValue();
 			}else if(args[2].get().getClass().equals(LogoTime.class)){
