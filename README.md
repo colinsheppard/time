@@ -694,6 +694,16 @@ Dispatch all of the events in the discrete event schedule that are scheduled for
 
 ---------------------------------------
 
+**time:show-schedule**
+
+*time:show-schedule*
+
+Reports as a string all of the events in the schedule in tab-separated format with three columns: tick,semi-colon-separated-list-of-agents,task.
+
+    print time:show-schedule 
+
+---------------------------------------
+
 **time:size-of-schedule** 
 
 *time:size-of-schedule*
