@@ -523,6 +523,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		public void addEvent(Argument args[], Context context, AddType addType) throws ExtensionException, LogoException {
 			String primName = null;
 			Double eventTick = null;
+			
 			switch(addType){
 			case DEFAULT:
 				primName = "add";

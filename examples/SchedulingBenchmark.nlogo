@@ -1,12 +1,7 @@
 extensions [time]
 
-globals[
-  schedule  ;; holds the dynamic schedule
-]
-
 to setup
-  clear-all
-  reset-ticks
+  __clear-all-and-reset-ticks
   setup-turtles
   setup-schedule
 end
@@ -16,16 +11,14 @@ to setup-turtles
 end
 
 to setup-schedule
-  set schedule time:create-schedule
-  
   let ind 1
-  while[ind <= nactions][
-    time:add-event schedule turtles task go-forward ind
-    set ind ind + 1
+  while[ind <= nticks][
+    time:schedule-event turtles task go-forward ind
+    set ind ind + n-rest-between-action
   ]
 end
 
-to go-forward 
+to go-forward
   fd nsteps  ;; move forward
 end
 
@@ -36,7 +29,7 @@ end
 to go-discrete-event
   setup
   reset-timer
-  time:go-until schedule nticks;; executes the schedule and clocks along the ticker
+  time:go-until nticks;; executes the schedule and clocks along the ticker
   print (word "discrete event schedule time = " timer)
 end
 
@@ -46,16 +39,16 @@ to go-static
   repeat nticks [
     tick
     ask turtles [
-      if ticks <= nactions [go-forward]
-    ] 
+      if ticks mod n-rest-between-action = 1 [go-forward]
+    ]
   ]
   print (word "static schedule time = " timer)
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
+219
 10
-554
+563
 375
 16
 16
@@ -77,7 +70,7 @@ GRAPHICS-WINDOW
 0
 1
 ticks
-30.0
+1.0
 
 BUTTON
 12
@@ -122,7 +115,7 @@ nturtles
 nturtles
 0
 10000
-3100
+5000
 100
 1
 NIL
@@ -152,7 +145,7 @@ nsteps
 nsteps
 0
 100
-30
+100
 1
 1
 NIL
@@ -161,13 +154,13 @@ HORIZONTAL
 SLIDER
 14
 106
-186
+209
 139
-nactions
-nactions
-0
+n-rest-between-action
+n-rest-between-action
+1
 200
-6
+50
 1
 1
 NIL
@@ -175,18 +168,28 @@ HORIZONTAL
 
 TEXTBOX
 581
-24
+68
 1224
 1518
-This model was designed to benchmark traditional agent scheduling against discrete event scheduling using the time extension.  \n\nDiscrete event scheduling is most useful for models where agents spend a lot of time *not* doing anything but yet they know at what future tick they will need to do something.  Sometimes in a netlogo model, you have to test a certain condition or set of conditions for all agents every tick (usually in the form of an \"ask\") in order to decide whether the agents should act or not.  But for some models, you might know in advance exactly when a particular agent needs to act, but yet you still have to test some set of conditions until the time is ripe.  Discrete event scheduling cuts all of those superfluous test out and the action is performed only when needed, with no testing and very little overhead.\n\nFor example, if an agent is a state machine and spends most of the time in the state \"at rest\" and has a predicatable schedule that knows that the agent should transition to the state \"awake\" at tick 105, then using a discrete event scheduler allows you to schedule the \"wake up\" procedure for tick 105 and avoid testing conditions in the meantime.\n\nTo simulate the benefit of discrete event scheduling versus \"static\" scheduling, this model implements the exact same model using both techniques.  \n\nUse the sliders to set:\n\n-nturtles: the number of turtles, \n-nticks: the number of total ticks in the simulation,\n-nactions: how many times does each turtle do something (in this model, \"something\" is to move forward nsteps),\n-nsteps: how many steps does each turtle take when it moves forward. \n\nThe model behaves as follows:\n\n-For the first 'naction' ticks, all of the turtles do a simple action, they move forward by 'nsteps'.  \n-The total simulation runs out to 'nticks'.  \n-With the static scheduler, every agent is asked to check whether or not it's appropriate to move foward at that time.  \n-With the discrete event scheduler, the agents are scheduled during setup to move forward during the appropriate ticks and nothing is scheduled thereafter.\n-At the end of a single run, the amount of time it took to do the whole run is written to the console.\n\nVarying the values in the sliders will allow you to get a sense for how much overhead is involved in just running a simple if statement during those ticks when the turtles aren't doing anything.
+This model was designed to benchmark traditional agent scheduling against discrete event scheduling using the time extension.  \n\nDiscrete event scheduling is most useful for models where agents spend a lot of time *not* doing anything but yet they know at what future tick they will need to do something.  Sometimes in a netlogo model, you have to test a certain condition or set of conditions for all agents every tick (usually in the form of an \"ask\") in order to decide whether the agents should act or not.  But for some models, you might know in advance exactly when a particular agent needs to act, but yet you still have to test some set of conditions until the time is ripe.  Discrete event scheduling cuts all of those superfluous test out and the action is performed only when needed, with no testing and very little overhead.\n\nFor example, if an agent is a state machine and spends most of the time in the state \"at rest\" and has a predicatable schedule that knows that the agent should transition to the state \"awake\" at tick 105, then using a discrete event scheduler allows you to schedule the \"wake up\" procedure for tick 105 and avoid testing conditions in the meantime.\n\nTo simulate the benefit of discrete event scheduling versus \"static\" scheduling, this model implements the exact same model using both techniques.  \n\nUse the sliders to set:\n\n-nturtles: the number of turtles, \n-nticks: the number of total ticks in the simulation,\n-n-rest-between-action: for how many time steps should the turtles \"rest\" or do nothing between actions (where an \"action\" is for all turtles to move forward by nsteps),\n-nsteps: how many steps does each turtle take when it moves forward. \n\nThe model behaves as follows:\n\n-Starting at tick 1 and for every n-rest-between-action ticks thereafter, all turtles move forward by nsteps.\n-The total simulation runs out to 'nticks'.  \n-With the static scheduler, the current time is tested to determine whether agents should move forward.  \n-With the discrete event scheduler, the agents are scheduled during setup to move forward at the appropriate times.\n-At the end of a single run, the amount of time it took to do the whole run is written to the console.\n\nVarying the values in the sliders will allow you to get a sense for how much overhead is involved in just running a simple if statement during each tick.
 11
 0.0
+1
+
+TEXTBOX
+589
+21
+1181
+121
+Important, uncheck \"view updates\" above to benchmark without bias.
+16
+15.0
 1
 
 @#$#@#$#@
 ## WHAT IS IT?
 
-This model was designed to benchmark traditional agent scheduling against dynamic scheduling using the dynamic-scheduler extension.  
+This model was designed to benchmark traditional agent scheduling against dynamic scheduling using the dynamic-scheduler extension.
 
 Dynamic scheduling is most useful for models where agents spend a lot of time *not* doing anything but yet they know at what future tick they will need to do something.  Sometimes in a netlogo model, you have to test a certain condition or set of conditions for all agents every tick (usually in the form of an "ask") in order to decide whether the agents should act or not.  But for some models, you might know in advance exactly when a particular agent needs to act, but yet you still have to test some set of conditions until the time is ripe.  Dynamic scheduling cuts all of those superfluous test out and the action is performed only when needed, with no testing and very little overhead.
 
@@ -194,13 +197,13 @@ For example, if an agent is a state machine and spends most of the time in the s
 
 ## HOW IT WORKS
 
-To simulate the benefit of dynamic scheduling versus "static" scheduling, this model implements the exact same model using both techniques.  
+To simulate the benefit of dynamic scheduling versus "static" scheduling, this model implements the exact same model using both techniques.
 
 The model behaves as follows:
 
--For the first 'naction' ticks, all of the turtles do a simple action, they move forward by 'nsteps'.  
--The total simulation runs out to 'nticks'.  
--With the static scheduler, every agent is asked to check whether or not it's appropriate to move foward at that time.  
+-For the first 'naction' ticks, all of the turtles do a simple action, they move forward by 'nsteps'.
+-The total simulation runs out to 'nticks'.
+-With the static scheduler, every agent is asked to check whether or not it's appropriate to move foward at that time.
 -With the dynamic scheduler, the agents are scheduled during setup to move forward during the appropriate ticks and nothing is scheduled thereafter.
 -At the end of a single run, the amount of time it took to do the whole run is written to the console.
 
@@ -208,10 +211,10 @@ The model behaves as follows:
 
 Use the sliders to set:
 
--nturtles: the number of turtles, 
+-nturtles: the number of turtles,
 -nticks: the number of total ticks in the simulation,
 -nactions: how many times does each turtle do something (in this model, "something" is to move forward nsteps),
--nsteps: how many steps does each turtle take when it moves forward. 
+-nsteps: how many steps does each turtle take when it moves forward.
 
 Click "go-dynamic" or "go-static" to run each version of the model, observe and compare the length of the runs.
 
@@ -517,7 +520,7 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.0.1
+NetLogo 5.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
@@ -525,9 +528,9 @@ NetLogo 5.0.1
 @#$#@#$#@
 default
 0.0
--0.2 0 1.0 0.0
+-0.2 0 0.0 1.0
 0.0 1 1.0 0.0
-0.2 0 1.0 0.0
+0.2 0 0.0 1.0
 link direction
 true
 0
