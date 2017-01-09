@@ -6,3 +6,4 @@ examples/new-ts-file.csv
 *.docx
 jar-command.sh
 .DS_Store
+debugging
