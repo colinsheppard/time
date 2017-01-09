@@ -37,7 +37,7 @@ import org.joda.time.*;
 import org.joda.time.chrono.ISOChronology;
 import org.joda.time.format.*;
 
-public class TimeExtension extends org.nlogo.api.DefaultClassManager {
+public class TimeExtensionDeprecated extends org.nlogo.api.DefaultClassManager {
 
 	public enum AddType {
 		DEFAULT, SHUFFLE, REPEAT, REPEAT_SHUFFLED
@@ -161,7 +161,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 	}
 	static class LogoTimeSeries implements org.nlogo.api.ExtensionObject {
-		TreeMap<LogoTime,TimeSeriesRecord> times = new TreeMap<LogoTime,TimeSeriesRecord>((new TimeExtension()).new LogoTimeComparator());
+		TreeMap<LogoTime,TimeSeriesRecord> times = new TreeMap<LogoTime,TimeSeriesRecord>((new TimeExtensionDeprecated()).new LogoTimeComparator());
 		LinkedHashMap<String,TimeSeriesColumn> columns = new LinkedHashMap<String,TimeSeriesColumn>();
 		Integer numRows = 0;
 
@@ -489,7 +489,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		}
 	}
 	private static class LogoSchedule implements org.nlogo.api.ExtensionObject {
-		LogoEventComparator comparator = (new TimeExtension()).new LogoEventComparator();
+		LogoEventComparator comparator = (new TimeExtensionDeprecated()).new LogoEventComparator();
 		TreeSet<LogoEvent> scheduleTree = new TreeSet<LogoEvent>(comparator);
 		TickCounter tickCounter = null;
 		
@@ -556,7 +556,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			}
 			if (eventTick < ((ExtensionContext)context).workspace().world().ticks()) throw new ExtensionException("Attempted to schedule an event for tick "+ eventTick +" which is before the present 'moment' of "+((ExtensionContext)context).workspace().world().ticks());
 			
-			TimeExtension.PeriodType repeatIntervalPeriodType = null;
+			TimeExtensionDeprecated.PeriodType repeatIntervalPeriodType = null;
 			Double repeatInterval = null;
 			if(addType == AddType.REPEAT || addType == AddType.REPEAT_SHUFFLED){
 				if (!args[3].get().getClass().equals(Double.class)) throw new ExtensionException("time:repeat expecting a number as the fourth argument");
@@ -565,7 +565,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 				if(args.length == 5){
 					if(!this.isAnchored())throw new ExtensionException("A LogoEvent can only be scheduled to repeat using a period type if the discrete event schedule has been anchored to a LogoTime, see time:anchor-schedule");
 					repeatIntervalPeriodType = stringToPeriodType(getStringFromArgument(args, 4));
-					if(repeatIntervalPeriodType != TimeExtension.PeriodType.MONTH && repeatIntervalPeriodType != TimeExtension.PeriodType.YEAR){
+					if(repeatIntervalPeriodType != TimeExtensionDeprecated.PeriodType.MONTH && repeatIntervalPeriodType != TimeExtensionDeprecated.PeriodType.YEAR){
 						repeatInterval = this.timeAnchor.getDifferenceBetween(this.tickType, this.timeAnchor.plus(repeatIntervalPeriodType, repeatInterval))/this.tickValue;
 						if(debug)printToConsole(context, "from:"+repeatIntervalPeriodType+" to:"+this.tickType+" interval:"+repeatInterval);
 						repeatIntervalPeriodType = null;
@@ -586,7 +586,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 			}else{
 				// leave agentSet as null to signal observer should be used
 			}
-			LogoEvent event = (new TimeExtension()).new LogoEvent(agentSet,args[1].getCommandTask(),eventTick,repeatInterval,repeatIntervalPeriodType,shuffleAgentSet);
+			LogoEvent event = (new TimeExtensionDeprecated()).new LogoEvent(agentSet,args[1].getCommandTask(),eventTick,repeatInterval,repeatIntervalPeriodType,shuffleAgentSet);
 			if(debug)printToConsole(context,"scheduling event: "+event.dump(false, false, false));
 			scheduleTree.add(event);
 		}
@@ -1295,7 +1295,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	private static Long dToL(double d){
 		return ((Double)d).longValue();
 	}
-	private static TimeExtension.PeriodType stringToPeriodType(String sType) throws ExtensionException{
+	private static TimeExtensionDeprecated.PeriodType stringToPeriodType(String sType) throws ExtensionException{
 		sType = sType.trim().toLowerCase();
 		if(sType.substring(sType.length()-1).equals("s"))sType = sType.substring(0,sType.length()-1);
 		if(sType.equals("milli")){
@@ -1431,7 +1431,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 		return context;
 	}
 	public static void setContext(Context context) {
-		TimeExtension.context = context;
+		TimeExtensionDeprecated.context = context;
 	}
 	/***********************
 	 * Primitive Classes
@@ -1442,7 +1442,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 					Syntax.WildcardType());
 		}
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
-			TimeExtension.setContext(context); // for debugging
+			TimeExtensionDeprecated.setContext(context); // for debugging
 			LogoTime time = new LogoTime(getStringFromArgument(args, 0));
 			return time;
 		}
@@ -1453,7 +1453,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 					Syntax.WildcardType());
 		}
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
-			TimeExtension.setContext(context); // for debugging
+			TimeExtensionDeprecated.setContext(context); // for debugging
 			LogoTime time = new LogoTime(getStringFromArgument(args, 0),getStringFromArgument(args, 1));
 			return time;
 		}

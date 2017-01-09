@@ -1,0 +1,24 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+
+group = 'time'
+version = '1.0.0-SNAPSHOT'
+
+description = """"""
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    maven { url "http://maven.geotoolkit.org/" }
+    maven { url "https://repository.jboss.org/nexus/content/repositories/thirdparty-releases" }
+    maven { url "http://central.maven.org/maven2"}
+    maven { url "http://repo.maven.apache.org/maven2" }
+    maven { url "http://download.osgeo.org/webdav/geotools" }
+    maven { url "http://dl.bintray.com/matsim/matsim" }
+    maven { url "https://jitpack.io" }
+}
+
+dependencies {
+    compile 'org.scala-lang:scala-library:2.12.0'
+}
