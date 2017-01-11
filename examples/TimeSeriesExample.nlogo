@@ -2,23 +2,23 @@ extensions [time]
 globals[
   time-series
   ts
-] 
+]
 to setup
-  ;;print __dump-extensions 
+  ;;print __dump-extensions
   ;;print __dump-extension-prims
   __clear-all-and-reset-ticks
   print ""
   print "============================"
   print ""
-  
+
   set time-series time:ts-load "time-series-data.csv"
   print time-series
-  
+
   print time:ts-get time-series time:create "2000-01-01 01:30:00" "flow"
   print time:ts-get time-series time:create "2000-01-01 10:20:00" "flow"
   print time:ts-get time-series time:create "2000-01-01 10:30:00" "flow"
   print time:ts-get-exact time-series time:create "2000-01-01 10:00" "flow"
-  
+
   print time:ts-get-interp time-series time:create "2000-01-01 10:30:00" "flow"
   print time:ts-get-interp time-series time:create "2000-01-03 00:30:00" "all"
 
@@ -28,9 +28,9 @@ to setup
   time:ts-add-row ts ["2000-01-08" 5 4]
   time:ts-add-row ts ["2000-01-01" 6 7]
   time:ts-write ts "new-ts-file.csv"
-  
+
   set time-series time:ts-load-with-format "time-series-data-custom-date-format.csv" "dd-MM-YYYY HH:mm:ss"
-   print time-series 
+   print time-series
 end
 
 to go
@@ -41,10 +41,10 @@ end
 GRAPHICS-WINDOW
 336
 18
-775
-478
-16
-16
+773
+456
+-1
+-1
 13.0
 1
 10
@@ -443,9 +443,8 @@ false
 0
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
-
 @#$#@#$#@
-NetLogo 5.0.4
+NetLogo 6.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
@@ -453,15 +452,14 @@ NetLogo 5.0.4
 @#$#@#$#@
 default
 0.0
--0.2 0 1.0 0.0
+-0.2 0 0.0 1.0
 0.0 1 1.0 0.0
-0.2 0 1.0 0.0
+0.2 0 0.0 1.0
 link direction
 true
 0
 Line -7500403 true 150 150 90 180
 Line -7500403 true 150 150 210 180
-
 @#$#@#$#@
 0
 @#$#@#$#@

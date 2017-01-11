@@ -23,16 +23,16 @@ to setup
   ;time:schedule-event turtles task go-forward time:create "2000-01-2"
 
    ;; Schedule all of the turtles to peform the "go-forward" procudure at tick 1 in random order
-   time:schedule-event-shuffled turtles (task [fd 2]) 1
+   time:schedule-event-shuffled turtles ([ [] -> fd 2 ]) 1
 
    ;  time:schedule-event-shuffled turtles task go-forward time:create "2000-01-2"
 
   ;; Schedule individual turtles to go forward at whatever tick we want, it's ok to add events
   ;; to the schedule out of order, they will be performed in order
-  time:schedule-event one-of turtles task go-forward 2.0
-  time:schedule-event one-of turtles task go-forward 2.5
-  time:schedule-event one-of turtles task go-forward 2.9
-  time:schedule-event one-of turtles task go-forward 2.2
+  time:schedule-event one-of turtles [ [] -> go-forward ] 2.0
+  time:schedule-event one-of turtles [ [] -> go-forward ] 2.5
+  time:schedule-event one-of turtles [ [] -> go-forward ] 2.9
+  time:schedule-event one-of turtles [ [] -> go-forward ] 2.2
 
   ;; Use the repeat primitive (which is identical to add but takes an additional argument: the repeat interval used
   ;; to reschedule the event immediately after it has been performed)
@@ -51,7 +51,7 @@ to go-forward
   print (word self " going forward at " ticks)
   fd 2
   if turtles-reschedule-themselves[
-    time:schedule-event self task go-forward ticks + 10
+    time:schedule-event self [ [] -> go-forward ] ticks + 10
   ]
 end
 
@@ -76,10 +76,10 @@ end
 GRAPHICS-WINDOW
 336
 18
-775
-478
-16
-16
+773
+456
+-1
+-1
 13.0
 1
 10
@@ -188,7 +188,7 @@ go-until-tick
 go-until-tick
 0
 200
-42
+42.0
 1
 1
 NIL
@@ -521,9 +521,8 @@ false
 0
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
-
 @#$#@#$#@
-NetLogo 5.3
+NetLogo 6.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
@@ -539,7 +538,6 @@ true
 0
 Line -7500403 true 150 150 90 180
 Line -7500403 true 150 150 210 180
-
 @#$#@#$#@
 0
 @#$#@#$#@

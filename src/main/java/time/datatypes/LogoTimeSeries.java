@@ -21,10 +21,11 @@ import time.TimeEnums.GetTSMethod;
 import time.TimeEnums.PeriodType;
 
 import org.nlogo.api.ExtensionException;
+import org.nlogo.core.ExtensionObject;
 import org.nlogo.core.LogoList;
 import org.nlogo.nvm.ExtensionContext;
 
-public class LogoTimeSeries {
+public class LogoTimeSeries implements ExtensionObject{
 	TreeMap<LogoTime,TimeSeriesRecord> times = new TreeMap<LogoTime,TimeSeriesRecord>(new LogoTimeComparator());
 	LinkedHashMap<String,TimeSeriesColumn> columns = new LinkedHashMap<String,TimeSeriesColumn>();
 	Integer numRows = 0;

@@ -1,27 +1,11 @@
 package time;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.NoSuchElementException;
-import java.util.Vector;
-import java.util.logging.FileHandler;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
-import org.nlogo.agent.Observer;
-import org.nlogo.agent.World;
-import org.nlogo.api.*;
-import org.nlogo.nvm.ExtensionContext;
 
 import time.datatypes.LogoSchedule;
 import time.primitives.DiscreteEventSchedulerPrimitives;
 import time.primitives.TimePrimitives;
 import time.primitives.TimeSeriesPrimitives;
 
-import org.joda.time.*;
-import org.joda.time.chrono.ISOChronology;
-import org.joda.time.format.*;
+import org.nlogo.api.Context;
 
 public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 

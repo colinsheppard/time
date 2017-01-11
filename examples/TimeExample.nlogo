@@ -4,21 +4,21 @@ globals[
   tick-date
   tick-day
   ts
-] 
+]
 to setup
-  ;;print __dump-extensions 
+  ;;print __dump-extensions
   ;;print __dump-extension-prims
   __clear-all-and-reset-ticks
   print ""
   print "============================"
   print ""
-  
+
   ;; A logotime can be one of three varieties: a DATETIME, a DATE, and a DAY
   ;; The variety is inferred by the length of the string passed to time:create
-  ;; 
+  ;;
   ;; The date delimiter can be '-' or '/' and the delimeter between the date and time
   ;; can be a 'T' or a ' '.  Single digit months and days can have an optional leading zero.
-  ;; Single digit hours, minutes, and seconds must have a leading zero.  Hours are basd on a 
+  ;; Single digit hours, minutes, and seconds must have a leading zero.  Hours are basd on a
   ;; 24-hour clock (e.g. midnight is '00', noon is '12', and 11pm is '23').
   ;;
   ;; DATETIME strings are based on the ISO8601 Standard which can by month, day, or week based:
@@ -26,11 +26,11 @@ to setup
   ;;   day based:    "yyyy-dddTHH:MM:SS.SSS"
   ;;   week based:   "yyyy-Www-dTHH:MM:SS.SSS"
   ;;   more info: http://joda-time.sourceforge.net/cal_iso.html
-  ;; 
+  ;;
   ;; DATE must be ordered as year-month-day, and DAY must be month-day.
-  ;; 
+  ;;
   ;; Use "" or "now" to get the system datetime
-  
+
   ;; Show what's possible in terms of formatting DATETIME, DATE, and DAY
   ; VALID DATETIME's
   print time:create "2000-01-02T03:04:05.678"
@@ -50,10 +50,10 @@ to setup
   print ""
   print "============================"
   print ""
-    
+
   ; prints the current datetime, two different ways
-  print time:create "now"  
-  print time:create ""  
+  print time:create "now"
+  print time:create ""
   print ""
   print "============================"
   print ""
@@ -62,14 +62,14 @@ to setup
   let t-datetime time:create "2000-01-02 03:04:05.678"
   let t-date time:create "2000-01-02"
   let t-day time:create "01-02"
-  
+
   ;; Print out the logotime using user specified format, for full description of options, see:
   ;; http://joda-time.sourceforge.net/api-release/org/joda/time/format/DateTimeFormat.html
   print time:show t-datetime "yyyy-MM-dd"
   print ""
   print "============================"
   print ""
-  
+
   ;; Print out specific fields from the datetime
   print time:get "year" t-datetime
   print time:get "month" t-datetime
@@ -84,7 +84,7 @@ to setup
   print ""
   print "============================"
   print ""
-  
+
   ;; Add some interval to the datetime
   print time:plus t-datetime 1.0 "seconds"
   print time:plus t-datetime 1.0 "minutes"
@@ -96,7 +96,7 @@ to setup
   print ""
   print "============================"
   print ""
-  
+
   ;; any of the three varieties of logotime can be achored to the tick,
   ;; the time value of the logotime is assumed to be tick zero.
   ;; the other arguments to this call describe how much time one tick is worth,
@@ -104,7 +104,7 @@ to setup
   set tick-datetime time:anchor-to-ticks t-datetime 1 "hour"
   set tick-date time:anchor-to-ticks t-date 2 "days"
   set tick-day time:anchor-to-ticks t-day 3 "months"
-  
+
   ;; make comparisons between LogoTimes
   print "before, before, after, equal, equal"
   print time:is-before (time:create "2000-01-02") (time:create "2000-01-03")
@@ -116,11 +116,11 @@ to setup
   print time:is-before (time:create "01-02") (time:create "01-03")
   print "is between"
   print time:is-between (time:create "2000-03-08") (time:create "1999-12-02") (time:create "2000-05-03")
-  print time:is-between (time:create "2000-03-08") (time:create "2000-05-03") (time:create "1999-12-02") 
+  print time:is-between (time:create "2000-03-08") (time:create "2000-05-03") (time:create "1999-12-02")
   print ""
   print "============================"
   print ""
-  
+
   ;; find the amount of time between two LogoTimes, make sure to specify a time unit and recall that months
   ;; and years will only be reported as whole numbers
   print time:difference-between (time:create "2000-01-02 00:00") (time:create "2000-02-02 00:00") "days"
@@ -145,10 +145,10 @@ end
 GRAPHICS-WINDOW
 336
 18
-775
-478
-16
-16
+773
+456
+-1
+-1
 13.0
 1
 10
@@ -547,9 +547,8 @@ false
 0
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
-
 @#$#@#$#@
-NetLogo 5.0.1
+NetLogo 6.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
@@ -557,15 +556,14 @@ NetLogo 5.0.1
 @#$#@#$#@
 default
 0.0
--0.2 0 1.0 0.0
+-0.2 0 0.0 1.0
 0.0 1 1.0 0.0
-0.2 0 1.0 0.0
+0.2 0 0.0 1.0
 link direction
 true
 0
 Line -7500403 true 150 150 90 180
 Line -7500403 true 150 150 210 180
-
 @#$#@#$#@
 0
 @#$#@#$#@

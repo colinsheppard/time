@@ -17,6 +17,7 @@ import org.nlogo.api.Context;
 import org.nlogo.api.ExtensionException;
 import org.nlogo.api.LogoException;
 import org.nlogo.core.AgentKindJ;
+import org.nlogo.core.ExtensionObject;
 import org.nlogo.core.LogoList;
 import org.nlogo.nvm.ExtensionContext;
 
@@ -25,7 +26,7 @@ import time.TimeEnums.PeriodType;
 import time.TimeExtension;
 import time.TimeUtils;
 
-public class LogoSchedule {
+public class LogoSchedule implements ExtensionObject{
 		LogoEventComparator comparator = new LogoEventComparator();
 		public TreeSet<LogoEvent> scheduleTree = new TreeSet<LogoEvent>(comparator);
 		TickCounter tickCounter = null;

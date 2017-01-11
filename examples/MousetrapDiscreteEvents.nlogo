@@ -20,87 +20,87 @@ to setup
      set pcolor yellow   ; Yellow means the trap has not triggered
      ; set trigger-time -1 ; Initialize trigger time to before model starts
    ]
-   
+
   ; Initialize the simulation time
   set start-time time:create "2010-01-01 12:00:00"
   set current-time time:anchor-to-ticks start-time 1.0 "second"
   time:anchor-schedule start-time 1.0 "second"
-  
+
   ; Create a log of times at which traps snap
   set snap-log (time:ts-create ["trap-xcor" "trap-ycor"])
-  
+
 end
 
 to start  ; Starts a simulation -- which then runs until no more balls are
           ; in the air.
-  
+
   ; Set off one trap to start the action
-  time:schedule-event (one-of patches) task snap current-time
-  
+time:schedule-event (one-of patches) [ [] -> snap ] current-time
+
   ; Execute the schedule
   time:go
-  
+
   ; After the schedule has finished write the log of snap times out to file.
   ; First, delete the output file if it already exists.
   if file-exists? "snap-log.csv" [file-delete "snap-log.csv"]
   ; Then open it.
-  time:ts-write snap-log "snap-log.csv" 
+  time:ts-write snap-log "snap-log.csv"
 
   ; Finally, histogram the trap snap times
   ; We can only histogram numbers, but the snap-log records times in logotime format.
   ; So we create a temporary list of snap times in seconds using "map".
   ; Use time:difference-between instead of time:get because time:get reports only integer values.
   set-current-plot "Snap time distribution"
-  histogram map [time:difference-between start-time ? "second"] (time:ts-get-range snap-log start-time current-time "logotime")
-  
+  histogram map [ [?1] -> time:difference-between start-time ?1 "second" ] (time:ts-get-range snap-log start-time current-time "logotime")
+
 end
 
 to snap  ; Executed by a trap when a ball lands on it
 
     ; Stop if trap has already snapped
     if pcolor = black [ stop ]
-   
+
     set pcolor red   ; Show the snap
     display          ; So we can see things happen on the View
                      ; Set View updates to ??? on-ticks?
     set pcolor black ; Black means the trap has triggered
-    
+
     ; Send 2 balls in air, determine where and when they land
-    repeat 2 
+    repeat 2
     [
       let trap-ball-lands-on one-of (patches in-radius 5)
       let ball-travel-time random-float (mean-flight-time * 2)
       let ball-arrival-time time:plus current-time ball-travel-time "seconds"
-      time:schedule-event trap-ball-lands-on task snap ball-arrival-time
+      time:schedule-event trap-ball-lands-on [ [] -> snap ] ball-arrival-time
     ]
-    
+
     ; Finally, update outputs
     update-output
-    
+
 end
 
 to update-output
-  
+
   ; Plot the number of balls in the air = "snaps" scheduled but not executed
   set-current-plot "Balls in air"
   plotxy ticks time:size-of-schedule
-  
+
   ; Plot number of traps remaining untriggered
   set-current-plot "Untriggered traps"
   plotxy ticks count patches with [pcolor = yellow]
-  
+
   ; Record the snap time, converted to seconds because we don't need the date, hour, etc.
-  time:ts-add-row snap-log (sentence current-time pxcor pycor) 
-  
+  time:ts-add-row snap-log (sentence current-time pxcor pycor)
+
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
 436
 10
-776
-371
-16
-16
+774
+349
+-1
+-1
 10.0
 1
 10
@@ -510,9 +510,8 @@ false
 0
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
-
 @#$#@#$#@
-NetLogo 5.0.3
+NetLogo 6.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
@@ -528,7 +527,6 @@ true
 0
 Line -7500403 true 150 150 90 180
 Line -7500403 true 150 150 210 180
-
 @#$#@#$#@
 0
 @#$#@#$#@

@@ -13,12 +13,13 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.nlogo.agent.World;
 import org.nlogo.api.ExtensionException;
+import org.nlogo.core.ExtensionObject;
 
 import time.TimeEnums.DateType;
 import time.TimeEnums.PeriodType;
 import time.TimeUtils;
 
-public class LogoTime {
+public class LogoTime implements ExtensionObject{
 	public DateType			dateType = null;
 	public LocalDateTime 	datetime = null;
 	public LocalDate 		date	 = null;

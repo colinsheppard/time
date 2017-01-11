@@ -3,12 +3,13 @@ import org.nlogo.api.Agent;
 import org.nlogo.agent.AgentSet;
 import org.nlogo.nvm.AnonymousCommand;
 import org.nlogo.api.ExtensionException;
+import org.nlogo.core.ExtensionObject;
 
 import time.TimeEnums.PeriodType;
 import time.TimeExtension;
 import time.TimeUtils;
 
-public class LogoEvent {
+public class LogoEvent implements ExtensionObject{
 	final long id;
 	public Double tick = null;
 	public AnonymousCommand task = null;
