@@ -92,8 +92,7 @@ public class DiscreteEventSchedulerPrimitives {
 				untilTick = TimeUtils.getDoubleFromArgument(args, 0);
 			}
 			if(untilTime == null){
-				//TODO fix
-//				TimeExtension.schedule.performScheduledTasks(args, context, untilTick);
+				TimeExtension.schedule.performScheduledTasks(args, context, untilTick);
 			}else{
 				TimeExtension.schedule.performScheduledTasks(args, context, untilTime);
 			}

@@ -37,8 +37,7 @@ public class TimeSeriesPrimitives {
 				throw new ExtensionException("time: was expecting a LogoTime object as the first item in the list passed as argument 2, found this instead: " + Dump.logoObject(timeObj));
 			}
 			if(list.size() != (ts.getNumColumns()+1)) throw new ExtensionException("time: cannot add "+(list.size()-1)+" values to a time series with "+ts.getNumColumns()+" columns.");
-			//TODO fix
-//			ts.add(time,list.logoSublist(1, list.size()));
+			ts.add(time,list.logoSublist(1, list.size()));
 		}
 	}
 	

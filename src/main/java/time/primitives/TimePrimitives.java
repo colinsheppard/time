@@ -8,6 +8,7 @@ import org.nlogo.api.ExtensionException;
 import org.nlogo.api.LogoException;
 import org.nlogo.core.Syntax;
 import org.nlogo.core.SyntaxJ;
+import org.nlogo.nvm.ExtensionContext;
 
 import time.TimeExtension;
 import time.TimeUtils;
@@ -35,10 +36,9 @@ public class TimePrimitives {
 		public Object report(Argument args[], Context context) throws ExtensionException, LogoException {
 			LogoTime time = TimeUtils.getTimeFromArgument(args, 0);
 			LogoTime newTime = new LogoTime(time);
-			//TODO fix
-//			newTime.setAnchor(TimeUtils.getDoubleFromArgument(args, 1),
-//					TimeUtils.stringToPeriodType(TimeUtils.getStringFromArgument(args, 2)),
-//					((ExtensionContext)context).workspace().world());
+			newTime.setAnchor(TimeUtils.getDoubleFromArgument(args, 1),
+					TimeUtils.stringToPeriodType(TimeUtils.getStringFromArgument(args, 2)),
+					((ExtensionContext)context).workspace().world());
 			return newTime;
 		}
 	}

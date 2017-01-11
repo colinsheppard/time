@@ -1,19 +1,23 @@
 package time.datatypes;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.TreeSet;
 
 import org.nlogo.agent.Agent;
+import org.nlogo.agent.AgentIterator;
 import org.nlogo.agent.ArrayAgentSet;
 import org.nlogo.agent.TickCounter;
 import org.nlogo.agent.TreeAgentSet;
 import org.nlogo.agent.World;
-import org.nlogo.api.AgentSet;
-import org.nlogo.api.AnonymousCommand;
+import org.nlogo.agent.AgentSet;
+import org.nlogo.nvm.AnonymousCommand;
 import org.nlogo.api.AnonymousProcedure;
 import org.nlogo.api.Argument;
 import org.nlogo.api.Context;
 import org.nlogo.api.ExtensionException;
 import org.nlogo.api.LogoException;
+import org.nlogo.core.AgentKindJ;
+import org.nlogo.core.LogoList;
 import org.nlogo.nvm.ExtensionContext;
 
 import time.TimeEnums.AddType;
@@ -78,20 +82,18 @@ public class LogoSchedule {
 			if (!(args[0].get() instanceof Agent) && !(args[0].get() instanceof AgentSet) && !((args[0].get() instanceof String) && args[0].get().toString().toLowerCase().equals("observer"))) 
 				throw new ExtensionException("time:"+primName+" expecting an agent, agentset, or the string \"observer\" as the first argument");
 			if (!(args[1].get() instanceof AnonymousCommand)) throw new ExtensionException("time:"+primName+" expecting a command task as the second argument");
-			//TODO get this working
-			/*
-			if(((AnonymousProcedure)args[1].get()).formals().length > 0) throw new ExtensionException("time:"+primName+" expecting as the second argument a command task that takes no arguments of its own, but found a task which expects its own arguments, this kind of task is unsupported by the time extension.");
+			if(((AnonymousCommand)args[1].get()).formals().length > 0) throw new ExtensionException("time:"+primName+" expecting as the second argument a command task that takes no arguments of its own, but found a task which expects its own arguments, this kind of task is unsupported by the time extension.");
 			if(args[2].get().getClass().equals(Double.class)){
 				eventTick = args[2].getDoubleValue();
 			}else if(args[2].get().getClass().equals(LogoTime.class)){
 				if(!this.isAnchored())throw new ExtensionException("A LogoEvent can only be scheduled to occur at a LogoTime if the discrete event schedule has been anchored to a LogoTime, see time:anchor-schedule");
-				eventTick = this.timeToTick(TimeExtension.getTimeFromArgument(args, 2));
+				eventTick = this.timeToTick(TimeUtils.getTimeFromArgument(args, 2));
 			}else{
 				throw new ExtensionException("time:"+primName+" expecting a number or logotime as the third argument");
 			}
 			if (eventTick < ((ExtensionContext)context).workspace().world().ticks()) throw new ExtensionException("Attempted to schedule an event for tick "+ eventTick +" which is before the present 'moment' of "+((ExtensionContext)context).workspace().world().ticks());
 			
-			TimeExtension.PeriodType repeatIntervalPeriodType = null;
+			PeriodType repeatIntervalPeriodType = null;
 			Double repeatInterval = null;
 			if(addType == AddType.REPEAT || addType == AddType.REPEAT_SHUFFLED){
 				if (!args[3].get().getClass().equals(Double.class)) throw new ExtensionException("time:repeat expecting a number as the fourth argument");
@@ -99,50 +101,40 @@ public class LogoSchedule {
 				if (repeatInterval <= 0) throw new ExtensionException("time:repeat the repeat interval must be a positive number");
 				if(args.length == 5){
 					if(!this.isAnchored())throw new ExtensionException("A LogoEvent can only be scheduled to repeat using a period type if the discrete event schedule has been anchored to a LogoTime, see time:anchor-schedule");
-					repeatIntervalPeriodType = TimeExtension.stringToPeriodType(TimeExtension.getStringFromArgument(args, 4));
-					if(repeatIntervalPeriodType != TimeExtension.PeriodType.MONTH && repeatIntervalPeriodType != TimeExtension.PeriodType.YEAR){
+					repeatIntervalPeriodType = TimeUtils.stringToPeriodType(TimeUtils.getStringFromArgument(args, 4));
+					if(repeatIntervalPeriodType != PeriodType.MONTH && repeatIntervalPeriodType != PeriodType.YEAR){
 						repeatInterval = this.timeAnchor.getDifferenceBetween(this.tickType, this.timeAnchor.plus(repeatIntervalPeriodType, repeatInterval))/this.tickValue;
-						if(TimeExtension.debug)TimeExtension.printToConsole(context, "from:"+repeatIntervalPeriodType+" to:"+this.tickType+" interval:"+repeatInterval);
+						if(TimeExtension.debug)TimeUtils.printToConsole(context, "from:"+repeatIntervalPeriodType+" to:"+this.tickType+" interval:"+repeatInterval);
 						repeatIntervalPeriodType = null;
 					}else{
-						if(TimeExtension.debug)TimeExtension.printToConsole(context, "repeat every: "+ repeatInterval + " " + repeatIntervalPeriodType);
+						if(TimeExtension.debug)TimeUtils.printToConsole(context, "repeat every: "+ repeatInterval + " " + repeatIntervalPeriodType);
 					}
 				}
 			}
-			*/
 			Boolean shuffleAgentSet = (addType == AddType.SHUFFLE || addType == AddType.REPEAT_SHUFFLED);
 
 			AgentSet agentSet = null;
 			if (args[0].get() instanceof org.nlogo.agent.Agent){
-				org.nlogo.agent.Agent theAgent = (org.nlogo.agent.Agent)args[0].getAgent();
-			//TODO fix
-//				agentSet = new AgentSet(theAgent.getAgentClass(),1,false,(World) theAgent.world());
-//				agentSet.add(theAgent);
+				Agent theAgent = (org.nlogo.agent.Agent)args[0].getAgent();
+				agentSet = new ArrayAgentSet(AgentKindJ.Turtle(),theAgent.toString(),new Agent[]{ theAgent });
 			}else if(args[0].get() instanceof AgentSet){
-				agentSet = args[0].getAgentSet();
+				agentSet = (AgentSet) args[0].getAgentSet();
 			}else{
 				// leave agentSet as null to signal observer should be used
 			}
-			//TODO fix
-			/*
-			LogoEvent event = new LogoEvent(agentSet,args[1].getCommand(),eventTick,repeatInterval,repeatIntervalPeriodType,shuffleAgentSet);
+			LogoEvent event = new LogoEvent(agentSet,(AnonymousCommand) args[1].getCommand(),eventTick,repeatInterval,repeatIntervalPeriodType,shuffleAgentSet);
 			if(TimeExtension.debug)TimeUtils.printToConsole(context,"scheduling event: "+event.dump(false, false, false));
 			scheduleTree.add(event);
-			*/
 		}
 		public void performScheduledTasks(Argument args[], Context context) throws ExtensionException, LogoException {
-			//TODO fix
-//			performScheduledTasks(args,context,Double.MAX_VALUE);
+			performScheduledTasks(args,context,Double.MAX_VALUE);
 		}	
 		public void performScheduledTasks(Argument args[], Context context, LogoTime untilTime) throws ExtensionException, LogoException {
 			if(!this.isAnchored())throw new ExtensionException("time:go-until can only accept a LogoTime as a stopping time if the schedule is anchored using time:anchore-schedule");
 			if(TimeExtension.debug)TimeUtils.printToConsole(context,"timeAnchor: "+this.timeAnchor+" tickType: "+this.tickType+" tickValue:"+this.tickValue + " untilTime:" + untilTime);
 			Double untilTick = this.timeAnchor.getDifferenceBetween(this.tickType, untilTime)/this.tickValue;
-			//TODO fix
-//			performScheduledTasks(args,context,untilTick);
+			performScheduledTasks(args,context,untilTick);
 		}
-			//TODO fix
-		/*
 		public void performScheduledTasks(Argument args[], Context context, Double untilTick) throws ExtensionException, LogoException {
 			ExtensionContext extcontext = (ExtensionContext) context;
 			Object[] emptyArgs = new Object[1]; // This extension is only for CommandTasks, so we know there aren't any args to pass in
@@ -156,32 +148,28 @@ public class LogoSchedule {
 					org.nlogo.nvm.Context nvmContext = new org.nlogo.nvm.Context(extcontext.nvmContext().job,
 																					(org.nlogo.agent.Agent)extcontext.getAgent().world().observer(),
 																					extcontext.nvmContext().ip,
-																					extcontext.nvmContext().activation);
+																					extcontext.nvmContext().activation,
+																					extcontext.workspace());
 					event.task.perform(nvmContext, emptyArgs);
 				}else if(event.shuffleAgentSet){
-					Iterator iter = event.agents.shufflerator(extcontext.nvmContext().job.random);
+					AgentIterator iter = event.agents.shufflerator(extcontext.nvmContext().job.random);
 					while(iter.hasNext()){
-						org.nlogo.nvm.Context nvmContext = new org.nlogo.nvm.Context(extcontext.nvmContext().job,iter.next(),extcontext.nvmContext().ip,extcontext.nvmContext().activation);
-//						if(extcontext.nvmContext().stopping)return;
+						org.nlogo.nvm.Context nvmContext = new org.nlogo.nvm.Context(extcontext.nvmContext().job,iter.next(),
+								extcontext.nvmContext().ip,extcontext.nvmContext().activation,extcontext.workspace());
+						if(extcontext.nvmContext().stopping)return;
 						event.task.perform(nvmContext, emptyArgs);
-//						if(nvmContext.stopping)return;
+						if(nvmContext.stopping)return;
 					}
 				}else{
-					org.nlogo.agent.Agent[] source = null;
-					org.nlogo.agent.Agent[] copy = null;
-					if(event.agents instanceof ArrayAgentSet){
-						source = event.agents.toArray();
-						copy = new org.nlogo.agent.Agent[event.agents.count()];
-						System.arraycopy(source, 0, copy, 0, source.length);
-					}else if(event.agents instanceof TreeAgentSet){
-						copy = event.agents.toArray();
-					}
-					for(org.nlogo.agent.Agent theAgent : copy){
+					LogoList copy = new LogoList(event.agents.toLogoList().toVector());
+					while(copy.iterator().hasNext()){
+						Agent theAgent = (Agent) copy.iterator().next();
 						if(theAgent == null || theAgent.id == -1)continue;
-						org.nlogo.nvm.Context nvmContext = new org.nlogo.nvm.Context(extcontext.nvmContext().job,theAgent,extcontext.nvmContext().ip,extcontext.nvmContext().activation);
-//						if(extcontext.nvmContext().stopping)return;
+						org.nlogo.nvm.Context nvmContext = new org.nlogo.nvm.Context(extcontext.nvmContext().job,theAgent,
+								extcontext.nvmContext().ip,extcontext.nvmContext().activation, extcontext.workspace());
+						if(extcontext.nvmContext().stopping)return;
 						event.task.perform(nvmContext, emptyArgs);
-//						if(nvmContext.stopping)return;
+						if(nvmContext.stopping)return;
 					}
 				}
 
@@ -196,7 +184,6 @@ public class LogoSchedule {
 			}
 			if(tickCounter != null && untilTick < Double.MAX_VALUE && untilTick > tickCounter.ticks()) tickCounter.tick(untilTick-tickCounter.ticks());
 		}
-		*/
 		public LogoTime getCurrentTime() throws ExtensionException{
 			if(!this.isAnchored())return null;
 			if(TimeExtension.debug)TimeUtils.printToConsole(TimeExtension.context, "current time is: " + this.timeAnchor.plus(this.tickType,tickCounter.ticks() / this.tickValue));

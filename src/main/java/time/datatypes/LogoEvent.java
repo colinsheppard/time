@@ -1,7 +1,7 @@
 package time.datatypes;
 import org.nlogo.api.Agent;
-import org.nlogo.api.AgentSet;
-import org.nlogo.api.AnonymousCommand;
+import org.nlogo.agent.AgentSet;
+import org.nlogo.nvm.AnonymousCommand;
 import org.nlogo.api.ExtensionException;
 
 import time.TimeEnums.PeriodType;
@@ -68,9 +68,8 @@ public class LogoEvent {
 			}
 			result = result.substring(0, result.length()-1);
 		}
-		//TODO fix
-//		String[] splitArr = task.procedure().nameToken.toString().split(":");
-//		result += "\t" + ((task==null)?"": (splitArr.length>1 ? splitArr[1].substring(0, splitArr[1].length()-1)+" " : "")+task.procedure().displayName);
+		String[] splitArr = task.procedure().nameToken().toString().split(":");
+		result += "\t" + ((task==null)?"": (splitArr.length>1 ? splitArr[1].substring(0, splitArr[1].length()-1)+" " : "")+task.procedure().displayName());
 		return result;
 	}
 }

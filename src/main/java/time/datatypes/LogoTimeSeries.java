@@ -40,7 +40,7 @@ public class LogoTimeSeries {
 	public LogoTimeSeries(String filename, ExtensionContext context) throws ExtensionException{
 		parseTimeSeriesFile(filename, context);
 	}
-	public void add(LogoTime time, List<Object> list) throws ExtensionException{
+	public void add(LogoTime time, LogoList list) throws ExtensionException{
 		int index = times.size();
 		TimeSeriesRecord record = new TimeSeriesRecord(time, index);
 		int i = 0;
