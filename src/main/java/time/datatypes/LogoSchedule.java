@@ -49,7 +49,6 @@ public class LogoSchedule implements ExtensionObject{
 				this.timeAnchor = new LogoTime(time);
 				this.tickType = tickType;
 				this.tickValue = tickValue;
-				this.tickCounter = ((ExtensionContext)TimeExtension.context).workspace().world().tickCounter;
 			} catch (ExtensionException e) {
 				e.printStackTrace();
 			}
@@ -127,6 +126,16 @@ public class LogoSchedule implements ExtensionObject{
 			if(TimeExtension.debug)TimeUtils.printToConsole(context,"scheduling event: "+event.dump(false, false, false));
 			scheduleTree.add(event);
 		}
+		TickCounter getTickCounter() throws ExtensionException{
+			if(tickCounter==null)throw new ExtensionException("Tick counter has not been initialized in time extension.");
+			return tickCounter;
+		}
+		TickCounter getTickCounter(ExtensionContext context){
+			if(tickCounter==null){
+				tickCounter = context.workspace().world().tickCounter;
+			}
+			return tickCounter;
+		}
 		public void performScheduledTasks(Argument args[], Context context) throws ExtensionException, LogoException {
 			performScheduledTasks(args,context,Double.MAX_VALUE);
 		}	
@@ -143,7 +152,9 @@ public class LogoSchedule implements ExtensionObject{
 			ArrayList<org.nlogo.agent.Agent> theAgents = new ArrayList<org.nlogo.agent.Agent>();
 			while(event != null && event.tick <= untilTick){
 				if(TimeExtension.debug)TimeUtils.printToConsole(context,"performing event-id: "+event.id+" for agent: "+event.agents+" at tick:"+event.tick + " ");
-				if(tickCounter != null)tickCounter.tick(event.tick-tickCounter.ticks());
+				if(TimeExtension.debug)TimeUtils.printToConsole(context,"tick counter before: "+getTickCounter(extcontext)+", "+getTickCounter(extcontext).ticks());
+				getTickCounter(extcontext).tick(event.tick-getTickCounter(extcontext).ticks());
+				if(TimeExtension.debug)TimeUtils.printToConsole(context,"tick counter after: "+getTickCounter(extcontext)+", "+getTickCounter(extcontext).ticks());
 				
 				if(event.agents == null){
 					if(TimeExtension.debug)TimeUtils.printToConsole(context,"single agent");
@@ -182,12 +193,12 @@ public class LogoSchedule implements ExtensionObject{
 				// Grab the next event from the schedule
 				event = scheduleTree.isEmpty() ? null : scheduleTree.first();
 			}
-			if(tickCounter != null && untilTick < Double.MAX_VALUE && untilTick > tickCounter.ticks()) tickCounter.tick(untilTick-tickCounter.ticks());
+			if(untilTick!=null && untilTick < Double.MAX_VALUE && untilTick > getTickCounter(extcontext).ticks()) getTickCounter(extcontext).tick(untilTick-getTickCounter(extcontext).ticks());
 		}
 		public LogoTime getCurrentTime() throws ExtensionException{
 			if(!this.isAnchored())return null;
-			if(TimeExtension.debug)TimeUtils.printToConsole(TimeExtension.context, "current time is: " + this.timeAnchor.plus(this.tickType,tickCounter.ticks() / this.tickValue));
-			return this.timeAnchor.plus(this.tickType,tickCounter.ticks() / this.tickValue);
+			if(TimeExtension.debug)TimeUtils.printToConsole(TimeExtension.context, "current time is: " + this.timeAnchor.plus(this.tickType,getTickCounter().ticks() / this.tickValue));
+			return this.timeAnchor.plus(this.tickType,getTickCounter().ticks() / this.tickValue);
 		}
 		public String dump(boolean readable, boolean exporting, boolean reference) {
 			StringBuilder buf = new StringBuilder();

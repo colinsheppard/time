@@ -1,5 +1,9 @@
 extensions [time]
 
+globals[
+ current-time
+]
+
 to setup
   ;;print __dump-extensions
   ;;print __dump-extension-prims
@@ -8,7 +12,8 @@ to setup
   create-turtles 5
 
   ; Optionally anchor the schedule to a date/time
-  time:anchor-schedule time:create "2000-01-01 00:00" 0.5 "day"
+  time:anchor-schedule time:create "2000-01-01" 0.5 "day"
+  set current-time time:anchor-to-ticks time:create "2000-01-01" 0.5 "day"
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Now schedule some events (turtles or other agents must first be created to be assigned an event)
@@ -17,27 +22,27 @@ to setup
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   ;; Schedule all of the turtles to peform the "go-forward" procudure at tick 1
-  ;time:schedule-event turtles task go-forward 1
+ ;time:schedule-event turtles [ [] -> go-forward ] 1
 
   ;; If the schedule is anchored, then use a LogoTime instead of a tick number to schedule the event
-  ;time:schedule-event turtles task go-forward time:create "2000-01-2"
+  ;time:schedule-event turtles [ [] -> go-forward ] time:create "2000-01-2"
 
    ;; Schedule all of the turtles to peform the "go-forward" procudure at tick 1 in random order
-   time:schedule-event-shuffled turtles ([ [] -> fd 2 ]) 1
+   ;time:schedule-event-shuffled turtles ([ [] -> fd 2 ]) 1
 
-   ;  time:schedule-event-shuffled turtles task go-forward time:create "2000-01-2"
+  ; time:schedule-event-shuffled turtles [ [] -> go-forward ] time:create "2000-01-2"
 
   ;; Schedule individual turtles to go forward at whatever tick we want, it's ok to add events
   ;; to the schedule out of order, they will be performed in order
-  time:schedule-event one-of turtles [ [] -> go-forward ] 2.0
-  time:schedule-event one-of turtles [ [] -> go-forward ] 2.5
-  time:schedule-event one-of turtles [ [] -> go-forward ] 2.9
-  time:schedule-event one-of turtles [ [] -> go-forward ] 2.2
+ ; time:schedule-event one-of turtles [ [] -> go-forward ] 2.0
+ ;time:schedule-event one-of turtles [ [] -> go-forward ] 2.5
+ ; time:schedule-event one-of turtles [ [] -> go-forward ] 2.9
+ ; time:schedule-event one-of turtles [ [] -> go-forward ] 2.2
 
   ;; Use the repeat primitive (which is identical to add but takes an additional argument: the repeat interval used
   ;; to reschedule the event immediately after it has been performed)
-;  time:schedule-repeating-event (one-of turtles) (task go-forward) 3.25 1.0
-  ;time:schedule-repeating-event-with-period (one-of turtles) (task go-forward) 3.25 2.0 "hours"
+  ;time:schedule-repeating-event (one-of turtles) ([ [] -> go-forward ]) 3.25 1.0
+  time:schedule-repeating-event-with-period (one-of turtles) ([ [] -> go-forward ]) 3.25 2.0 "days"
 
   ;; See what's on your schedule
   print time:show-schedule
@@ -48,7 +53,8 @@ end
 
 ;; Note: in this example model, go-forward occurs inside a turtle context, so self refers to the turtle performing the event
 to go-forward
-  print (word self " going forward at " ticks)
+  print (word self " going forward at " current-time "(" ticks ")")
+  ;print time:show-schedule
   fd 2
   if turtles-reschedule-themselves[
     time:schedule-event self [ [] -> go-forward ] ticks + 10
@@ -158,7 +164,7 @@ SWITCH
 328
 turtles-reschedule-themselves
 turtles-reschedule-themselves
-0
+1
 1
 -1000
 
@@ -188,7 +194,7 @@ go-until-tick
 go-until-tick
 0
 200
-42.0
+43.0
 1
 1
 NIL
