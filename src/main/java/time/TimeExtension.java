@@ -18,7 +18,7 @@ public class TimeExtension extends org.nlogo.api.DefaultClassManager {
 	public static final LogoSchedule schedule = new LogoSchedule();
 	public static Context context;
 	public static long nextEvent = 0;
-	public static boolean debug = false;
+	public static boolean debug = true;
 
 	public void load(org.nlogo.api.PrimitiveManager primManager) {
 		/**********************

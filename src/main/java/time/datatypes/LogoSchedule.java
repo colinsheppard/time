@@ -144,36 +144,35 @@ public class LogoSchedule implements ExtensionObject{
 			while(event != null && event.tick <= untilTick){
 				if(TimeExtension.debug)TimeUtils.printToConsole(context,"performing event-id: "+event.id+" for agent: "+event.agents+" at tick:"+event.tick + " ");
 				if(tickCounter != null)tickCounter.tick(event.tick-tickCounter.ticks());
-
+				
 				if(event.agents == null){
+					if(TimeExtension.debug)TimeUtils.printToConsole(context,"single agent");
 					org.nlogo.nvm.Context nvmContext = new org.nlogo.nvm.Context(extcontext.nvmContext().job,
 																					(org.nlogo.agent.Agent)extcontext.getAgent().world().observer(),
 																					extcontext.nvmContext().ip,
 																					extcontext.nvmContext().activation,
 																					extcontext.workspace());
 					event.task.perform(nvmContext, emptyArgs);
-				}else if(event.shuffleAgentSet){
-					AgentIterator iter = event.agents.shufflerator(extcontext.nvmContext().job.random);
+				}else{
+					AgentIterator iter = null;
+					if(event.shuffleAgentSet){
+						iter = event.agents.shufflerator(extcontext.nvmContext().job.random);
+					}else{
+						iter = event.agents.iterator();
+					}
+					ArrayList<Agent> copy = new ArrayList<Agent>();
 					while(iter.hasNext()){
-						org.nlogo.nvm.Context nvmContext = new org.nlogo.nvm.Context(extcontext.nvmContext().job,iter.next(),
+						copy.add(iter.next());
+					}
+					for(Agent theAgent : copy){
+						if(theAgent == null || theAgent.id == -1)continue;
+						org.nlogo.nvm.Context nvmContext = new org.nlogo.nvm.Context(extcontext.nvmContext().job,theAgent,
 								extcontext.nvmContext().ip,extcontext.nvmContext().activation,extcontext.workspace());
 						if(extcontext.nvmContext().stopping)return;
 						event.task.perform(nvmContext, emptyArgs);
 						if(nvmContext.stopping)return;
 					}
-				}else{
-					LogoList copy = new LogoList(event.agents.toLogoList().toVector());
-					while(copy.iterator().hasNext()){
-						Agent theAgent = (Agent) copy.iterator().next();
-						if(theAgent == null || theAgent.id == -1)continue;
-						org.nlogo.nvm.Context nvmContext = new org.nlogo.nvm.Context(extcontext.nvmContext().job,theAgent,
-								extcontext.nvmContext().ip,extcontext.nvmContext().activation, extcontext.workspace());
-						if(extcontext.nvmContext().stopping)return;
-						event.task.perform(nvmContext, emptyArgs);
-						if(nvmContext.stopping)return;
-					}
 				}
-
 				// Remove the current event as is from the schedule
 				scheduleTree.remove(event);
 

@@ -1,6 +1,9 @@
 package time;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -157,7 +160,10 @@ public class TimeUtils {
 		try {
 			ExtensionContext extcontext = (ExtensionContext) context;
 			extcontext.workspace().outputObject(msg,null, true, true,OutputDestinationJ.OUTPUT_AREA());
+		    Files.write(Paths.get("/Users/critter/Dropbox/netlogo/time/debugging/log.txt"), (msg+"\n").getBytes(), StandardOpenOption.APPEND);
 		} catch (LogoException e) {
+			throw new ExtensionException(e);
+		} catch (IOException e) {
 			throw new ExtensionException(e);
 		}
 	}
