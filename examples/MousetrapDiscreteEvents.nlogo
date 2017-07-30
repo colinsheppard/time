@@ -58,25 +58,24 @@ end
 to snap  ; Executed by a trap when a ball lands on it
 
     ; Stop if trap has already snapped
-    if pcolor = black [ stop ]
+    if pcolor != black [
+      set pcolor red   ; Show the snap
+      display          ; So we can see things happen on the View
+                       ; Set View updates to ??? on-ticks?
+      set pcolor black ; Black means the trap has triggered
 
-    set pcolor red   ; Show the snap
-    display          ; So we can see things happen on the View
-                     ; Set View updates to ??? on-ticks?
-    set pcolor black ; Black means the trap has triggered
+      ; Send 2 balls in air, determine where and when they land
+      repeat 2
+      [
+        let trap-ball-lands-on one-of (patches in-radius 5)
+        let ball-travel-time random-float (mean-flight-time * 2)
+        let ball-arrival-time time:plus current-time ball-travel-time "seconds"
+        time:schedule-event trap-ball-lands-on [ [] -> snap ] ball-arrival-time
+      ]
 
-    ; Send 2 balls in air, determine where and when they land
-    repeat 2
-    [
-      let trap-ball-lands-on one-of (patches in-radius 5)
-      let ball-travel-time random-float (mean-flight-time * 2)
-      let ball-arrival-time time:plus current-time ball-travel-time "seconds"
-      time:schedule-event trap-ball-lands-on [ [] -> snap ] ball-arrival-time
+      ; Finally, update outputs
+      update-output
     ]
-
-    ; Finally, update outputs
-    update-output
-
 end
 
 to update-output
@@ -197,7 +196,7 @@ INPUTBOX
 102
 114
 mean-flight-time
-0.2
+1.0
 1
 0
 Number
