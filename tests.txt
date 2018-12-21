@@ -1,0 +1,2 @@
+StringEndsWithSuccess
+  extensions [time]

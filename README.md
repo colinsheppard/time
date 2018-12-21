@@ -745,3 +745,4 @@ This extension is in part powered by [Joda Time](http://joda-time.sourceforge.ne
 The NetLogo dynamic scheduler extension is in the public domain.  To the extent possible under law, Colin Sheppard and Steve Railsback have waived all copyright and related or neighboring rights.
 
 [back to top](#netlogo-time-extension)
+

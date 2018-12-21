@@ -1,0 +1,158 @@
+package org.nlogo.extensions.time.primitives
+//import java.time.format.DateTimeFormat
+import java.time.format.DateTimeFormatter
+import org.nlogo.api.Argument
+import org.nlogo.api.Context
+import org.nlogo.api.Command
+import org.nlogo.api.ExtensionException
+import org.nlogo.api.LogoException
+import org.nlogo.api.Reporter
+import org.nlogo.core.Syntax
+import org.nlogo.core.SyntaxJ
+import org.nlogo.extensions.time._
+import org.nlogo.extensions.time.datatypes._
+import scala.collection.JavaConverters._
+
+object DiscreteEventSchedulerPrimitives {
+
+  class AddEvent extends Command {
+    def getSyntax(): Syntax =
+      SyntaxJ.commandSyntax(
+        Array(Syntax.WildcardType,
+              Syntax.WildcardType,
+              Syntax.WildcardType))
+    def perform(args: Array[Argument], context: Context): Unit = {
+      TimeExtension.schedule.addEvent(args, context, Default)
+    }
+  }
+
+  class AddEventShuffled extends Command {
+    def getSyntax(): Syntax =
+      SyntaxJ.commandSyntax(
+        Array(Syntax.WildcardType,
+              Syntax.WildcardType,
+              Syntax.WildcardType))
+    def perform(args: Array[Argument], context: Context): Unit = {
+      TimeExtension.schedule.addEvent(args, context, Shuffle)
+    }
+  }
+
+  class AnchorSchedule extends Command {
+    def getSyntax(): Syntax =
+      SyntaxJ.commandSyntax(
+        Array(Syntax.WildcardType, Syntax.NumberType, Syntax.StringType))
+    def perform(args: Array[Argument], context: Context): Unit = {
+      TimeExtension.schedule.anchorSchedule(
+        TimeUtils.getTimeFromArgument(args, 0),
+        TimeUtils.getDoubleFromArgument(args, 1),
+        TimeUtils.stringToPeriodType(TimeUtils.getStringFromArgument(args, 2)))
+    }
+  }
+
+  class ClearSchedule extends Command {
+    def getSyntax(): Syntax = SyntaxJ.commandSyntax(Array(): Array[Int])
+    def perform(args: Array[Argument], context: Context): Unit = {
+      TimeExtension.schedule.clear()
+    }
+  }
+
+  class GetSize extends Reporter {
+    def getSyntax(): Syntax =
+      SyntaxJ.reporterSyntax(Array(): Array[Int], Syntax.NumberType)
+    def report(args: Array[Argument], context: Context): AnyRef = {
+      if (TimeExtension.debug)
+        TimeUtils.printToConsole(
+          context,
+          "size of schedule: " + TimeExtension.schedule.scheduleTree.size)
+      new java.lang.Double(TimeExtension.schedule.scheduleTree.size)
+    }
+  }
+
+  class Go extends Command {
+    def getSyntax(): Syntax = SyntaxJ.commandSyntax(Array(): Array[Int])
+    def perform(args: Array[Argument], context: Context): Unit = {
+      TimeExtension.schedule.performScheduledTasks(args, context)
+    }
+  }
+
+  class GoUntil extends Command {
+    def getSyntax(): Syntax =
+      SyntaxJ.commandSyntax(Array(Syntax.WildcardType))
+    def perform(args: Array[Argument], context: Context): Unit = {
+      var untilTime: LogoTime = null
+      var untilTick: java.lang.Double = null
+      try untilTime = TimeUtils.getTimeFromArgument(args, 0)
+      catch {
+        case e: ExtensionException =>
+          untilTick = TimeUtils.getDoubleFromArgument(args, 0)
+
+      }
+      if (untilTime == null) {
+        TimeExtension.schedule.performScheduledTasks(args, context, untilTick)
+      } else {
+        TimeExtension.schedule.performScheduledTasks(args, context, untilTime)
+      }
+    }
+  }
+
+  class RepeatEvent extends Command {
+    def getSyntax(): Syntax =
+      SyntaxJ.commandSyntax(
+        Array(Syntax.WildcardType,
+              Syntax.WildcardType,
+              Syntax.WildcardType,
+              Syntax.NumberType))
+    def perform(args: Array[Argument], context: Context): Unit = {
+      TimeExtension.schedule.addEvent(args, context, Repeat)
+    }
+
+  }
+
+  class RepeatEventShuffled extends Command {
+    def getSyntax(): Syntax =
+      SyntaxJ.commandSyntax(
+        Array(Syntax.WildcardType,
+              Syntax.WildcardType,
+              Syntax.WildcardType,
+              Syntax.NumberType))
+    def perform(args: Array[Argument], context: Context): Unit = {
+      TimeExtension.schedule.addEvent(args, context, Shuffle)
+    }
+
+  }
+
+  class RepeatEventShuffledWithPeriod extends Command {
+
+    def getSyntax(): Syntax =
+      SyntaxJ.commandSyntax(
+        Array(Syntax.WildcardType,
+              Syntax.WildcardType,
+              Syntax.WildcardType,
+              Syntax.NumberType,
+              Syntax.StringType))
+    def perform(args: Array[Argument], context: Context): Unit = {
+      TimeExtension.schedule.addEvent(args, context, Shuffle)
+    }
+
+  }
+
+  class RepeatEventWithPeriod extends Command {
+    def getSyntax(): Syntax =
+      SyntaxJ.commandSyntax(
+        Array(Syntax.WildcardType,
+              Syntax.WildcardType,
+              Syntax.WildcardType,
+              Syntax.NumberType,
+              Syntax.StringType))
+    def perform(args: Array[Argument], context: Context): Unit = {
+      TimeExtension.schedule.addEvent(args, context, Repeat)
+    }
+  }
+
+  class ShowSchedule extends Reporter {
+    def getSyntax(): Syntax =
+      SyntaxJ.reporterSyntax(Array(): Array[Int], Syntax.StringType)
+    def report(args: Array[Argument], context: Context): AnyRef =
+      TimeExtension.schedule.dump(false, false, false)
+  }
+}
