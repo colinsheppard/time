@@ -8,7 +8,6 @@ import org.nlogo.core.ExtensionObject
 import org.nlogo.extensions.time._
 import scala.collection.JavaConverters._
 
-
 class LogoEvent(var agents: org.nlogo.agent.AgentSet,
                 var task: AnonymousCommand,
                 var tick: java.lang.Double,
@@ -31,34 +30,23 @@ class LogoEvent(var agents: org.nlogo.agent.AgentSet,
    */
 
   def reschedule(callingSchedule: LogoSchedule): java.lang.Boolean = {
-    if (repeatInterval == null){ false }
-    if (repeatIntervalPeriodType == null) {
-    // in this case we assume that repeatInterval is in the same units as tick
-      this.tick = this.tick + repeatInterval
-    } else {
-      val currentTime: LogoTime = callingSchedule.getCurrentTime
-      if (TimeExtension.debug)
-        TimeUtils.printToConsole(
-          TimeExtension.context,
-          "resheduling: " + repeatInterval + " " + repeatIntervalPeriodType +
-            " ahead of " +
-            currentTime +
-            " or " +
-            currentTime.getDifferenceBetween(
-              callingSchedule.tickType,
-              currentTime.plus(repeatIntervalPeriodType, repeatInterval)) /
-              callingSchedule.tickValue
-        )
-      this.tick = this.tick +
-          currentTime.getDifferenceBetween(
-            callingSchedule.tickType,
-            currentTime.plus(repeatIntervalPeriodType, repeatInterval)) /
-            callingSchedule.tickValue
-      if (TimeExtension.debug)
-        TimeUtils.printToConsole(TimeExtension.context,
-                                 "event scheduled for tick: " + this.tick)
+    repeatInterval match {
+      case x if x == null => false
+      case x if repeatIntervalPeriodType == null => {
+        this.tick = this.tick + repeatInterval
+        TimeExtension.schedule.scheduleTree.add(this)
+      }
+      case _ => {
+        val currentTime: LogoTime = callingSchedule.getCurrentTime
+        if (TimeExtension.debug)
+          TimeUtils.printToConsole(TimeExtension.context, "resheduling: " + repeatInterval + " " + repeatIntervalPeriodType + " ahead of " + currentTime + " or "
+            + currentTime.getDifferenceBetween(callingSchedule.tickType, currentTime.plus(repeatIntervalPeriodType, repeatInterval)) / callingSchedule.tickValue)
+        this.tick = this.tick + currentTime.getDifferenceBetween(callingSchedule.tickType, currentTime.plus(repeatIntervalPeriodType, repeatInterval)) / callingSchedule.tickValue
+        if (TimeExtension.debug)
+          TimeUtils.printToConsole(TimeExtension.context, "event scheduled for tick: " + this.tick)
+          TimeExtension.schedule.scheduleTree.add(this)
+      }
     }
-    TimeExtension.schedule.scheduleTree.add(this)
   }
   override def equals(obj: Any): Boolean = this == obj
 
@@ -69,22 +57,14 @@ class LogoEvent(var agents: org.nlogo.agent.AgentSet,
     var result: String = tick + "\t"
     if (agents != null) {
       val listOfAgents: Iterable[org.nlogo.api.Agent] = agents.agents.asScala
-      //agents.agents.foreach{ result += _.toString + ";"}
-      for (agent <- listOfAgents) {
-        result += agent.toString + ";"
-      }
+      for (agent <- listOfAgents) {result += agent.toString + ";"}
       result = result.substring(0, result.length - 1)
     }
-    val splitArr: Array[String] =
-      task.procedure.nameToken.toString.split(":")
-
-    result = result + "\t" + (if ((task == null)){ "" }
-                      else {
-                        (if (splitArr.length > 1)
-                           splitArr(1).substring(0, splitArr(1).length - 1) + " "
-                         else "") +
-                        task.procedure.displayName(0) // ???
-                      })
+    val splitArr: Array[String] = task.procedure.nameToken.toString.split(":")
+    result = result + "\t" + task match {
+           case null => ""
+           case x if splitArr.length > 1 => splitArr(1).substring(0, splitArr(1).length - 1) + " " + task.procedure.displayName(0)
+           case _ => "" + task.procedure.displayName(0) }
     result
   }
 }

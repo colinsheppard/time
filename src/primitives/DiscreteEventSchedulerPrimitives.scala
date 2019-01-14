@@ -85,7 +85,6 @@ object DiscreteEventSchedulerPrimitives {
       catch {
         case e: ExtensionException =>
           untilTick = TimeUtils.getDoubleFromArgument(args, 0)
-
       }
       if (untilTime == null) {
         TimeExtension.schedule.performScheduledTasks(args, context, untilTick)
@@ -122,7 +121,6 @@ object DiscreteEventSchedulerPrimitives {
   }
 
   class RepeatEventShuffledWithPeriod extends Command {
-
     def getSyntax(): Syntax =
       SyntaxJ.commandSyntax(
         Array(Syntax.WildcardType,

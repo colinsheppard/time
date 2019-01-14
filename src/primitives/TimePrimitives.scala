@@ -17,7 +17,6 @@ import scala.collection.JavaConverters._
 object TimePrimitives {
 
   class NewLogoTime extends Reporter {
-
     def getSyntax(): Syntax =
       SyntaxJ.reporterSyntax(Array(Syntax.StringType), Syntax.WildcardType)
     def report(args: Array[Argument], context: Context): AnyRef = {
@@ -28,12 +27,10 @@ object TimePrimitives {
   }
 
   class Anchor extends Reporter {
-
     def getSyntax(): Syntax =
       SyntaxJ.reporterSyntax(
         Array(Syntax.WildcardType, Syntax.NumberType, Syntax.StringType),
         Syntax.WildcardType)
-
     def report(args: Array[Argument], context: Context): AnyRef = {
       val time: LogoTime = TimeUtils.getTimeFromArgument(args, 0)
       val newTime: LogoTime = new LogoTime(time)
@@ -47,11 +44,9 @@ object TimePrimitives {
   }
 
   class Show extends Reporter {
-
     def getSyntax(): Syntax =
       SyntaxJ.reporterSyntax(Array(Syntax.WildcardType, Syntax.StringType),
                              Syntax.StringType)
-
     def report(args: Array[Argument], context: Context): AnyRef = {
       val time: LogoTime = TimeUtils.getTimeFromArgument(args, 0)
       val fmtString: String = TimeUtils.getStringFromArgument(args, 1)
@@ -65,11 +60,9 @@ object TimePrimitives {
   }
 
   class Copy extends Reporter {
-
     def getSyntax(): Syntax =
       SyntaxJ.reporterSyntax(Array(Syntax.WildcardType),
                              Syntax.WildcardType)
-
     def report(args: Array[Argument], context: Context): AnyRef = {
       val time: LogoTime = TimeUtils.getTimeFromArgument(args, 0)
       new LogoTime(time)
@@ -81,7 +74,6 @@ object TimePrimitives {
     def getSyntax(): Syntax =
       SyntaxJ.reporterSyntax(Array(Syntax.StringType, Syntax.StringType),
                              Syntax.WildcardType)
-
     def report(args: Array[Argument], context: Context): AnyRef = {
       TimeExtension.context = context
       val time: LogoTime = new LogoTime(
@@ -96,7 +88,7 @@ object TimePrimitives {
       SyntaxJ.reporterSyntax(Array(Syntax.WildcardType,
                                    Syntax.WildcardType,
                                    Syntax.StringType),
-                             Syntax.NumberType)
+                                   Syntax.NumberType)
     def report(args: Array[Argument], context: Context): AnyRef = {
       val startTime: LogoTime = TimeUtils.getTimeFromArgument(args, 0)
       val endTime: LogoTime = TimeUtils.getTimeFromArgument(args, 1)
@@ -109,7 +101,7 @@ object TimePrimitives {
   class Get extends Reporter {
     def getSyntax(): Syntax =
       SyntaxJ.reporterSyntax(Array(Syntax.StringType, Syntax.WildcardType),
-                             Syntax.NumberType)
+        Syntax.NumberType)
     def report(args: Array[Argument], context: Context): AnyRef = {
       val periodType: PeriodType =
         TimeUtils.stringToPeriodType(TimeUtils.getStringFromArgument(args, 0))
@@ -119,12 +111,10 @@ object TimePrimitives {
   }
 
   class IsAfter extends Reporter {
-
     def getSyntax(): Syntax =
       SyntaxJ.reporterSyntax(
         Array(Syntax.WildcardType, Syntax.WildcardType),
         Syntax.BooleanType)
-
     def report(args: Array[Argument], context: Context): AnyRef = {
       val timeA: LogoTime = TimeUtils.getTimeFromArgument(args, 0)
       val timeB: LogoTime = TimeUtils.getTimeFromArgument(args, 1)
@@ -149,7 +139,7 @@ object TimePrimitives {
       SyntaxJ.reporterSyntax(Array(Syntax.WildcardType,
                                    Syntax.WildcardType,
                                    Syntax.WildcardType),
-                             Syntax.BooleanType)
+                                   Syntax.BooleanType)
     def report(args: Array[Argument], context: Context): AnyRef = {
       val timeA: LogoTime = TimeUtils.getTimeFromArgument(args, 0)
       val timeB: LogoTime = TimeUtils.getTimeFromArgument(args, 1)
@@ -159,12 +149,10 @@ object TimePrimitives {
   }
 
   class IsEqual extends Reporter {
-
     def getSyntax(): Syntax =
       SyntaxJ.reporterSyntax(
         Array(Syntax.WildcardType, Syntax.WildcardType),
         Syntax.BooleanType)
-
     def report(args: Array[Argument], context: Context): AnyRef = {
       val timeA: LogoTime = TimeUtils.getTimeFromArgument(args, 0)
       val timeB: LogoTime = TimeUtils.getTimeFromArgument(args, 1)

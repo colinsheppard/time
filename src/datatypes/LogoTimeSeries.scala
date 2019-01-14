@@ -1,25 +1,12 @@
 package org.nlogo.extensions.time.datatypes
 
-import java.io.BufferedReader
-import java.io.BufferedWriter
-import java.io.DataInputStream
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileNotFoundException
-import java.io.FileWriter
-import java.io.IOException
-import java.io.InputStreamReader
+import java.io.{BufferedReader, BufferedWriter, DataInputStream, File, FileInputStream, FileNotFoundException, FileWriter, IOException, InputStreamReader}
 import java.net.MalformedURLException
-import java.util.ArrayList
-import java.util.Arrays
-import java.util.LinkedHashMap
-import java.util.List
-import java.util.TreeMap
+import java.util.{ArrayList, Arrays, LinkedHashMap, List, TreeMap}
 import scala.collection.immutable.Vector._
 
 import org.nlogo.api.ExtensionException
-import org.nlogo.core.ExtensionObject
-import org.nlogo.core.LogoList
+import org.nlogo.core.{ExtensionObject, LogoList}
 import org.nlogo.nvm.ExtensionContext
 import org.nlogo.extensions.time._
 import scala.collection.JavaConverters._
@@ -48,7 +35,7 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
 
   def add(time: LogoTime, list: LogoList): Unit = {
     val index: Int = times.size
-    val record: TimeSeriesRecord = new TimeSeriesRecord(time, index)
+    val record = new TimeSeriesRecord(time, index)
     var i: Int = 0
     for (colName <- columns.keySet.asScala) {
       columns.get(colName).add(list.get({ i += 1; i - 1 }).toString)
@@ -56,8 +43,7 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
     try times.put(time, record)
     catch {
       case e: NullPointerException =>
-        if (time.dateType !=
-              times.keySet().toArray()(0).asInstanceOf[LogoTime].dateType) {
+        if (time.dateType != times.keySet().toArray()(0).asInstanceOf[LogoTime].dateType) {
           throw new ExtensionException(
             "Cannot add a row with a LogoTime of type " + time.dateType.toString +
               " to a LogoTimeSeries of type " +
@@ -152,9 +138,7 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
     while (strLine != null) {
       lineData = strLine.split(delim)
       val newTime: LogoTime = new LogoTime(lineData(0), customFormat)
-      times.put(newTime, new TimeSeriesRecord(newTime, {
-        numRows += 1; numRows - 1
-      }))
+      times.put(newTime, new TimeSeriesRecord(newTime, { numRows += 1; numRows - 1 }))
       var colInd: Int = 1
       while (colInd <= columns.size) {
         columns.get(columnNames(colInd)).add(lineData(colInd))
@@ -167,9 +151,7 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
     fstream.close()
   }
 
-  def getByTime(time: LogoTime,
-                columnName: String,
-                getMethod: GetTSMethod): AnyRef = {
+  def getByTime(time: LogoTime, columnName: String, getMethod: GetTSMethod): AnyRef = {
     val columnList: ArrayList[String] = new ArrayList[String](columns.size)
     val resultList: ArrayList[AnyRef] = new ArrayList[AnyRef](columns.size)
     if (columnName.==("ALL_-_COLUMNS")) {

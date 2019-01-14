@@ -24,8 +24,7 @@ class TimeExtension extends DefaultClassManager {
 
   def load(primManager: org.nlogo.api.PrimitiveManager): Unit = {
     primManager.addPrimitive("create", new TimePrimitives.NewLogoTime())
-    primManager.addPrimitive("create-with-format",
-                             new TimePrimitives.CreateWithFormat())
+    primManager.addPrimitive("create-with-format", new TimePrimitives.CreateWithFormat())
     primManager.addPrimitive("anchor-to-ticks", new TimePrimitives.Anchor())
     primManager.addPrimitive("plus", new TimePrimitives.Plus())
     primManager.addPrimitive("show", new TimePrimitives.Show())
@@ -35,14 +34,10 @@ class TimeExtension extends DefaultClassManager {
     primManager.addPrimitive("is-after", new TimePrimitives.IsAfter())
     primManager.addPrimitive("is-equal", new TimePrimitives.IsEqual())
     primManager.addPrimitive("is-between", new TimePrimitives.IsBetween())
-    primManager.addPrimitive("difference-between",
-                             new TimePrimitives.DifferenceBetween())
-    primManager.addPrimitive("size-of-schedule",
-                             new DiscreteEventSchedulerPrimitives.GetSize())
-    primManager.addPrimitive("schedule-event",
-                             new DiscreteEventSchedulerPrimitives.AddEvent())
-    primManager.addPrimitive(
-      "schedule-event-shuffled",
+    primManager.addPrimitive("difference-between", new TimePrimitives.DifferenceBetween())
+    primManager.addPrimitive("size-of-schedule", new DiscreteEventSchedulerPrimitives.GetSize())
+    primManager.addPrimitive("schedule-event", new DiscreteEventSchedulerPrimitives.AddEvent())
+    primManager.addPrimitive("schedule-event-shuffled",
       new DiscreteEventSchedulerPrimitives.AddEventShuffled())
     primManager.addPrimitive(
       "schedule-repeating-event",
@@ -56,24 +51,18 @@ class TimeExtension extends DefaultClassManager {
     primManager.addPrimitive(
       "schedule-repeating-event-shuffled-with-period",
       new DiscreteEventSchedulerPrimitives.RepeatEventShuffledWithPeriod())
-    primManager.addPrimitive(
-      "anchor-schedule",
+    primManager.addPrimitive("anchor-schedule",
       new DiscreteEventSchedulerPrimitives.AnchorSchedule())
     primManager.addPrimitive("go", new DiscreteEventSchedulerPrimitives.Go())
-    primManager.addPrimitive("go-until",
-                             new DiscreteEventSchedulerPrimitives.GoUntil())
-    primManager.addPrimitive(
-      "clear-schedule",
+    primManager.addPrimitive("go-until", new DiscreteEventSchedulerPrimitives.GoUntil())
+    primManager.addPrimitive("clear-schedule",
       new DiscreteEventSchedulerPrimitives.ClearSchedule())
-    primManager.addPrimitive(
-      "show-schedule",
+    primManager.addPrimitive("show-schedule",
       new DiscreteEventSchedulerPrimitives.ShowSchedule())
-    primManager.addPrimitive("ts-create",
-                             new TimeSeriesPrimitives.TimeSeriesCreate())
+    primManager.addPrimitive("ts-create", new TimeSeriesPrimitives.TimeSeriesCreate())
     primManager.addPrimitive("ts-load",
                              new TimeSeriesPrimitives.TimeSeriesLoad())
-    primManager.addPrimitive(
-      "ts-load-with-format",
+    primManager.addPrimitive("ts-load-with-format",
       new TimeSeriesPrimitives.TimeSeriesLoadWithFormat())
     primManager.addPrimitive("ts-write",
                              new TimeSeriesPrimitives.TimeSeriesWrite())

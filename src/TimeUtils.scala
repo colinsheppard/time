@@ -1,46 +1,38 @@
 package org.nlogo.extensions.time
 
 import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.file.StandardOpenOption
-import java.util.logging.FileHandler
-import java.util.logging.Logger
-import java.util.logging.SimpleFormatter
-import org.nlogo.api.Argument
-import org.nlogo.api.Context
-import org.nlogo.api.Dump
-import org.nlogo.api.ExtensionException
-import org.nlogo.api.LogoException
-import org.nlogo.api.OutputDestination
-import org.nlogo.api.OutputDestinationJ
+import java.nio.file.{Files, Paths, StandardOpenOption}
+import java.util.logging.{FileHandler, Logger, SimpleFormatter}
+import org.nlogo.api.{Argument, Context, Dump, ExtensionException, LogoException, OutputDestination, OutputDestinationJ}
 import org.nlogo.core.LogoList
 import org.nlogo.nvm.ExtensionContext
 import org.nlogo.window.OutputArea
 import org.nlogo.extensions.time._
-import org.nlogo.extensions.time.datatypes.{ LogoTimeSeries, LogoTime, LogoSchedule }
+import org.nlogo.extensions.time.datatypes.{LogoTimeSeries, LogoTime, LogoSchedule}
 
+/* This object holds convenient methods for time and types */
 object TimeUtils {
-
- /**********************
- * Convenience Methods *
- ***********************/
   def dToL(d: Double): java.lang.Long =
     d.asInstanceOf[java.lang.Double].longValue()
 
-  def stringToPeriodType(sTypeArg: String): PeriodType = {
-    var sType: String = sTypeArg.trim().toLowerCase().asInstanceOf[String]
-    if (sType.substring(sType.length - 1).==("s")){
-      sType = sType.substring(0, sType.length - 1)
+  def stringToPeriodType(typeString: String): PeriodType = {
+    val typ = typeString.trim().toLowerCase() match {
+      case s if s.substring(s.length - 1).== ("s") => s.substring(0, s.length - 1)
+      case s => s
     }
-    sType match {
-      case "milli" => Milli
+    typ match {
+      case "milli"  => Milli
       case "second" => Second
-      case "minute" => Hour
-      case stype if stype == "day" || stype == "dayofmonth" || stype == "dom" => Day
-      case stype if stype == "dayofyear" || stype == "doy" || stype == "julianday" || stype == "jday"
+      case "minute" => Minute
+      case "hour" => Hour
+      case stype
+        if stype == "day" || stype == "dayofmonth" || stype == "dom"
+          => Day
+      case stype
+        if stype == "dayofyear" || stype == "doy" || stype == "julianday" || stype == "jday"
           => DayOfYear
-      case stype if stype == "dayofweek" || stype == "dow" || stype == "weekday" || stype == "wday"
+      case stype
+        if stype == "dayofweek" || stype == "dow" || stype == "weekday" || stype == "wday"
           => DayOfWeek
       case "week" => Week
       case "month" => Month
@@ -48,106 +40,84 @@ object TimeUtils {
     }
   }
 
-  def getTimeFromArgument(args: Array[Argument],
-                          argIndex: java.lang.Integer): LogoTime = {
-    var time: LogoTime = null
-    val obj: AnyRef = args(argIndex).get
-    if (obj.isInstanceOf[String]) {
-      time = new LogoTime(args(argIndex).getString)
-    } else if (obj.isInstanceOf[LogoTime]) {
-      time = obj.asInstanceOf[LogoTime]
-    } else {
-      throw new ExtensionException(
-        "time: was expecting a LogoTime object as argument " +
-          (argIndex + 1) +
-          ", found this instead: " +
-          Dump.logoObject(obj))
+  def getTimeFromArgument(args: Array[Argument], argIndex: java.lang.Integer): LogoTime = {
+    var time = args(argIndex).get match {
+      case str: String => new LogoTime(args(argIndex).getString)
+      case logoTime: LogoTime => logoTime
+      case obj =>
+        throw new ExtensionException(
+          "time: was expecting a LogoTime object as argument " +
+            (argIndex + 1) +
+            ", found this instead: " +
+            Dump.logoObject(obj))
     }
     time.updateFromTick()
     time
   }
 
-  def getDoubleFromArgument(args: Array[Argument],
-                            argIndex: java.lang.Integer): java.lang.Double = {
-    val obj: AnyRef = args(argIndex).get
-    if (!(obj.isInstanceOf[java.lang.Double])) {
-      throw new ExtensionException(
+  def getDoubleFromArgument(args: Array[Argument], argIndex: java.lang.Integer): java.lang.Double =
+    args(argIndex).get match {
+      case double: java.lang.Double => double
+      case obj =>
+       throw new ExtensionException(
         "time: was expecting a number as argument " + (argIndex + 1) +
           ", found this instead: " +
           Dump.logoObject(obj))
     }
-    obj.asInstanceOf[java.lang.Double]
-  }
 
-  def getListFromArgument(args: Array[Argument],
-                          argIndex: java.lang.Integer): LogoList = {
-    val obj: AnyRef = args(argIndex).get
-    if (!(obj.isInstanceOf[LogoList])) {
-      throw new ExtensionException(
-        "time: was expecting a list as argument " + (argIndex + 1) +
-          ", found this instead: " +
-          Dump.logoObject(obj))
+  def getListFromArgument(args: Array[Argument], argIndex: java.lang.Integer): LogoList =
+    args(argIndex).get match {
+      case logolist: LogoList => logolist
+      case logolist =>
+        throw new ExtensionException(
+          "time: was expecting a list as argument " + (argIndex + 1) +
+            ", found this instead: " +
+            Dump.logoObject(logolist))
     }
-    obj.asInstanceOf[LogoList]
-  }
 
-  def getIntFromArgument(args: Array[Argument],
-                         argIndex: java.lang.Integer): java.lang.Integer = {
-    val obj: AnyRef = args(argIndex).get
-    if (obj.isInstanceOf[java.lang.Double]) {
-      // Round to nearest int
-      roundDouble(obj.asInstanceOf[java.lang.Double])
-    } else if (!(obj.isInstanceOf[java.lang.Integer])) {
-      throw new ExtensionException(
-        "time: was expecting a number as argument " + (argIndex + 1) +
-          ", found this instead: " +
-          Dump.logoObject(obj))
+  def getIntFromArgument(args: Array[Argument], argIndex: java.lang.Integer): java.lang.Integer =
+    args(argIndex).get match {
+      case double: java.lang.Double => roundDouble(double)
+      case integer: java.lang.Integer => integer
+      case obj =>
+        throw new ExtensionException(
+          "time: was expecting a number as argument " + (argIndex + 1) +
+            ", found this instead: " +
+            Dump.logoObject(obj))
     }
-    obj.asInstanceOf[java.lang.Integer]
-  }
 
-  def getLongFromArgument(args: Array[Argument],
-                          argIndex: java.lang.Integer): java.lang.Long = {
-    val obj: AnyRef = args(argIndex).get
-    if (obj.isInstanceOf[java.lang.Double]) {
-      obj.asInstanceOf[java.lang.Double].longValue()
-    } else if (!(obj.isInstanceOf[java.lang.Integer])) {
-      throw new ExtensionException(
-        "time: was expecting a number as argument " + (argIndex + 1) +
-          ", found this instead: " +
-          Dump.logoObject(obj))
-    }
-    obj.asInstanceOf[java.lang.Long]
-  }
 
-  def getStringFromArgument(args: Array[Argument],
-                            argIndex: java.lang.Integer): String = {
-    val obj: AnyRef = args(argIndex).get
-    if (!(obj.isInstanceOf[String])) {
-      throw new ExtensionException(
-        "time: was expecting a string as argument " + (argIndex + 1) +
-          ", found this instead: " +
-          Dump.logoObject(obj))
+  def getLongFromArgument(args: Array[Argument], argIndex: java.lang.Integer): java.lang.Long =
+    args(argIndex).get match {
+      case double: java.lang.Double => double.longValue()
+      case integer: java.lang.Integer => integer.longValue()
+      case obj =>
+        throw new ExtensionException(
+          "time: was expecting a number as argument " + (argIndex + 1) +
+            ", found this instead: " +
+            Dump.logoObject(obj))
     }
-    obj.asInstanceOf[String]
-  }
 
-  def getTimeSeriesFromArgument(
-      args: Array[Argument],
-      argIndex: java.lang.Integer): LogoTimeSeries = {
-    var ts: LogoTimeSeries = null
-    val obj: AnyRef = args(argIndex).get
-    if (obj.isInstanceOf[LogoTimeSeries]) {
-      ts = obj.asInstanceOf[LogoTimeSeries]
-    } else {
-      throw new ExtensionException(
-        "time: was expecting a LogoTimeSeries object as argument " +
-          (argIndex + 1) +
-          ", found this instead: " +
-          Dump.logoObject(obj))
+  def getStringFromArgument(args: Array[Argument], argIndex: java.lang.Integer): String =
+    args(argIndex).get match {
+      case string: String => string
+      case obj =>
+        throw new ExtensionException(
+          "time: was expecting a string as argument " + (argIndex + 1) +
+            ", found this instead: " +
+            Dump.logoObject(obj))
     }
-    ts
-  }
+
+  def getTimeSeriesFromArgument(args: Array[Argument], argIndex: java.lang.Integer): LogoTimeSeries =
+    args(argIndex).get match {
+      case lts: LogoTimeSeries => lts
+      case obj =>
+        throw new ExtensionException(
+          "time: was expecting a LogoTimeSeries object as argument " +
+            (argIndex + 1) +
+            ", found this instead: " +
+            Dump.logoObject(obj))
+    }
 
   def roundDouble(d: java.lang.Double): java.lang.Integer =
     Math.round(d).asInstanceOf[java.lang.Long].intValue()
@@ -158,36 +128,29 @@ object TimeUtils {
   def printToLogfile(msg: String): Unit = {
     val logger: Logger = Logger.getLogger("MyLog")
     var fh: FileHandler = null
-    try {
-      // This block configure the logger with handler and formatter
+    try {// This block configure the logger with handler and formatter
       fh = new FileHandler("logfile.txt", true)
-      logger.addHandler(fh)
-      //logger.setLevel(Level.ALL);
+      logger.addHandler(fh) //logger.setLevel(Level.ALL);
       val formatter: SimpleFormatter = new SimpleFormatter()
-      fh.setFormatter(formatter)
-      // the following statement is used to log any messages
+      fh.setFormatter(formatter) // the following statement is used to log any messages
       logger.info(msg)
       fh.close()
     } catch {
       case e: SecurityException => e.printStackTrace()
-
       case e: IOException => e.printStackTrace()
-
     }
   }
 
   // Convenience method, to extract a schedule object from an Argument.
-  def getScheduleFromArguments(args: Array[Argument],
-                               index: Int): LogoSchedule = {
-    val obj: AnyRef = args(index).get
-    if (!(obj.isInstanceOf[LogoSchedule])) {
-      throw new ExtensionException(
-        "Was expecting a LogoSchedule as argument " + (index + 1) +
-          " found this instead: " +
-          Dump.logoObject(obj))
+  def getScheduleFromArguments(args: Array[Argument], index: Int): LogoSchedule =
+    args(index).get match {
+      case lschedule: LogoSchedule => lschedule
+      case obj =>
+        throw new ExtensionException(
+          "Was expecting a LogoSchedule as argument " + (index + 1) +
+            " found this instead: " +
+            Dump.logoObject(obj))
     }
-    obj.asInstanceOf[LogoSchedule]
-  }
 
   def printToConsole(context: Context, msg: String): Unit = {
     val extcontext: ExtensionContext = context.asInstanceOf[ExtensionContext]
@@ -200,7 +163,6 @@ object TimeUtils {
       StandardOpenOption.APPEND)
   }
 
-  def setContext(context: Context): Unit = {
+  def setContext(context: Context): Unit =
     TimeExtension.context = context
-  }
 }

@@ -1,24 +1,10 @@
 package org.nlogo.extensions.time.datatypes
 
-import java.util.ArrayList
-import java.util.Iterator
-import java.util.TreeSet
-import org.nlogo.agent.Agent
-import org.nlogo.agent.AgentIterator
-import org.nlogo.agent.ArrayAgentSet
-import org.nlogo.agent.TickCounter
-import org.nlogo.agent.TreeAgentSet
-import org.nlogo.agent.World
-import org.nlogo.agent.AgentSet
+import java.util.{ArrayList, Iterator, TreeSet}
+import org.nlogo.agent.{Agent, AgentIterator, ArrayAgentSet, TickCounter, TreeAgentSet, World, AgentSet}
 import org.nlogo.nvm.AnonymousCommand
-import org.nlogo.api.AnonymousProcedure
-import org.nlogo.api.Argument
-import org.nlogo.api.Context
-import org.nlogo.api.ExtensionException
-import org.nlogo.api.LogoException
-import org.nlogo.core.AgentKindJ
-import org.nlogo.core.ExtensionObject
-import org.nlogo.core.LogoList
+import org.nlogo.api.{AnonymousProcedure, Argument, Context, ExtensionException, LogoException}
+import org.nlogo.core.{AgentKindJ, ExtensionObject, LogoList}
 import org.nlogo.nvm.ExtensionContext
 import org.nlogo.extensions.time._
 import scala.collection.JavaConverters._
@@ -34,8 +20,7 @@ class LogoSchedule extends ExtensionObject {
   def isAnchored(): Boolean = timeAnchor != null
 
   def anchorSchedule(time: LogoTime,
-                     tickValue: java.lang.Double,
-                     tickType: PeriodType): Unit = {
+                     tickValue: java.lang.Double, tickType: PeriodType): Unit =
     try {
       this.timeAnchor = new LogoTime(time)
       this.tickType = tickType
@@ -44,7 +29,6 @@ class LogoSchedule extends ExtensionObject {
       case e: ExtensionException => e.printStackTrace()
 
     }
-  }
 
   def timeToTick(time: LogoTime): java.lang.Double = {
     if (this.timeAnchor.dateType != time.dateType)
@@ -158,65 +142,61 @@ class LogoSchedule extends ExtensionObject {
     }
     val shuffleAgentSet: Boolean = (addType == Shuffle || addType == RepeatShuffled)
     var agentSet: AgentSet = null
-    if (args(0).get.isInstanceOf[org.nlogo.agent.Agent]) {
-      val theAgent: Agent = args(0).getAgent
-        .asInstanceOf[org.nlogo.agent.Agent]
-      agentSet = new ArrayAgentSet(AgentKindJ.Turtle,
-                                   theAgent.toString,
-                                   Array(theAgent))
-    } else if (args(0).get.isInstanceOf[AgentSet]) {
-      agentSet = args(0).getAgentSet.asInstanceOf[AgentSet]
-    } else {}
-    // leave agentSet as null to signal observer should be used
-    // leave agentSet as null to signal observer should be used
-    val event: LogoEvent = new LogoEvent(
-      agentSet,
-      args(1).getCommand.asInstanceOf[AnonymousCommand],
-      eventTick,
-      repeatInterval,
-      repeatIntervalPeriodType,
-      shuffleAgentSet)
+    args(0).get match {
+      case agent: Agent =>
+        val theAgent: Agent = args(0).getAgent.asInstanceOf[org.nlogo.agent.Agent]
+        agentSet = new ArrayAgentSet(AgentKindJ.Turtle, theAgent.toString, Array(theAgent))
+      case agentset: AgentSet =>
+        agentSet = args(0).getAgentSet.asInstanceOf[AgentSet]
+      case _ =>
+    }
+    val event: LogoEvent =
+      new LogoEvent(
+        agentSet,
+        args(1).getCommand.asInstanceOf[AnonymousCommand],
+        eventTick,
+        repeatInterval,
+        repeatIntervalPeriodType,
+        shuffleAgentSet)
     if (TimeExtension.debug)
-      TimeUtils.printToConsole(
-        context,
-        "scheduling event: " + event.dump(false, false, false))
+      TimeUtils
+        .printToConsole(context,"scheduling event: " + event.dump(false, false, false))
     scheduleTree.add(event)
   }
 
-  def getTickCounter(): TickCounter = {
-    if (tickCounter == null)
-      throw new ExtensionException(
-        "Tick counter has not been initialized in time extension.")
-    tickCounter
-  }
-
-  def getTickCounter(context: ExtensionContext): TickCounter = {
-    if (tickCounter == null) {
-      tickCounter = context.workspace.world.tickCounter
+  def getTickCounter(): TickCounter =
+    tickCounter match {
+      case tc if tc == null =>
+        throw new ExtensionException(
+          "Tick counter has not been initialized in time extension.")
+      case tc => tc
     }
-    tickCounter
-  }
 
-  def performScheduledTasks(args: Array[Argument], context: Context): Unit = {
+  def getTickCounter(context: ExtensionContext): TickCounter =
+    tickCounter match {
+      case tc if tc == null =>
+        throw new ExtensionException(
+          "Tick counter has not been initialized in time extension.")
+      case tc => context.workspace.world.tickCounter
+    }
+
+  def performScheduledTasks(args: Array[Argument], context: Context): Unit =
     performScheduledTasks(args, context, java.lang.Double.MAX_VALUE)
-  }
 
   def performScheduledTasks(args: Array[Argument],
                             context: Context,
                             untilTime: LogoTime): Unit = {
     if (!this.isAnchored)
-      throw new ExtensionException(
-        "time:go-until can only accept a LogoTime as a stopping time if the schedule is anchored using time:anchore-schedule")
+      throw new ExtensionException("time:go-until can only accept a LogoTime as a stopping time if the schedule is anchored using time:anchore-schedule")
     if (TimeExtension.debug)
       TimeUtils.printToConsole(
         context,
-        "timeAnchor: " + this.timeAnchor + " tickType: " + this.tickType +
-          " tickValue:" +
-          this.tickValue +
-          " untilTime:" +
-          untilTime)
-    val untilTick: java.lang.Double = this.timeAnchor
-        .getDifferenceBetween(this.tickType, untilTime) /
+        "timeAnchor: " +  this.timeAnchor +
+          " tickType: " + this.tickType   +
+          " tickValue:" + this.tickValue  +
+          " untilTime:" +      untilTime)
+    val untilTick: java.lang.Double =
+      this.timeAnchor.getDifferenceBetween(this.tickType, untilTime) /
         this.tickValue
     performScheduledTasks(args, context, untilTick)
   }

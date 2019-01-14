@@ -1,11 +1,6 @@
 package org.nlogo.extensions.time.datatypes
 
-import java.time.Duration
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.MonthDay
-import java.time.Period
-import java.time.ZoneOffset
+import java.time.{Duration, LocalDate, LocalDateTime, MonthDay, Period, ZoneOffset}
 import java.time.temporal.ChronoUnit
 import java.time.chrono.{ Chronology, IsoChronology }
 import java.time.format.DateTimeFormatter
