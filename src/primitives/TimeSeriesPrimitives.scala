@@ -20,22 +20,21 @@ import scala.collection.JavaConverters._
 object TimeSeriesPrimitives {
   class TimeSeriesAddRow extends Command {
     def getSyntax(): Syntax =
-      SyntaxJ.commandSyntax(
-        Array(Syntax.WildcardType, Syntax.WildcardType))
+      SyntaxJ.commandSyntax(Array(Syntax.WildcardType, Syntax.WildcardType))
     def perform(args: Array[Argument], context: Context): Unit = {
       val ts: LogoTimeSeries = TimeUtils.getTimeSeriesFromArgument(args, 0)
       val list: LogoList = TimeUtils.getListFromArgument(args, 1)
       val timeObj: AnyRef = list.get(0)
       var time: LogoTime = null
-      if (timeObj.isInstanceOf[String]) {
-        time = new LogoTime(timeObj.asInstanceOf[LocalDateTime])
-      } else if (timeObj.isInstanceOf[LogoTime]) {
-      // Create a new logotime since they are mutable
-        time = new LogoTime(timeObj.asInstanceOf[LocalDateTime])
-      } else {
+      timeObj match {
+        case tObj: String =>
+           time = new LogoTime(tObj)
+        case tObj: LogoTime =>
+          time = new LogoTime(tObj)
+        case tObj =>
         throw new ExtensionException(
           "time: was expecting a LogoTime object as the first item in the list passed as argument 2, found this instead: " +
-            Dump.logoObject(timeObj))
+            Dump.logoObject(tObj))
       }
       if (list.size != (ts.getNumColumns + 1))
         throw new ExtensionException(
@@ -56,14 +55,13 @@ object TimeSeriesPrimitives {
       try columnList = TimeUtils.getListFromArgument(args, 0)
       catch {
         case e: ExtensionException => {
-          val colName: String = TimeUtils.getStringFromArgument(args, 0)
           val cols: ArrayList[String] = new ArrayList[String]()
+          val colName: String = TimeUtils.getStringFromArgument(args, 0)
           cols.add(colName)
           columnList = LogoList.fromJava(cols)
         }
       }
-      val ts: LogoTimeSeries = new LogoTimeSeries(columnList)
-      ts
+      new LogoTimeSeries(columnList)
     }
   }
 
@@ -151,9 +149,7 @@ object TimeSeriesPrimitives {
       SyntaxJ.reporterSyntax(Array(Syntax.StringType), Syntax.WildcardType)
     def report(args: Array[Argument], context: Context): AnyRef = {
       val filename: String = TimeUtils.getStringFromArgument(args, 0)
-      val ts: LogoTimeSeries =
-        new LogoTimeSeries(filename, context.asInstanceOf[ExtensionContext])
-      ts
+       new LogoTimeSeries(filename, context.asInstanceOf[ExtensionContext])
     }
   }
 
@@ -164,11 +160,10 @@ object TimeSeriesPrimitives {
     def report(args: Array[Argument], context: Context): AnyRef = {
       val filename: String = TimeUtils.getStringFromArgument(args, 0)
       val format: String = TimeUtils.getStringFromArgument(args, 1)
-      val ts: LogoTimeSeries = new LogoTimeSeries(
+      new LogoTimeSeries(
         filename,
         format,
         context.asInstanceOf[ExtensionContext])
-      ts
     }
   }
 

@@ -19,8 +19,7 @@ class LogoSchedule extends ExtensionObject {
   override def equals(obj: Any): Boolean = this == obj
   def isAnchored(): Boolean = timeAnchor != null
 
-  def anchorSchedule(time: LogoTime,
-                     tickValue: java.lang.Double, tickType: PeriodType): Unit =
+  def anchorSchedule(time: LogoTime, tickValue: java.lang.Double, tickType: PeriodType): Unit =
     try {
       this.timeAnchor = new LogoTime(time)
       this.tickType = tickType
@@ -42,9 +41,7 @@ class LogoSchedule extends ExtensionObject {
       this.tickValue
   }
 
-  def addEvent(args: Array[Argument],
-               context: Context,
-               addType: AddType): Unit = {
+  def addEvent(args: Array[Argument], context: Context, addType: AddType): Unit = {
     var primName: String = null
     var eventTick: java.lang.Double = null
     addType match {
@@ -98,8 +95,7 @@ class LogoSchedule extends ExtensionObject {
         "time:" + primName +
           " expecting a number or logotime as the third argument")
     }
-    if (eventTick <
-          context.asInstanceOf[ExtensionContext].workspace.world.ticks)
+    if (eventTick < context.asInstanceOf[ExtensionContext].workspace.world.ticks)
       throw new ExtensionException(
         "Attempted to schedule an event for tick " + eventTick +
           " which is before the present 'moment' of " +
@@ -183,9 +179,7 @@ class LogoSchedule extends ExtensionObject {
   def performScheduledTasks(args: Array[Argument], context: Context): Unit =
     performScheduledTasks(args, context, java.lang.Double.MAX_VALUE)
 
-  def performScheduledTasks(args: Array[Argument],
-                            context: Context,
-                            untilTime: LogoTime): Unit = {
+  def performScheduledTasks(args: Array[Argument], context: Context, untilTime: LogoTime): Unit = {
     if (!this.isAnchored)
       throw new ExtensionException("time:go-until can only accept a LogoTime as a stopping time if the schedule is anchored using time:anchore-schedule")
     if (TimeExtension.debug)
@@ -201,9 +195,7 @@ class LogoSchedule extends ExtensionObject {
     performScheduledTasks(args, context, untilTick)
   }
 
-  def performScheduledTasks(args: Array[Argument],
-                            context: Context,
-                            untilTick: java.lang.Double): Unit = {
+  def performScheduledTasks(args: Array[Argument], context: Context, untilTick: java.lang.Double): Unit = {
     val extcontext: ExtensionContext = context.asInstanceOf[ExtensionContext]
     // This extension is only for CommandTasks, so we know there aren't any args to pass in
     val emptyArgs: Array[Any] = Array.ofDim[Any](1)
@@ -291,14 +283,10 @@ class LogoSchedule extends ExtensionObject {
   def getCurrentTime(): LogoTime = {
     if (!this.isAnchored) null
     if (TimeExtension.debug){
-      TimeUtils.printToConsole(
-        TimeExtension.context ,
-        "current time is: " +
-          this.timeAnchor.plus(this.tickType,
-            getTickCounter.ticks / this.tickValue))
+      TimeUtils.printToConsole(TimeExtension.context, "current time is: " +
+        this.timeAnchor.plus(this.tickType, getTickCounter.ticks / this.tickValue))
     }
-    this.timeAnchor
-      .plus(this.tickType, getTickCounter.ticks / this.tickValue)
+    this.timeAnchor.plus(this.tickType, getTickCounter.ticks / this.tickValue)
   }
 
   def dump(readable: Boolean, exporting: Boolean, reference: Boolean): String = {

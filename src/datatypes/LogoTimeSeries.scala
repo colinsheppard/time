@@ -24,12 +24,12 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
   }
 
   def this(filename: String, customFormat: String, context: ExtensionContext) = {
-    this(null: LogoList)
+    this(LogoList(Vector[AnyRef]()): LogoList)
     parseTimeSeriesFile(filename, customFormat, context)
   }
 
   def this(filename: String, context: ExtensionContext) = {
-    this(null: LogoList)
+    this(LogoList(Vector[AnyRef]()): LogoList)
     parseTimeSeriesFile(filename, context)
   }
 
@@ -92,9 +92,7 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
     parseTimeSeriesFile(filename, null, context)
   }
 
-  def parseTimeSeriesFile(filename: String,
-                          customFormat: String,
-                          context: ExtensionContext): Unit = {
+  def parseTimeSeriesFile(filename: String,customFormat: String,context: ExtensionContext): Unit = {
     var dataFile: File = null
     dataFile =
       if (filename.charAt(0) == '/' || filename.charAt(0) == '\\' ||
@@ -141,7 +139,7 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
       times.put(newTime, new TimeSeriesRecord(newTime, { numRows += 1; numRows - 1 }))
       var colInd: Int = 1
       while (colInd <= columns.size) {
-        columns.get(columnNames(colInd)).add(lineData(colInd))
+        columns.get(columnNames(colInd - 1)).add(lineData(colInd))
         colInd += 1
         colInd - 1
       }

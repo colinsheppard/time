@@ -6,9 +6,9 @@ netLogoExtName := "time"
 netLogoZipSources := false
 
 netLogoTarget := org.nlogo.build.NetLogoExtension.directoryTarget(baseDirectory.value / "time")
-//netLogoTarget :=
-//  org.nlogo.build.NetLogoExtension.directoryTarget(baseDirectory.value)
 publishMavenStyle in ThisBuild := false
-scalaSource in Compile := baseDirectory.value / "src"
-
-//javacOptions ++= Seq("-g", "-deprecation", "-Xlint:all", "-Xlint:-serial", "-Xlint:-path", "-encoding", "us-ascii")
+lazy val src = (project in file("."))
+  .settings(
+    scalaSource in Compile := baseDirectory.value / "src",
+    scalaSource in Test    := baseDirectory.value / "test"
+  )
