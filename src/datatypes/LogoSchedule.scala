@@ -29,150 +29,115 @@ class LogoSchedule extends ExtensionObject {
 
     }
 
+  @throws[ExtensionException]
   def timeToTick(time: LogoTime): java.lang.Double = {
     if (this.timeAnchor.dateType != time.dateType)
-      throw new ExtensionException(
-        "Cannot schedule event to occur at a LogoTime of type " +
+      throw new ExtensionException("Cannot schedule event to occur at a LogoTime of type " +
           time.dateType.toString +
           " because the schedule is anchored to a LogoTime of type " +
-          this.timeAnchor.dateType.toString +
-          ".  Types must be consistent.")
-    this.timeAnchor.getDifferenceBetween(this.tickType, time) /
-      this.tickValue
+          this.timeAnchor.dateType.toString + ".  Types must be consistent.")
+    this.timeAnchor.getDifferenceBetween(this.tickType, time) / this.tickValue
   }
 
   def addEvent(args: Array[Argument], context: Context, addType: AddType): Unit = {
     var primName: String = null
     var eventTick: java.lang.Double = null
+    // Deciding on addType
     addType match {
       case Default =>
         primName = "add"
         if (args.length < 3)
-          throw new ExtensionException(
-            "time:add must have 3 arguments: schedule agent task tick/time")
+          throw new ExtensionException("time:add must have 3 arguments: schedule agent task tick/time")
       case Shuffle =>
         primName = "add-shuffled"
         if (args.length < 3)
-          throw new ExtensionException(
-            "time:add-shuffled must have 3 arguments: schedule agent task tick/time")
+          throw new ExtensionException("time:add-shuffled must have 3 arguments: schedule agent task tick/time")
       case Repeat =>
         primName = "repeat"
         if (args.length < 4)
-          throw new ExtensionException(
-            "time:repeat must have 4 or 5 arguments: schedule agent task tick/time number (period-type)")
+          throw new ExtensionException("time:repeat must have 4 or 5 arguments: schedule agent task tick/time number (period-type)")
       case RepeatShuffled =>
         primName = "repeat-shuffled"
         if (args.length < 4)
-          throw new ExtensionException(
-            "time:repeat-shuffled must have 4 or 5 arguments: schedule agent task tick/time number (period-type)")
-
+          throw new ExtensionException("time:repeat-shuffled must have 4 or 5 arguments: schedule agent task tick/time number (period-type)")
     }
-    if (!(args(0).get.isInstanceOf[Agent]) && !(args(0).get
-          .isInstanceOf[AgentSet]) &&
-        !((args(0).get.isInstanceOf[String]) && args(0).get.toString
-          .toLowerCase()
-          .==("observer")))
-      throw new ExtensionException(
-        "time:" + primName +
-          " expecting an agent, agentset, or the string \"observer\" as the first argument")
-    if (!(args(1).get.isInstanceOf[AnonymousCommand]))
-      throw new ExtensionException(
-        "time:" + primName + " expecting a command task as the second argument")
-    if (args(1).get.asInstanceOf[AnonymousCommand].formals.length >
-          0)
-      throw new ExtensionException(
-        "time:" + primName +
-          " expecting as the second argument a command task that takes no arguments of its own, but found a task which expects its own arguments, this kind of task is unsupported by the time extension.")
-    if (args(2).get.getClass == classOf[Double]) {
+
+    // Through exception on conditions for agent, agentsets and not observer
+    if (!(args(0).get.isInstanceOf[Agent])
+      && !(args(0).get.isInstanceOf[AgentSet])
+      && !((args(0).get.isInstanceOf[String]) && args(0).get.toString.toLowerCase().==("observer")))
+      throw new ExtensionException(s"time: $primName expecting an agent, agentset, or the string \'observer\' as the first argument")
+    else if (!(args(1).get.isInstanceOf[AnonymousCommand]))
+      throw new ExtensionException(s"time: $primName expecting a command task as the second argument")
+    else if (args(1).get.asInstanceOf[AnonymousCommand].formals.length > 0)
+      throw new ExtensionException(s"time: $primName expecting as the second argument a command task that takes no arguments of its own, but found a task which expects its own arguments, this kind of task is unsupported by the time extension.")
+
+    // Determine the type of the entered input for addEvent: number, logotime, observer
+    // Something is wrong here
+    // args(2).get.getClass is not a double
+    if (args(2).get.getClass == classOf[java.lang.Double]) {
       eventTick = args(2).getDoubleValue
     } else if (args(2).get.getClass == classOf[LogoTime]) {
       if (!this.isAnchored)
-        throw new ExtensionException(
-          "A LogoEvent can only be scheduled to occur at a LogoTime if the discrete event schedule has been anchored to a LogoTime, see time:anchor-schedule")
+        throw new ExtensionException("A LogoEvent can only be scheduled to occur at a LogoTime if the discrete event schedule has been anchored to a LogoTime, see time:anchor-schedule")
       eventTick = this.timeToTick(TimeUtils.getTimeFromArgument(args, 2))
     } else {
-      throw new ExtensionException(
-        "time:" + primName +
-          " expecting a number or logotime as the third argument")
+          throw new ExtensionException(s"time: $primName expecting a number or logotime as the third argument")
     }
+
     if (eventTick < context.asInstanceOf[ExtensionContext].workspace.world.ticks)
-      throw new ExtensionException(
-        "Attempted to schedule an event for tick " + eventTick +
-          " which is before the present 'moment' of " +
-          context.asInstanceOf[ExtensionContext].workspace.world.ticks)
+      throw new ExtensionException(s"Attempted to schedule an event for tick $eventTick which is before the present 'moment' of ${context.asInstanceOf[ExtensionContext].workspace.world.ticks}")
+
     var repeatIntervalPeriodType: PeriodType = null
     var repeatInterval: java.lang.Double = null
     if (addType == Repeat || addType == RepeatShuffled) {
       if (args(3).get.getClass != classOf[Double])
-        throw new ExtensionException(
-          "time:repeat expecting a number as the fourth argument")
+        throw new ExtensionException("time:repeat expecting a number as the fourth argument")
       repeatInterval = args(3).getDoubleValue
       if (repeatInterval <= 0)
-        throw new ExtensionException(
-          "time:repeat the repeat interval must be a positive number")
+        throw new ExtensionException("time:repeat the repeat interval must be a positive number")
       if (args.length == 5) {
         if (!this.isAnchored)
-          throw new ExtensionException(
-            "A LogoEvent can only be scheduled to repeat using a period type if the discrete event schedule has been anchored to a LogoTime, see time:anchor-schedule")
-        repeatIntervalPeriodType = TimeUtils.stringToPeriodType(
-          TimeUtils.getStringFromArgument(args, 4))
+          throw new ExtensionException("A LogoEvent can only be scheduled to repeat using a period type if the discrete event schedule has been anchored to a LogoTime, see time:anchor-schedule")
+        repeatIntervalPeriodType = TimeUtils.stringToPeriodType(TimeUtils.getStringFromArgument(args, 4))
         if (repeatIntervalPeriodType != Month && repeatIntervalPeriodType != Year) {
           repeatInterval = this.timeAnchor.getDifferenceBetween(
               this.tickType,
-              this.timeAnchor.plus(repeatIntervalPeriodType, repeatInterval)) /
-              this.tickValue
-          if (TimeExtension.debug)
-            TimeUtils.printToConsole(
-              context,
-              "from:" + repeatIntervalPeriodType + " to:" + this.tickType +
-                " interval:" +
-                repeatInterval)
+              this.timeAnchor.plus(repeatIntervalPeriodType, repeatInterval)) / this.tickValue
           repeatIntervalPeriodType = null
-        } else {
-          if (TimeExtension.debug)
-            TimeUtils.printToConsole(
-              context,
-              "repeat every: " + repeatInterval + " " + repeatIntervalPeriodType)
         }
       }
+
+      val shuffleAgentSet: Boolean = addType == Shuffle || addType == RepeatShuffled
+      var agentSet: AgentSet = null
+      agentSet = args(0).get match {
+        case agent: Agent =>
+          val theAgent: Agent = args(0).getAgent.asInstanceOf[org.nlogo.agent.Agent]
+          new ArrayAgentSet(AgentKindJ.Turtle, theAgent.toString, Array(theAgent))
+        case agentset: AgentSet =>
+          args(0).getAgentSet.asInstanceOf[AgentSet]
+      }
+
+      val event: LogoEvent =
+        new LogoEvent(agentSet, args(1).getCommand.asInstanceOf[AnonymousCommand], eventTick,
+          repeatInterval, repeatIntervalPeriodType, shuffleAgentSet)
+      scheduleTree.add(event)
     }
-    val shuffleAgentSet: Boolean = (addType == Shuffle || addType == RepeatShuffled)
-    var agentSet: AgentSet = null
-    args(0).get match {
-      case agent: Agent =>
-        val theAgent: Agent = args(0).getAgent.asInstanceOf[org.nlogo.agent.Agent]
-        agentSet = new ArrayAgentSet(AgentKindJ.Turtle, theAgent.toString, Array(theAgent))
-      case agentset: AgentSet =>
-        agentSet = args(0).getAgentSet.asInstanceOf[AgentSet]
-      case _ =>
-    }
-    val event: LogoEvent =
-      new LogoEvent(
-        agentSet,
-        args(1).getCommand.asInstanceOf[AnonymousCommand],
-        eventTick,
-        repeatInterval,
-        repeatIntervalPeriodType,
-        shuffleAgentSet)
-    if (TimeExtension.debug)
-      TimeUtils
-        .printToConsole(context,"scheduling event: " + event.dump(false, false, false))
-    scheduleTree.add(event)
   }
 
   def getTickCounter(): TickCounter =
     tickCounter match {
       case tc if tc == null =>
-        throw new ExtensionException(
-          "Tick counter has not been initialized in time extension.")
+        throw new ExtensionException("Tick counter has not been initialized in time extension.")
       case tc => tc
     }
 
   def getTickCounter(context: ExtensionContext): TickCounter =
     tickCounter match {
-      case tc if tc == null =>
-        throw new ExtensionException(
-          "Tick counter has not been initialized in time extension.")
+      case tc if tc == null => {
+        tickCounter = context.workspace.world.tickCounter
+        tickCounter
+      }
       case tc => context.workspace.world.tickCounter
     }
 
@@ -181,7 +146,7 @@ class LogoSchedule extends ExtensionObject {
 
   def performScheduledTasks(args: Array[Argument], context: Context, untilTime: LogoTime): Unit = {
     if (!this.isAnchored)
-      throw new ExtensionException("time:go-until can only accept a LogoTime as a stopping time if the schedule is anchored using time:anchore-schedule")
+      throw new ExtensionException("time:go-until can only accept a LogoTime as a stopping time if the schedule is anchored using time:anchor-schedule")
     if (TimeExtension.debug)
       TimeUtils.printToConsole(
         context,
@@ -190,8 +155,7 @@ class LogoSchedule extends ExtensionObject {
           " tickValue:" + this.tickValue  +
           " untilTime:" +      untilTime)
     val untilTick: java.lang.Double =
-      this.timeAnchor.getDifferenceBetween(this.tickType, untilTime) /
-        this.tickValue
+      this.timeAnchor.getDifferenceBetween(this.tickType, untilTime) / this.tickValue
     performScheduledTasks(args, context, untilTick)
   }
 

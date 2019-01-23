@@ -1,2 +1,101 @@
-StringEndsWithSuccess
+TimeCreateDefault
   extensions [time]
+  time:show (time:create "2000/01/01 10:00") "yyyy/dd/MM HH:mm" => "2000/01/01 10:00"
+  time:show (time:create "2000/01/01 10:00") "yyyy/dd/MM" => "2000/01/01"
+  time:show (time:create "2000/01/01 10:00") "dd/MM/yyyy" => "01/01/2000"
+
+TimePlusOperator
+  extensions [time]
+  time:show (time:plus (time:create "2000/01/01 10:00") 3 "days") "yyyy/MM/dd" => "2000/01/04"
+  time:show (time:plus (time:create "2000/01/04 10:00") -3 "days") "yyyy/MM/dd" => "2000/01/01"
+  time:show (time:plus (time:create "2000/01/04 10:00") 0 "days") "yyyy/MM/dd" => "2000/01/04"
+  time:show (time:plus (time:create "2000/01/04 10:00") 3 "hour") "yyyy/MM/dd HH" => "2000/01/04 13"
+  time:show (time:plus (time:create "2000/01/04 10:00") 24 "hour") "yyyy/MM/dd HH" => "2000/01/05 10"
+
+TimeIsBefore
+  extensions [time]
+  time:is-before (time:create "2000/01/01 10:00")  (time:create "2000/01/01 11:00") => true
+  time:is-before (time:create "2000/01/01 10:00")  (time:create "2000/01/01 09:00") => false
+  time:is-before (time:create "2000/01/01 10:00")  (time:create "2000/01/01 10:00") => false
+  time:is-before (time:create "2001/01/01 10:00")  (time:create "2001/01/01 10:00") => false
+  time:is-before (time:create "2001/01/01 10:00")  (time:create "2000/01/01 10:00") => false
+  time:is-before (time:create "2000/01/01 10:00")  (time:create "2001/01/01 10:00") => true
+  time:is-before (time:create "2001/01/01 10:00")  (time:create "2000/01/01 10:00") => false
+  time:is-before (time:create "2000/01/01 10:01")  (time:create "2000/01/01 10:00") => false
+  time:is-before (time:create "2000/01/01 10:00")  (time:create "2000/01/01 10:01") => true
+
+TimeIsAfter
+  extensions [time]
+  time:is-after (time:create "2000/01/01 10:00")  (time:create "2000/01/01 11:00") => false
+  time:is-after (time:create "2000/01/01 10:00")  (time:create "2000/01/01 09:00") => true
+  time:is-after (time:create "2000/01/01 10:00")  (time:create "2000/01/01 10:00") => false
+  time:is-after (time:create "2001/01/01 10:00")  (time:create "2001/01/01 10:00") => false
+  time:is-after (time:create "2001/01/01 10:00")  (time:create "2000/01/01 10:00") => true
+  time:is-after (time:create "2000/01/01 10:00")  (time:create "2001/01/01 10:00") => false
+  time:is-after (time:create "2001/01/01 10:00")  (time:create "2000/01/01 10:00") => true
+  time:is-after (time:create "2000/01/01 10:01")  (time:create "2000/01/01 10:00") => true
+  time:is-after (time:create "2000/01/01 10:00")  (time:create "2000/01/01 10:01") => false
+
+TimeIsEqual
+  extensions [time]
+  time:is-equal (time:create "2000/01/01 10:00")  (time:create "2000/01/01 11:00") => false
+  time:is-equal (time:create "2000/01/01 10:00")  (time:create "2000/01/01 09:00") => false
+  time:is-equal (time:create "2000/01/01 10:00")  (time:create "2000/01/01 10:00") => true
+  time:is-equal (time:create "2001/01/01 10:00")  (time:create "2001/01/01 10:00") => true
+  time:is-equal (time:create "2001/01/01 10:00")  (time:create "2000/01/01 10:00") => false
+  time:is-equal (time:create "2000/01/01 10:00")  (time:create "2001/01/01 10:00") => false
+  time:is-equal (time:create "2001/01/01 10:00")  (time:create "2000/01/01 10:00") => false
+  time:is-equal (time:plus (time:create "2001/01/01 10:00") 3 "day") (time:create "2001/01/04 10:00") => true
+    time:is-equal (time:plus (time:create "2001/01/04 10:00") -3 "day") (time:create "2001/01/01 10:00") => true
+
+TimeShow
+  extensions [time]
+  time:show (time:create "2000/01/01 10:00") "yyyy/MM/d" => "2000/01/1"
+  time:show (time:create "2000/01/01 10:00") "yyyy-MM-d" => "2000-01-1"
+  time:show (time:create "2000/01/01 10:00") "mm" => "00"
+  time:show (time:create "2000/01/01 10:00:01.001") "SSSS" => "0010"
+
+TimeIsBetween
+  extensions [time]
+  time:is-between (time:create "2000/01/01 10:00:01") (time:create "2000/01/01 10:00:01") (time:create "2000/01/01 10:00:01") => true
+  time:is-between (time:create "2000/01/01") (time:create "2000/01/01") (time:create "2000/01/01") => true
+  time:is-between (time:create "2000/01/02") (time:create "2000/01/05") (time:create "2000/01/01") => true
+  time:is-between (time:create "2000/01/01") (time:create "2000/01/02") (time:create "2000/01/03") => false
+
+TimeGet
+  extensions [time]
+  time:get "year" (time:create "2000/01/01 10:00") => 2000
+  time:get "year" (time:plus (time:create "2000/01/01 10:00") 3 "day") => 2000
+  time:get "year" (time:plus (time:create "2000/01/01 10:00") 3 "year") => 2003
+  time:get "month" (time:create "2000/01/01 10:00") => 1
+  time:get "day" (time:create "2000/01/01 10:00") => 1
+  time:get "hour" (time:create "2000/01/01 10:00") => 10
+  time:get "second" (time:create "2000/01/01 10:00:01.100") => 1
+  time:get "milli" (time:create "2000/01/01 10:00:01.123") => 0
+
+TimeAnchorToTick
+  extensions [time]
+  time:show (time:anchor-to-ticks (time:create "2000-01-02 03:04:05") 1 "hour") "yyyy|MM/dd" => "2000|01/02"
+
+TimeDifferenceBetween
+  extensions [time]
+  time:difference-between (time:create "2000-01-02 10:00") (time:create "2000-01-01 10:00") "day" => -1
+  time:difference-between (time:create "2000-01-02 10:00") (time:create "2000-01-02 10:02") "second" => 120
+  time:difference-between (time:create "2000-02-01 10:00") (time:create "2000-03-01 10:00") "day" => 29
+
+TimeCreateWithFormat
+  extensions [time]
+  time:show (time:create-with-format "2000-02-01" "yyyy-MM-dd") "yyyy-MM-dd" => "2000-02-01"
+  time:show (time:create-with-format "2000-02-01" "yyyy-MM-dd") "dd/MM/yyyy" => "01/02/2000"
+  time:show (time:create-with-format "2000-02-01 10:00:42" "yyyy-MM-dd HH:mm:ss") "dd/MM/ss" => "01/02/42"
+   time:show (time:create-with-format "2000-02-01 10:23:42" "yyyy-MM-dd HH:ss:mm") "dd/MM/ss" => "01/02/23"
+
+TimeCreateCopy
+  extensions [time]
+  time:show time:copy (time:create "2000/01/01 10:00") "yyyy/MM/dd" => "2000/01/01"
+  time:show time:copy (time:plus (time:create "2000/01/01 10:00") 3 "day") "yyyy/MM/dd" => "2000/01/04"
+  time:show time:copy (time:plus (time:create "2000/01/01 10:00") 0 "day") "yyyy/MM/dd" => "2000/01/01"
+
+TimeSeriesCreate
+  extensions [time]
+  (time:ts-create ["turtle-show" "new-xcor" "new-ycor"])

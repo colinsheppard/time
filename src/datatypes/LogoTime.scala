@@ -308,13 +308,13 @@ class LogoTime extends ExtensionObject {
 
   def get(periodType: PeriodType): java.lang.Integer = {
     periodType match {
-      case Milli =>
-        this.dateType match { // getChronology().millisOfSecond().get(getMillis());
-          case DateTime => (datetime.getSecond * 1000)
-          case Date => LocalDateTime.from(date).getSecond() * 1000
-          case DayDate => LocalDateTime.from(monthDay).getSecond() * 1000
-
-        }
+//      case Milli =>
+//        this.dateType match {
+//          case DateTime => (datetime.getNano * 1000000)
+//          case Date => LocalDateTime.from(date).getNano() * 1000000
+//          case DayDate => LocalDateTime.from(monthDay).getNano() * 1000000
+//
+//        }
       case Second =>
         this.dateType match {
           case DateTime => datetime.getSecond
@@ -367,7 +367,7 @@ class LogoTime extends ExtensionObject {
         this.dateType match {
           case DateTime => datetime.getYear()
           case Date => LocalDateTime.from(date).getYear()
-          case DayDate =>LocalDateTime.from(monthDay).getYear()
+          case DayDate => LocalDateTime.from(monthDay).getYear()
 
         }
       case _ => 0
@@ -375,7 +375,6 @@ class LogoTime extends ExtensionObject {
   }
 
   def plus(pType: PeriodType, durVal: java.lang.Double): LogoTime = {
-    println(s"This is the pType $pType")
     this.dateType match {
       case DateTime => this.plus(this.datetime, pType, durVal)
       case Date => this.plus(this.date, pType, durVal)
@@ -473,7 +472,7 @@ class LogoTime extends ExtensionObject {
       timeA = timeB
       timeB = tempA
     }
-    if (this.dateType != timeA.dateType || this.dateType != timeB.dateType) // really we are type checking in here...
+    if (this.dateType != timeA.dateType || this.dateType != timeB.dateType)
       throw new ExtensionException(
         "time comparisons only work if the LogoTime's are the same variety, but you called with a " +
           this.dateType.toString +
@@ -503,9 +502,7 @@ class LogoTime extends ExtensionObject {
 
   def getDifferenceBetween(pType: PeriodType, endTime: LogoTime): java.lang.Double = {
     if (this.dateType != endTime.dateType){
-      throw new ExtensionException(
-        "time comparisons only work if the LogoTimes are the same variety, but you called with a " +
-          this.dateType.toString + " and a " + endTime.dateType.toString)
+      throw new ExtensionException(s"time comparisons only work if the LogoTimes are the same variety, but you called with a ${this.dateType.toString} and a ${endTime.dateType.toString}")
     }
     var durVal: java.lang.Double = 1.0
     pType match {
@@ -516,10 +513,7 @@ class LogoTime extends ExtensionObject {
           case Date =>
             TimeUtils.intToDouble((Period.between(this.date, endTime.date)).getYears)
           case DayDate =>
-            throw new ExtensionException(
-              pType +
-                " type is not supported by the time:difference-between primitive with LogoTimes of type DAY")
-
+            throw new ExtensionException(s"$pType type is not supported by the time:difference-between primitive with LogoTimes of type DAY")
         }
       case Month =>
         this.dateType match {
@@ -532,7 +526,7 @@ class LogoTime extends ExtensionObject {
             TimeUtils.intToDouble(
               (Period.between(LocalDate.from(this.monthDay), LocalDate.from(endTime.monthDay))).getMonths)
         }
-      case Week | Day | DayOfYear | Hour | Minute | Second | Milli =>
+      case Week | Day | DayOfYear | Hour | Minute | Second | Milli => {
         pType match {
           case Week => durVal *= (7.0 * 24.0 * 60.0 * 60.0 * 1000)
           case Day | DayOfYear => durVal *= (24.0 * 60.0 * 60.0 * 1000)
@@ -542,20 +536,13 @@ class LogoTime extends ExtensionObject {
           case _ =>
         }
         this.dateType match {
-          case DateTime =>
-              (Duration.between(
-                this.datetime, endTime.datetime)).toMillis / durVal
-          case Date =>
-              (Duration.between(
-                this.date, endTime.date)).toMillis / durVal
-          case DayDate =>
-              (Duration.between(
-                this.monthDay.atYear(this.monthDay.get(YEAR)),
-                endTime.monthDay.atYear(endTime.monthDay.get(YEAR)))).toMillis / durVal
-        }
-      case _ =>
-        throw new ExtensionException(
-          pType + " type is not supported by the time:difference-between primitive")
+            case DateTime =>
+                (Duration.between(
+                  this.datetime, endTime.datetime)).toMillis /durVal
+            case _ => throw new ExtensionException(s"$pType type is not supported by the time:difference-between primitive")
+          }
+      }
+      case _ => throw new ExtensionException(s"$pType type is not supported by the time:difference-between primitive")
     }
   }
 }

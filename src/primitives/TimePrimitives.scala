@@ -100,8 +100,7 @@ object TimePrimitives {
 
   class Get extends Reporter {
     def getSyntax(): Syntax =
-      SyntaxJ.reporterSyntax(Array(Syntax.StringType, Syntax.WildcardType),
-        Syntax.NumberType)
+      SyntaxJ.reporterSyntax(Array(Syntax.StringType, Syntax.WildcardType), Syntax.NumberType)
     def report(args: Array[Argument], context: Context): AnyRef = {
       val periodType: PeriodType =
         TimeUtils.stringToPeriodType(TimeUtils.getStringFromArgument(args, 0))
