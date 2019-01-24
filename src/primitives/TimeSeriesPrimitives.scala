@@ -159,11 +159,11 @@ object TimeSeriesPrimitives {
                              Syntax.WildcardType)
     def report(args: Array[Argument], context: Context): AnyRef = {
       val filename: String = TimeUtils.getStringFromArgument(args, 0)
-      val format: String = TimeUtils.getStringFromArgument(args, 1)
-      new LogoTimeSeries(
-        filename,
-        format,
-        context.asInstanceOf[ExtensionContext])
+      val format: Option[String] =
+        TimeUtils.getStringFromArgument(args, 1) match {
+          case null => None
+          case x => Some(x) }
+      new LogoTimeSeries(filename,format,context.asInstanceOf[ExtensionContext])
     }
   }
 

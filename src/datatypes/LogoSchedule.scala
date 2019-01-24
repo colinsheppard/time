@@ -8,11 +8,12 @@ import org.nlogo.core.{AgentKindJ, ExtensionObject, LogoList}
 import org.nlogo.nvm.ExtensionContext
 import org.nlogo.extensions.time._
 import scala.collection.JavaConverters._
+import util.control.Breaks._
 
 class LogoSchedule extends ExtensionObject {
+  // This is the data structure that contains all the scheduled events
   var scheduleTree: TreeSet[LogoEvent] = new TreeSet[LogoEvent](LogoEventComparator)
   var tickCounter: TickCounter = null
-  // The following three fields track an anchored schedule
   var timeAnchor: LogoTime = null
   var tickType: PeriodType = null
   var tickValue: java.lang.Double = null
@@ -26,240 +27,197 @@ class LogoSchedule extends ExtensionObject {
       this.tickValue = tickValue
     } catch {
       case e: ExtensionException => e.printStackTrace()
-
     }
 
   @throws[ExtensionException]
   def timeToTick(time: LogoTime): java.lang.Double = {
     if (this.timeAnchor.dateType != time.dateType)
-      throw new ExtensionException("Cannot schedule event to occur at a LogoTime of type " +
-          time.dateType.toString +
-          " because the schedule is anchored to a LogoTime of type " +
-          this.timeAnchor.dateType.toString + ".  Types must be consistent.")
+      throw new ExtensionException(s"Cannot schedule event to occur at a LogoTime of type ${time.dateType.toString} because the schedule is anchored to a LogoTime of type ${this.timeAnchor.dateType.toString}.  Types must be consistent.")
     this.timeAnchor.getDifferenceBetween(this.tickType, time) / this.tickValue
   }
 
+  @throws[ExtensionException]
   def addEvent(args: Array[Argument], context: Context, addType: AddType): Unit = {
-    var primName: String = null
-    var eventTick: java.lang.Double = null
-    // Deciding on addType
-    addType match {
-      case Default =>
-        primName = "add"
-        if (args.length < 3)
-          throw new ExtensionException("time:add must have 3 arguments: schedule agent task tick/time")
-      case Shuffle =>
-        primName = "add-shuffled"
-        if (args.length < 3)
-          throw new ExtensionException("time:add-shuffled must have 3 arguments: schedule agent task tick/time")
-      case Repeat =>
-        primName = "repeat"
-        if (args.length < 4)
-          throw new ExtensionException("time:repeat must have 4 or 5 arguments: schedule agent task tick/time number (period-type)")
-      case RepeatShuffled =>
-        primName = "repeat-shuffled"
-        if (args.length < 4)
-          throw new ExtensionException("time:repeat-shuffled must have 4 or 5 arguments: schedule agent task tick/time number (period-type)")
-    }
-
-    // Through exception on conditions for agent, agentsets and not observer
-    if (!(args(0).get.isInstanceOf[Agent])
-      && !(args(0).get.isInstanceOf[AgentSet])
-      && !((args(0).get.isInstanceOf[String]) && args(0).get.toString.toLowerCase().==("observer")))
-      throw new ExtensionException(s"time: $primName expecting an agent, agentset, or the string \'observer\' as the first argument")
+    // Determines primitives name
+      val primName = addType match {
+        case Default =>
+          if (args.length < 3)
+            throw new ExtensionException(
+              "time:add must have 3 arguments: schedule agent task tick/time")
+          "add"
+        case Shuffle =>
+          if (args.length < 3)
+            throw new ExtensionException(
+              "time:add-shuffled must have 3 arguments: schedule agent task tick/time")
+          "add-shuffled"
+        case Repeat =>
+          if (args.length < 4)
+            throw new ExtensionException("""time:repeat must have 4 or 5 arguments:
+              schedule agent task tick/time number (period-type)""")
+          "repeat"
+        case RepeatShuffled =>
+          if (args.length < 4)
+            throw new ExtensionException("time:repeat-shuffled must have 4 or 5 arguments: schedule agent task tick/time number (period-type)")
+          "repeat-shuffled"
+        case _ => null
+      }
+    // Throw exception on conditions for agent, agentsets and not observer
+    val isInvalidEventArgument = !(args(0).get.isInstanceOf[Agent]) &&
+        !(args(0).get.isInstanceOf[AgentSet]) &&
+        !((args(0).get.isInstanceOf[String]) && args(0).get.toString.toLowerCase().==("observer"))
+    if (isInvalidEventArgument)
+      throw new ExtensionException(
+        "time: $primName expected an agent, agentset, or the string \'observer\' as the first argument")
     else if (!(args(1).get.isInstanceOf[AnonymousCommand]))
-      throw new ExtensionException(s"time: $primName expecting a command task as the second argument")
+      throw new ExtensionException(
+        s"time: $primName expecting a command task as the second argument")
     else if (args(1).get.asInstanceOf[AnonymousCommand].formals.length > 0)
-      throw new ExtensionException(s"time: $primName expecting as the second argument a command task that takes no arguments of its own, but found a task which expects its own arguments, this kind of task is unsupported by the time extension.")
+      throw new ExtensionException(
+       s"""time: $primName expecting as the second argument a command task that takes no arguments of
+       its own, but found a task which expects its own arguments, this kind of task is unsupported by
+       the time extension.""")
 
-    // Determine the type of the entered input for addEvent: number, logotime, observer
-    // Something is wrong here
-    // args(2).get.getClass is not a double
-    if (args(2).get.getClass == classOf[java.lang.Double]) {
-      eventTick = args(2).getDoubleValue
-    } else if (args(2).get.getClass == classOf[LogoTime]) {
-      if (!this.isAnchored)
-        throw new ExtensionException("A LogoEvent can only be scheduled to occur at a LogoTime if the discrete event schedule has been anchored to a LogoTime, see time:anchor-schedule")
-      eventTick = this.timeToTick(TimeUtils.getTimeFromArgument(args, 2))
-    } else {
-          throw new ExtensionException(s"time: $primName expecting a number or logotime as the third argument")
-    }
-
-    if (eventTick < context.asInstanceOf[ExtensionContext].workspace.world.ticks)
-      throw new ExtensionException(s"Attempted to schedule an event for tick $eventTick which is before the present 'moment' of ${context.asInstanceOf[ExtensionContext].workspace.world.ticks}")
-
-    var repeatIntervalPeriodType: PeriodType = null
-    var repeatInterval: java.lang.Double = null
-    if (addType == Repeat || addType == RepeatShuffled) {
-      if (args(3).get.getClass != classOf[Double])
-        throw new ExtensionException("time:repeat expecting a number as the fourth argument")
-      repeatInterval = args(3).getDoubleValue
-      if (repeatInterval <= 0)
-        throw new ExtensionException("time:repeat the repeat interval must be a positive number")
-      if (args.length == 5) {
-        if (!this.isAnchored)
-          throw new ExtensionException("A LogoEvent can only be scheduled to repeat using a period type if the discrete event schedule has been anchored to a LogoTime, see time:anchor-schedule")
-        repeatIntervalPeriodType = TimeUtils.stringToPeriodType(TimeUtils.getStringFromArgument(args, 4))
-        if (repeatIntervalPeriodType != Month && repeatIntervalPeriodType != Year) {
-          repeatInterval = this.timeAnchor.getDifferenceBetween(
-              this.tickType,
-              this.timeAnchor.plus(repeatIntervalPeriodType, repeatInterval)) / this.tickValue
-          repeatIntervalPeriodType = null
-        }
+      /* --------------------------------------------------------------------------------
+         Determine the type of the entered input for addEvent: number, logotime, observer
+         -------------------------------------------------------------------------------- */
+      val eventTick: java.lang.Double = args(2).get.getClass match {
+        case clazz if clazz == classOf[java.lang.Double] => args(2).getDoubleValue
+        case clazz if clazz == classOf[LogoTime] =>
+          if (!this.isAnchored)
+            throw new ExtensionException(s"""A LogoEvent can only be scheduled to occur at a LogoTime
+            if the discrete event schedule has been anchored to a LogoTime, see time:anchor-schedule""")
+          this.timeToTick(TimeUtils.getTimeFromArgument(args, 2))
+        case _ =>
+          throw new ExtensionException(
+            s"""time: $primName expecting a number or logotime as the third argument""")
       }
 
+    if (eventTick < context.asInstanceOf[ExtensionContext].workspace.world.ticks)
+      throw new ExtensionException(s"""Attempted to schedule an event for tick $eventTick which is
+      before the present 'moment' of ${context.asInstanceOf[ExtensionContext].workspace.world.ticks}""")
+      var repeatIntervalPeriodType: PeriodType = null
+      var repeatInterval: java.lang.Double = null
+      if (addType == Repeat || addType == RepeatShuffled) {
+        if (args(3).get.getClass != classOf[java.lang.Double])
+          throw new ExtensionException("time:repeat expecting a number as the fourth argument")
+        repeatInterval = args(3).getDoubleValue
+        if (repeatInterval <= 0)
+          throw new ExtensionException("time:repeat the repeat interval must be a positive number")
+        if (args.length == 5) {
+          if (!this.isAnchored)
+            throw new ExtensionException(
+              """A LogoEvent can only be scheduled to repeat using a period type if the discrete
+                 event schedule has been anchored to a LogoTime, see time:anchor-schedule""")
+          repeatIntervalPeriodType = TimeUtils.stringToPeriodType(TimeUtils.getStringFromArgument(args, 4))
+          if (repeatIntervalPeriodType != Month && repeatIntervalPeriodType != Year) {
+            repeatInterval = this.timeAnchor.getDifferenceBetween(this.tickType,
+                this.timeAnchor.plus(repeatIntervalPeriodType, repeatInterval)) / this.tickValue
+            repeatIntervalPeriodType = null
+          }
+        }
+      }
       val shuffleAgentSet: Boolean = addType == Shuffle || addType == RepeatShuffled
-      var agentSet: AgentSet = null
-      agentSet = args(0).get match {
+      val agentSet = args(0).get match {
         case agent: Agent =>
           val theAgent: Agent = args(0).getAgent.asInstanceOf[org.nlogo.agent.Agent]
           new ArrayAgentSet(AgentKindJ.Turtle, theAgent.toString, Array(theAgent))
-        case agentset: AgentSet =>
-          args(0).getAgentSet.asInstanceOf[AgentSet]
+        case agentset: AgentSet => args(0).getAgentSet.asInstanceOf[AgentSet]
+        case _ => null
       }
-
-      val event: LogoEvent =
-        new LogoEvent(agentSet, args(1).getCommand.asInstanceOf[AnonymousCommand], eventTick,
-          repeatInterval, repeatIntervalPeriodType, shuffleAgentSet)
+      val event: LogoEvent = new LogoEvent(agentSet, args(1).getCommand.asInstanceOf[AnonymousCommand], eventTick,repeatInterval, repeatIntervalPeriodType, shuffleAgentSet)
       scheduleTree.add(event)
-    }
   }
 
   def getTickCounter(): TickCounter =
     tickCounter match {
-      case tc if tc == null =>
+      case null =>
         throw new ExtensionException("Tick counter has not been initialized in time extension.")
       case tc => tc
     }
 
   def getTickCounter(context: ExtensionContext): TickCounter =
     tickCounter match {
-      case tc if tc == null => {
+      case null =>
         tickCounter = context.workspace.world.tickCounter
         tickCounter
-      }
       case tc => context.workspace.world.tickCounter
     }
 
-  def performScheduledTasks(args: Array[Argument], context: Context): Unit =
-    performScheduledTasks(args, context, java.lang.Double.MAX_VALUE)
+  /* ----------------------------------------------------------------------------
+     performScheduledTasks are three functions that are meant to allow overloaded
+     use of performing a task by the LogoSchedule object [CBR 01/24/2019]
+     ----------------------------------------------------------------- */
 
+  def performScheduledTasks(args: Array[Argument], context: Context): Unit = {
+    performScheduledTasks(args, context,
+      context.asInstanceOf[ExtensionContext].workspace.world.tickCounter.ticks)
+  }
   def performScheduledTasks(args: Array[Argument], context: Context, untilTime: LogoTime): Unit = {
-    if (!this.isAnchored)
-      throw new ExtensionException("time:go-until can only accept a LogoTime as a stopping time if the schedule is anchored using time:anchor-schedule")
-    if (TimeExtension.debug)
-      TimeUtils.printToConsole(
-        context,
-        "timeAnchor: " +  this.timeAnchor +
-          " tickType: " + this.tickType   +
-          " tickValue:" + this.tickValue  +
-          " untilTime:" +      untilTime)
-    val untilTick: java.lang.Double =
-      this.timeAnchor.getDifferenceBetween(this.tickType, untilTime) / this.tickValue
+    if (!this.isAnchored) throw new ExtensionException(
+      """time:go-until can only accept a LogoTime as a stopping time if the schedule is anchored
+         using time:anchor-schedule""")
+    if (TimeExtension.debug) TimeUtils.printToConsole(context, s"timeAnchor: ${this.timeAnchor} tickType: ${this.tickType} tickValue: ${this.tickValue} untilTime:$untilTime")
+    // Calculate the untilTick and pass it to the main function
+    val untilTick: java.lang.Double = this.timeAnchor.getDifferenceBetween(this.tickType, untilTime) / this.tickValue
     performScheduledTasks(args, context, untilTick)
   }
-
   def performScheduledTasks(args: Array[Argument], context: Context, untilTick: java.lang.Double): Unit = {
-    val extcontext: ExtensionContext = context.asInstanceOf[ExtensionContext]
     // This extension is only for CommandTasks, so we know there aren't any args to pass in
+    val extcontext: ExtensionContext = context.asInstanceOf[ExtensionContext]
     val emptyArgs: Array[Any] = Array.ofDim[Any](1)
-    var event: LogoEvent =
-      if (scheduleTree.isEmpty) null else scheduleTree.first()
-    val theAgents: ArrayList[org.nlogo.agent.Agent] =
-      new ArrayList[org.nlogo.agent.Agent]()
-    while (event != null && event.tick <= untilTick) {
-      if (TimeExtension.debug)
-        TimeUtils.printToConsole(
-          context,
-          "performing event-id: " + event.id + " for agent: " +
-            event.agents +
-            " at tick:" +
-            event.tick +
-            " ")
-      if (TimeExtension.debug)
-        TimeUtils.printToConsole(
-          context,
-          "tick counter before: " + getTickCounter(extcontext) +
-            ", " +
-            getTickCounter(extcontext).ticks)
-      getTickCounter(extcontext).tick(
-        event.tick - getTickCounter(extcontext).ticks)
-      if (TimeExtension.debug)
-        TimeUtils.printToConsole(
-          context,
-          "tick counter after: " + getTickCounter(extcontext) +
-            ", " +
-            getTickCounter(extcontext).ticks)
-      if (event.agents == null) {
-        if (TimeExtension.debug)
-          TimeUtils.printToConsole(context, "single agent")
-        val nvmContext: org.nlogo.nvm.Context = new org.nlogo.nvm.Context(
-          extcontext.nvmContext.job,
-          extcontext.getAgent
-            .world
-            .observer
-            .asInstanceOf[org.nlogo.agent.Agent],
-          extcontext.nvmContext.ip,
-          extcontext.nvmContext.activation,
-          extcontext.workspace
-        )
-        event.task.perform(nvmContext, emptyArgs.asInstanceOf[Array[AnyRef]])
-      } else {
-        var iter: AgentIterator = null
-        iter =
-          if (event.shuffleAgentSet)
-            event.agents.shufflerator(extcontext.nvmContext.job.random)
-          else event.agents.iterator
-        val copy: ArrayList[Agent] = new ArrayList[Agent]()
-        while (iter.hasNext) copy.add(iter.next())
-        for (theAgent <- copy.asScala) {
-          if (theAgent == null || theAgent.id == -1) {
-          //continue
-          }
+    var event: LogoEvent = if (scheduleTree.isEmpty) null else scheduleTree.first()
+    val theAgents: ArrayList[org.nlogo.agent.Agent] = new ArrayList[org.nlogo.agent.Agent]()
+
+    /* --------------------------------------------------------------------------
+       While Loop: Recursive but can end up in a recursive infinite loop
+       Queue Afterwards: Remove the current event from the logo queue, reschedule
+         the event, then grab the next event from the schedule [CBR 01/24/2019]
+       -------------------------------------------------------------------------- */
+    while (event != null && event.tick <= untilTick) { // iterates through scheduleTree
+      event.agents match {
+        case null => // observer context
           val nvmContext: org.nlogo.nvm.Context = new org.nlogo.nvm.Context(
-            extcontext.nvmContext.job,
-            theAgent,
-            extcontext.nvmContext.ip,
-            extcontext.nvmContext.activation,
-            extcontext.workspace)
-          if (extcontext.nvmContext.stopping){
-            return
-          }
+            extcontext.nvmContext.job, extcontext.getAgent.world.observer.asInstanceOf[org.nlogo.agent.Agent],
+            extcontext.nvmContext.ip, extcontext.nvmContext.activation, extcontext.workspace)
           event.task.perform(nvmContext, emptyArgs.asInstanceOf[Array[AnyRef]])
-          if (nvmContext.stopping){
-            return
+        case _ =>
+          val iter: AgentIterator =
+            if (event.shuffleAgentSet) event.agents.shufflerator(extcontext.nvmContext.job.random)
+            else event.agents.iterator
+          val copy: ArrayList[Agent] = new ArrayList[Agent]()
+
+          while (iter.hasNext) copy.add(iter.next())
+          for (theAgent <- copy.asScala) {
+            breakable {
+              if (theAgent == null || theAgent.id == -1)
+                break
+              val nvmContext: org.nlogo.nvm.Context = new org.nlogo.nvm.Context(
+                extcontext.nvmContext.job,theAgent, extcontext.nvmContext.ip,
+                extcontext.nvmContext.activation, extcontext.workspace)
+              if (extcontext.nvmContext.stopping){return}
+              event.task.perform(nvmContext, emptyArgs.asInstanceOf[Array[AnyRef]])
+              if (nvmContext.stopping){return}
+            }
           }
-        }
       }
-      // Remove the current event as is from the schedule
       scheduleTree.remove(event)
-      // Reschedule the event if necessary
       event.reschedule(this)
-      // Grab the next event from the schedule
       event = if (scheduleTree.isEmpty) null else scheduleTree.first()
     }
-    if (untilTick != null && untilTick < java.lang.Double.MAX_VALUE &&
-        untilTick > getTickCounter(extcontext).ticks)
-      getTickCounter(extcontext).tick(
-        untilTick - getTickCounter(extcontext).ticks)
+    if (untilTick != null && untilTick < java.lang.Double.MAX_VALUE && untilTick > getTickCounter(extcontext).ticks)
+      getTickCounter(extcontext).tick(untilTick - getTickCounter(extcontext).ticks)
   }
 
-  def getCurrentTime(): LogoTime = {
+  def getCurrentTime(): LogoTime =
     if (!this.isAnchored) null
-    if (TimeExtension.debug){
-      TimeUtils.printToConsole(TimeExtension.context, "current time is: " +
-        this.timeAnchor.plus(this.tickType, getTickCounter.ticks / this.tickValue))
-    }
-    this.timeAnchor.plus(this.tickType, getTickCounter.ticks / this.tickValue)
-  }
+    else this.timeAnchor.plus(this.tickType, getTickCounter.ticks / this.tickValue)
 
   def dump(readable: Boolean, exporting: Boolean, reference: Boolean): String = {
     val buf: StringBuilder = new StringBuilder()
     if (exporting) {
       buf.append("LogoSchedule")
-      if (!reference) {
+      if (!reference)
         buf.append(":")
-      }
     }
     if (!(reference && exporting)) {
       buf.append(" [ ")
@@ -276,7 +234,5 @@ class LogoSchedule extends ExtensionObject {
   def getExtensionName(): String = "time"
   def getNLTypeName(): String = "schedule"
   def recursivelyEqual(arg0: AnyRef): Boolean = equals(arg0)
-  def clear(): Unit = {
-    scheduleTree.clear()
-  }
+  def clear(): Unit = scheduleTree.clear()
 }

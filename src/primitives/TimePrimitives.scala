@@ -70,16 +70,15 @@ object TimePrimitives {
   }
 
   class CreateWithFormat extends Reporter {
-
     def getSyntax(): Syntax =
       SyntaxJ.reporterSyntax(Array(Syntax.StringType, Syntax.StringType),
                              Syntax.WildcardType)
     def report(args: Array[Argument], context: Context): AnyRef = {
       TimeExtension.context = context
-      val time: LogoTime = new LogoTime(
-        TimeUtils.getStringFromArgument(args, 0),
-        TimeUtils.getStringFromArgument(args, 1))
-      time
+      val customFormat = TimeUtils.getStringFromArgument(args, 1) match {
+        case null => None
+        case x => Some(x) }
+      new LogoTime(TimeUtils.getStringFromArgument(args, 0),customFormat)
     }
   }
 

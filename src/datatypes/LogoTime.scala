@@ -11,24 +11,19 @@ import org.nlogo.api.ExtensionException
 import org.nlogo.core.ExtensionObject
 import org.nlogo.extensions.time._
 
-/*class LogoThrime extends ExtensionObject {
-  val dateType: DateType = DateTime
-  val dateTime: LocalDateTime = dt
-  var date: LocalDate = null
-  var monthDay: MonthDay = null
-  private var customFmt: DateTimeFormatter = null
-  private var defaultFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
-  private var isAnchored: java.lang.Boolean = false
-  private var tickValue: java.lang.Double = _
-  private var tickType: PeriodType = _
-  private var anchorDatetime: LocalDateTime = _
-  private var anchorDate: LocalDate = _
-  private var anchorMonthDay: MonthDay = _
-  private var world: World = _
-
-}*/
-
 class LogoTime extends ExtensionObject {
+  /*
+   Well, the point of datatypes is for what? To be able to
+   type check at runtime... I think the types need to be redone
+   Because you can just do this with a sealed trait
+   , but what about similar data structures.
+   Well they are identical. It would almost be a record
+
+   We are playing with nulls and I think Options would
+   be some much better
+   I think options would be worth it. No, I think updating to
+   match would be helpful
+   */
   var dateType: DateType = DateTime
   var datetime: LocalDateTime = null
   var date: LocalDate = null
@@ -49,54 +44,54 @@ class LogoTime extends ExtensionObject {
     this.datetime = dt
   }
 
-  def this(dateStringArg: String, customFormat: String) = {
+  def this(dateStringArg: String, customFormat: Option[String]) = {
     this()
     var dateString: String = dateStringArg
     // First we parse the string to determine the date type
-    if (customFormat == null) {
+    customFormat match {
+      case None =>
       dateString = parseDateString(dateString)
-    } else {
-      this.dateType =
-        if (customFormat.indexOf('H') >= 0 || customFormat.indexOf('h') >= 0 ||
-            customFormat.indexOf('K') >= 0 ||
-            customFormat.indexOf('k') >= 0) DateTime
-        else if (customFormat.indexOf('Y') >= 0 || customFormat.indexOf('y') >= 0)
+      case Some(customForm) =>
+        this.dateType =
+        if (customForm.indexOf('H') >= 0 || customForm.indexOf('h') >= 0 ||
+            customForm.indexOf('K') >= 0 || customForm.indexOf('k') >= 0)
+          DateTime
+        else if (customForm.indexOf('Y') >= 0 || customForm.indexOf('y') >= 0)
           Date
-        else DayDate
+        else
+          DayDate
     }
-    this.dateType match {
-      case DateTime => this.defaultFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
-      case Date => this.defaultFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-      case DayDate => this.defaultFmt = DateTimeFormatter.ofPattern("MM-dd")
-
+    this.defaultFmt = this.dateType match {
+      case DateTime => DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
+      case Date => DateTimeFormatter.ofPattern("yyyy-MM-dd")
+      case DayDate => DateTimeFormatter.ofPattern("MM-dd")
     }
-    if (customFormat == null) {
-      this.dateType match {
-        case DateTime =>
-          this.datetime =
-            if ((dateString.length == 0 || dateString.==("now")))
-              LocalDateTime.now
-            else LocalDateTime.parse(dateString)
-        case Date => this.date = LocalDate.parse(dateString)
-        case DayDate => this.monthDay = MonthDay.parse(dateString, this.defaultFmt)
-
-      }
-    } else {
-      this.customFmt = DateTimeFormatter.ofPattern(customFormat)
-      this.dateType match {
-        case DateTime => this.datetime = LocalDateTime.parse(dateString, this.customFmt)
-        case Date => this.date = LocalDate.parse(dateString, this.customFmt)
-        case DayDate => this.monthDay = MonthDay.parse(dateString, this.customFmt)
+    customFormat match {
+      case None =>
+        this.dateType match {
+          case DateTime =>
+            this.datetime =
+              if (dateString.length == 0 || dateString.==("now"))
+                LocalDateTime.now
+              else LocalDateTime.parse(dateString)
+          case Date => this.date = LocalDate.parse(dateString)
+          case DayDate => this.monthDay = MonthDay.parse(dateString, this.defaultFmt)
+        }
+      case Some(customForm) =>
+        this.customFmt = DateTimeFormatter.ofPattern(customForm)
+        this.dateType match {
+          case DateTime => this.datetime = LocalDateTime.parse(dateString, this.customFmt)
+          case Date => this.date = LocalDate.parse(dateString, this.customFmt)
+          case DayDate => this.monthDay = MonthDay.parse(dateString, this.customFmt)
       }
     }
   }
 
-  def this(dateString: String) = this(dateString, null)
+  def this(dateString: String) = this(dateString, None)
 
   def this(time: LogoTime) = {
     this(time.show(time.defaultFmt))
   }
-
 
   def this(dt: LocalDate) = {
     this()
@@ -154,20 +149,9 @@ class LogoTime extends ExtensionObject {
   }
 
   def parseDateString(dateStringT: String): String = {
-    // what is this doing?
-    // it is parsing, but what exactly is it parsing?
     var dateString: String = dateStringT.replace('/', '-').replace(' ', 'T').trim()
     var len: Int = dateString.length
-    // Ok so we are grabbing the length of the pre-existing list.
-    // then he should matching on the character as we continue down
-    // First add 0's to pad single digit months / days if necessary
     val firstDash: Int = dateString.indexOf('-') // couldn't you pattern match
-//    firstDash match { // this is a side effect match
-//      case fd if fd == 1 || fd == 2  => dataString = "0" + dataString len = len + 1
-//      case fd if fd != 4 && fd != -1 => throw new ExtensionException("Illegal time string: '" + dateString + "'")
-//      case fd => {
-//        val secondDash = dataString.lastIndexOf('-')
-//    }
     if (firstDash == 1 || firstDash == 2) {
     // DAY
       if (firstDash == 1){
@@ -190,9 +174,7 @@ class LogoTime extends ExtensionObject {
       val secondDash: Int = dateString.lastIndexOf('-')
       if (secondDash == 6) {
       // month is single digit
-        dateString = dateString.substring(0, 5) + "0" + dateString.substring(
-            5,
-            len) { len += 1; len - 1 }
+        dateString = dateString.substring(0, 5) + "0" + dateString.substring(5,len){ len += 1; len - 1 }
       }
       if (len == 9 || dateString.indexOf('T') == 9) {
       // day is single digit
@@ -379,7 +361,7 @@ class LogoTime extends ExtensionObject {
       case DateTime => this.plus(this.datetime, pType, durVal)
       case Date => this.plus(this.date, pType, durVal)
       case DayDate => this.plus(this.monthDay, pType, durVal)
-      case _ => null
+      case _ => this
     }
   }
 

@@ -23,9 +23,10 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
     columns.put(colName.toString, new TimeSeriesColumn())
   }
 
-  def this(filename: String, customFormat: String, context: ExtensionContext) = {
+  def this(filename: String, customFormat: Option[String], context: ExtensionContext) = {
     this(LogoList(Vector[AnyRef]()): LogoList)
     parseTimeSeriesFile(filename, customFormat, context)
+
   }
 
   def this(filename: String, context: ExtensionContext) = {
@@ -45,15 +46,9 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
       case e: NullPointerException =>
         if (time.dateType != times.keySet().toArray()(0).asInstanceOf[LogoTime].dateType) {
           throw new ExtensionException(
-            "Cannot add a row with a LogoTime of type " + time.dateType.toString +
-              " to a LogoTimeSeries of type " +
-              times
-                .keySet()
-                .toArray()(0)
-                .asInstanceOf[LogoTime]
-                .dateType
-                .toString +
-              ".  Note, the first row added to the LogoTimeSeries object determines the data types for all columns.")
+            s"""Cannot add a row with a LogoTime of type ${time.dateType.toString} to a LogoTimeSeries of type
+                ${times.keySet().toArray()(0).asInstanceOf[LogoTime].dateType.toString}.
+                Note, the first row added to the LogoTimeSeries object determines the data types for all columns.""")
         } else {
           throw e
         }
@@ -89,10 +84,10 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
   }
 
   def parseTimeSeriesFile(filename: String, context: ExtensionContext): Unit = {
-    parseTimeSeriesFile(filename, null, context)
+    parseTimeSeriesFile(filename, None, context)
   }
 
-  def parseTimeSeriesFile(filename: String,customFormat: String,context: ExtensionContext): Unit = {
+  def parseTimeSeriesFile(filename: String,customFormat: Option[String],context: ExtensionContext): Unit = {
     var dataFile: File = null
     dataFile =
       if (filename.charAt(0) == '/' || filename.charAt(0) == '\\' ||

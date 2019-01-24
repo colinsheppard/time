@@ -96,6 +96,116 @@ TimeCreateCopy
   time:show time:copy (time:plus (time:create "2000/01/01 10:00") 3 "day") "yyyy/MM/dd" => "2000/01/04"
   time:show time:copy (time:plus (time:create "2000/01/01 10:00") 0 "day") "yyyy/MM/dd" => "2000/01/01"
 
-TimeSeriesCreate
+TimeDiscreteEventAddEventTick
   extensions [time]
-  (time:ts-create ["turtle-show" "new-xcor" "new-ycor"])
+  globals [dt value]
+  turtles-own [cheese]
+  O> crt 1 [ set cheese 3 ]
+  O> reset-ticks
+  [ cheese ] of one-of turtles => 3
+  O> set dt time:anchor-to-ticks (time:create "2000/01/01 10:00") 1 "day"
+  O> time:anchor-schedule dt 1 "day"
+  O> time:schedule-event "observer" ([[] -> ask one-of turtles [set cheese 0]]) 2.0
+  O> tick time:go
+  O> tick time:go
+  [ cheese ] of one-of turtles => 0
+
+TimeDiscreteEventAddEventDate
+  extensions [time]
+  globals [dt value]
+  turtles-own [cheese]
+  O> crt 1 [ set cheese 3 ]
+  O> reset-ticks
+  [ cheese ] of one-of turtles => 3
+  O> set dt time:anchor-to-ticks (time:create "2000/01/01 10:00") 1 "day"
+  O> time:anchor-schedule dt 1 "day"
+  O> time:schedule-event "observer" ([[] -> ask one-of turtles [set cheese 0]]) (time:create "2000/01/02 10:00")
+  O> tick time:go
+  O> tick time:go
+  [ cheese ] of one-of turtles => 0
+
+TimeDiscreteEventAdd1
+  extensions [time]
+  globals [dt value]
+  turtles-own [cheese]
+  O> crt 1 [ set cheese 3 ]
+  O> reset-ticks
+  [ cheese ] of one-of turtles => 3
+  O> time:anchor-schedule time:create "2000/01/01 10:00" 1 "day"
+  O> time:schedule-event "observer" ([[] -> ask one-of turtles [set cheese 0]]) (time:create "2000/01/02 10:00")
+  O> tick time:go
+  O> tick time:go
+  [ cheese ] of one-of turtles => 0
+
+TimeDiscreteEventAdd2
+  extensions [time]
+  globals [dt value]
+  turtles-own [cheese]
+  O> crt 1 [ set cheese 3 ]
+  O> reset-ticks
+  [ cheese ] of one-of turtles => 3
+  O> time:anchor-schedule time:create "2000/01/01 10:00" 1 "day"
+  O> time:schedule-event "observer" ([[] -> ask one-of turtles [set cheese 0]]) (time:create "2000/01/03 10:00")
+  O> tick time:go
+  O> tick time:go
+  [ cheese ] of one-of turtles => 0
+
+TimeDiscreteEventAdd3
+  extensions [time]
+  globals [dt value]
+  turtles-own [cheese]
+  O> crt 1 [ set cheese 3 ]
+  O> reset-ticks
+  [ cheese ] of one-of turtles => 3
+  O> time:anchor-schedule time:create "2000/01/01 10:00" 1 "day"
+  O> time:schedule-event "observer" ([[] -> ask one-of turtles [set cheese 0]]) (time:create "2000/01/04 10:00")
+  O> tick time:go
+  O> tick time:go
+  [ cheese ] of one-of turtles => 3
+
+TimeDiscreteTurtlesMovement
+  extensions [time]
+  O> crt 1 [ setxy 0 0 ]
+  O> reset-ticks
+  O> time:anchor-schedule time:create "2000/01/01 10:00" 1 "year"
+  O> time:schedule-event turtles ([[] -> setxy 3 3]) 2.0
+  O> tick time:go
+  O> tick time:go
+  [ ycor ] of one-of turtles => 3
+
+TimeDiscreteTurtleMovement
+  extensions [time]
+  O> crt 10 [ setxy 0 0 ]
+  O> reset-ticks
+  O> time:anchor-schedule time:create "2000/01/01 10:00" 1 "year"
+  O> time:schedule-event turtle 0 ([[] -> setxy 1 1]) 2.0
+  O> tick time:go
+  O> tick time:go
+  [ ycor ] of turtle 0 => 1
+
+TimeDiscreteSuccess
+  extensions [time]
+  O> crt 1 [ setxy 0 0 ]
+  O> reset-ticks
+  O> time:anchor-schedule time:create "2000/01/01 10:00" 1 "year"
+  O> time:schedule-event turtles ([[] -> setxy 0 0]) (time:create "2000/01/02 10:00")
+
+TimeDiscreteRepeating
+  extensions [time]
+  globals [step]
+  O> crt 1 [ set step 0 setxy step step ]
+  O> reset-ticks
+  O> time:anchor-schedule time:create "2000/01/01 10:00" 1 "year"
+  O> time:schedule-repeating-event turtles ([[] -> set step step + 1 setxy step step]) (time:create "2000/01/02 10:00") 2.0
+  [ ycor ] of one-of turtles => 0
+  O> tick time:go
+  [ ycor ] of one-of turtles => 1
+  O> tick time:go
+  [ ycor ] of one-of turtles => 2
+  O> tick time:go
+  [ ycor ] of one-of turtles => 2
+  O> tick time:go
+  [ ycor ] of one-of turtles => 3
+  O> tick time:go
+  [ ycor ] of one-of turtles => 3
+  O> tick time:go
