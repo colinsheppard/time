@@ -1,10 +1,11 @@
 package org.nlogo.extensions.time.datatypes
 
-import java.time.{Duration, LocalDate, LocalDateTime, MonthDay, Period, ZoneOffset, Instant}
+import java.time.{Duration, LocalDate, LocalDateTime, MonthDay, Period, ZoneOffset, Instant, DateTimeException}
 import java.time.temporal.ChronoUnit._
 import java.time.temporal.ChronoField._
 import java.time.chrono.{ Chronology, IsoChronology }
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE
 import java.time.format.FormatStyle.{ FULL }
 import org.nlogo.agent.World
 import org.nlogo.api.ExtensionException
@@ -12,18 +13,6 @@ import org.nlogo.core.ExtensionObject
 import org.nlogo.extensions.time._
 
 class LogoTime extends ExtensionObject {
-  /*
-   Well, the point of datatypes is for what? To be able to
-   type check at runtime... I think the types need to be redone
-   Because you can just do this with a sealed trait
-   , but what about similar data structures.
-   Well they are identical. It would almost be a record
-
-   We are playing with nulls and I think Options would
-   be some much better
-   I think options would be worth it. No, I think updating to
-   match would be helpful
-   */
   var dateType: DateType = DateTime
   var datetime: LocalDateTime = null
   var date: LocalDate = null
@@ -46,7 +35,7 @@ class LogoTime extends ExtensionObject {
 
   def this(dateStringArg: String, customFormat: Option[String]) = {
     this()
-    var dateString: String = dateStringArg
+    var dateString: String = dateStringArg.replace('T',' ')
     // First we parse the string to determine the date type
     customFormat match {
       case None =>
@@ -148,70 +137,61 @@ class LogoTime extends ExtensionObject {
     millisToA < millisToB
   }
 
+  @throws[ExtensionException]
   def parseDateString(dateStringT: String): String = {
     var dateString: String = dateStringT.replace('/', '-').replace(' ', 'T').trim()
     var len: Int = dateString.length
-    val firstDash: Int = dateString.indexOf('-') // couldn't you pattern match
-    if (firstDash == 1 || firstDash == 2) {
-    // DAY
-      if (firstDash == 1){
-      // month is single digit
-        dateString = "0" + dateString
-        len = len + 1
-      }
-      // Now check the day for a single digit
-      if (len == 4) {
-        dateString = dateString.substring(0, 3) + "0" + dateString.substring(3,4)
-        len = len + 1
-      } else if (len < 5) {
-        throw new ExtensionException(
-          "Illegal time string: '" + dateString + "'")
-      }
-    } else if (firstDash != 4 && firstDash != -1) {
-      throw new ExtensionException("Illegal time string: '" + dateString + "'")
-    } else {
-      // DATETIME or DATE
-      val secondDash: Int = dateString.lastIndexOf('-')
-      if (secondDash == 6) {
-      // month is single digit
-        dateString = dateString.substring(0, 5) + "0" + dateString.substring(5,len){ len += 1; len - 1 }
-      }
-      if (len == 9 || dateString.indexOf('T') == 9) {
-      // day is single digit
-        dateString = dateString.substring(0, 8) + "0" + dateString.substring(
-            8,
-            len) { len += 1; len - 1 }
-      }
-      if (dateString.indexOf('T') == 10 & (dateString.indexOf(':') == 12 || len == 12)) {
-      // DATETIME without leading 0 on hour, pad it
-        val firstColon: Int = dateString.indexOf(':')
-        dateString = dateString.substring(0, 11) + "0" + dateString.substring(11, len)
-        { len += 1; len - 1 }
-      }
+    val firstDash: Int = dateString.indexOf('-')
+    firstDash match {
+      case fDash if fDash == 1 || fDash == 2 =>
+        if(firstDash == 1){
+          dateString = "0" + dateString
+          len = len + 1
+        }
+        if(len == 4){
+          dateString = dateString.substring(0, 3) + "0" + dateString.substring(3, 4)
+          len = len + 1
+        } else if(len < 5){
+          throw new ExtensionException("Illegal time string(Less than 5): '" + dateString + "'")
+        }
+      case fDash if fDash != 4 && fDash != -1 =>
+        throw new ExtensionException(s"Illegal time string(Not 4 or 1): '${dateString.substring(3,4)}'")
+      case _ =>
+        val secondDash = dateString.lastIndexOf('-')
+        if (secondDash == 6) { // month is single digit
+          dateString = dateString.substring(0, 5) + "0" + dateString.substring(5,len)
+          len += 1
+        }
+        if (len == 9 || dateString.indexOf('T') == 9) { // day is single digit
+          dateString = dateString.substring(0, 8) + "0" + dateString.substring(8,len)
+          len += 1
+        }
+        if (dateString.indexOf('T') == 10 & (dateString.indexOf(':') == 12 || len == 12)) {
+          // DATETIME without leading 0 on hour, pad it
+          dateString = dateString.substring(0, 11) + "0" + dateString.substring(11, len)
+          len += 1
+        }
     }
-    if (len == 23 || len == 21 || len == 3 || len == 0) {
-      // a full DATETIME
-      this.dateType = DateTime
-    } else if (len == 19 || len == 17) {
-      // a DATETIME without millis
-      this.dateType = DateTime
-      dateString += ".000"
-    } else if (len == 16 || len == 14) {
-      // a DATETIME without seconds or millis
-      this.dateType = DateTime
-      dateString += ":00.000"
-    } else if (len == 13 || len == 11) {
-      // a DATETIME without minutes, seconds or millis
-      this.dateType = DateTime
-      dateString += ":00:00.000"
-    } else if (len == 10) {
-      // a DATE
-      this.dateType = Date
-    } else if (len == 5) {
-      // a DAY
-      this.dateType = DayDate
-    } else {
-      throw new ExtensionException("Illegal time string: '" + dateString + "'")
+    this.dateType = len match {
+      case length if len == 23 || len == 21 || len == 3 || len == 0 =>
+        DateTime
+      case length if len == 19 || len == 17 => {
+        dateString += ".000"
+        DateTime
+      }
+      case length if len == 16 || len == 14 => {
+        dateString += ":00.000"
+        DateTime
+      }
+      case length if len == 13 || len == 11 => {
+        dateString += ":00:00.000"
+        DateTime
+      }
+      case length if len == 10 =>
+        Date
+      case length if len == 5 =>
+        DayDate
+      case _ => throw new ExtensionException(s"Illegal time string(No matching type): '$dateString'")
     }
     dateString
   }
@@ -237,18 +217,28 @@ class LogoTime extends ExtensionObject {
     catch {
       case e: ExtensionException => {}
     }
-    this.dateType match {
+    val test = this.dateType match {
       case DateTime =>
-        datetime.format(
-          if (this.customFmt == null) this.defaultFmt else this.customFmt)
+        val fmt = if(this.customFmt == null) this.defaultFmt else this.customFmt
+        println("DateTime")
+        datetime.format(fmt)
       case Date =>
-        date.format(
-          if (this.customFmt == null) this.defaultFmt else this.customFmt)
+        val fmt = if(this.customFmt == null) this.defaultFmt else this.customFmt
+        try
+          date.format(fmt)
+        catch {
+          case e: NullPointerException => "" // there seems to be an edge case
+        }
       case DayDate =>
-        monthDay.format(
-         if (this.customFmt == null) this.defaultFmt else this.customFmt)
+        val fmt = if(this.customFmt == null) this.defaultFmt else this.customFmt
+        try
+          monthDay.format(fmt)
+        catch {
+          case e: NullPointerException => "" // there seems to be an edge case
+        }
       case _ => ""
     }
+    test
   }
 
   def updateFromTick(): Unit = {
@@ -290,13 +280,12 @@ class LogoTime extends ExtensionObject {
 
   def get(periodType: PeriodType): java.lang.Integer = {
     periodType match {
-//      case Milli =>
-//        this.dateType match {
-//          case DateTime => (datetime.getNano * 1000000)
-//          case Date => LocalDateTime.from(date).getNano() * 1000000
-//          case DayDate => LocalDateTime.from(monthDay).getNano() * 1000000
-//
-//        }
+     case Milli =>
+        this.dateType match {
+          case DateTime => (datetime.getNano) / 1000000
+          case Date => LocalDateTime.from(date).getNano() / 1000000
+          case DayDate => LocalDateTime.from(monthDay).getNano() / 1000000
+      }
       case Second =>
         this.dateType match {
           case DateTime => datetime.getSecond
@@ -397,7 +386,7 @@ class LogoTime extends ExtensionObject {
         per match {
           case None => {
             new LogoTime(refTime
-              .asInstanceOf[LocalDate]
+              .asInstanceOf[LocalDate].atStartOfDay
               .plus(Duration.of(TimeUtils.dToL(durVal), MILLIS)))
           }
           case Some(period) =>
@@ -407,12 +396,13 @@ class LogoTime extends ExtensionObject {
         per match {
           case None => {
             val milliDurVal: java.lang.Integer = durVal.asInstanceOf[java.lang.Double].intValue()*1000000
-            new LogoTime(refTime.asInstanceOf[LocalDateTime].plusNanos(milliDurVal.asInstanceOf[Long]))
+            new LogoTime(refTime.asInstanceOf[MonthDay].atYear(2000).atStartOfDay
+              .plusNanos(milliDurVal.asInstanceOf[Long]))
           }
           case Some(period) =>
-          new LogoTime(refTime.asInstanceOf[LocalDateTime].plus(period))
+            new LogoTime(refTime.asInstanceOf[MonthDay].atYear(2000).atStartOfDay.plus(period))
         }
-      case _ =>  new LogoTime(refTime.asInstanceOf[LocalDateTime])
+      case failedtype =>  throw new ExtensionException(s"$failedtype type does not match datatypes")
     }
   }
 
@@ -515,16 +505,20 @@ class LogoTime extends ExtensionObject {
           case Hour => durVal *= (60.0 * 60.0 * 1000)
           case Minute => durVal *= (60.0 * 1000)
           case Second => durVal *= 1000
-          case _ =>
+          case Milli =>
+          case _ => throw new ExtensionException(s"$pType testing type is not supported by the time:difference-between primitive")
         }
         this.dateType match {
             case DateTime =>
-                (Duration.between(
-                  this.datetime, endTime.datetime)).toMillis /durVal
-            case _ => throw new ExtensionException(s"$pType type is not supported by the time:difference-between primitive")
+              (Duration.between(this.datetime, endTime.datetime)).toMillis /durVal
+            case Date =>
+             (Duration.between(this.date.atStartOfDay(), endTime.date.atStartOfDay())).toMillis / durVal
+            case DayDate =>
+              (Duration.between(this.monthDay.atYear(2000).atStartOfDay(), endTime.monthDay.atYear(2000).atStartOfDay())).toMillis /durVal
+            case _ => throw new ExtensionException(s"$pType ptype is not supported by the time:difference-between primitive")
           }
       }
-      case _ => throw new ExtensionException(s"$pType type is not supported by the time:difference-between primitive")
+      case _ => throw new ExtensionException(s"$pType coding type is not supported by the time:difference-between primitive")
     }
   }
 }

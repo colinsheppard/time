@@ -20,7 +20,7 @@ class LogoSchedule extends ExtensionObject {
   override def equals(obj: Any): Boolean = this == obj
   def isAnchored(): Boolean = timeAnchor != null
 
-  def anchorSchedule(time: LogoTime, tickValue: java.lang.Double, tickType: PeriodType): Unit =
+  def anchorSchedule(time:LogoTime, tickValue:java.lang.Double, tickType:PeriodType): Unit =
     try {
       this.timeAnchor = new LogoTime(time)
       this.tickType = tickType
@@ -146,7 +146,7 @@ class LogoSchedule extends ExtensionObject {
   /* ----------------------------------------------------------------------------
      performScheduledTasks are three functions that are meant to allow overloaded
      use of performing a task by the LogoSchedule object [CBR 01/24/2019]
-     ----------------------------------------------------------------- */
+     ---------------------------------------------------------------------------- */
 
   def performScheduledTasks(args: Array[Argument], context: Context): Unit = {
     performScheduledTasks(args, context,
