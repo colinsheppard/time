@@ -223,18 +223,10 @@ class LogoTime extends ExtensionObject {
         datetime.format(fmt)
       case Date =>
         val fmt = if(this.customFmt == null) this.defaultFmt else this.customFmt
-        try
-          date.format(fmt)
-        catch {
-          case e: NullPointerException => "" // there seems to be an edge case
-        }
+        date.format(fmt)
       case DayDate =>
         val fmt = if(this.customFmt == null) this.defaultFmt else this.customFmt
-        try
-          monthDay.format(fmt)
-        catch {
-          case e: NullPointerException => "" // there seems to be an edge case
-        }
+        monthDay.format(fmt)
       case _ => ""
     }
     test
@@ -403,7 +395,7 @@ class LogoTime extends ExtensionObject {
               .plusNanos(milliDurVal.asInstanceOf[Long])))
           }
           case Some(period) =>
-            new LogoTime(refTime.asInstanceOf[MonthDay].atYear(2000).atStartOfDay.plus(period))
+            new LogoTime(MonthDay.from(refTime.asInstanceOf[MonthDay].atYear(2000).atStartOfDay.plus(period)))
         }
       case failedtype =>  throw new ExtensionException(s"$failedtype type does not match datatypes")
     }
