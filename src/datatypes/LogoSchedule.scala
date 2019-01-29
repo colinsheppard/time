@@ -61,7 +61,8 @@ class LogoSchedule extends ExtensionObject {
           "repeat-shuffled"
         case _ => null
       }
-    // Throw exception on conditions for agent, agentsets and not observer
+
+    // Throw exception on conditions for agent, agentsets and observer
     val isInvalidEventArgument = !(args(0).get.isInstanceOf[Agent]) &&
         !(args(0).get.isInstanceOf[AgentSet]) &&
         !((args(0).get.isInstanceOf[String]) && args(0).get.toString.toLowerCase().==("observer"))
@@ -95,37 +96,39 @@ class LogoSchedule extends ExtensionObject {
     if (eventTick < context.asInstanceOf[ExtensionContext].workspace.world.ticks)
       throw new ExtensionException(s"""Attempted to schedule an event for tick $eventTick which is
       before the present 'moment' of ${context.asInstanceOf[ExtensionContext].workspace.world.ticks}""")
-      var repeatIntervalPeriodType: PeriodType = null
-      var repeatInterval: java.lang.Double = null
-      if (addType == Repeat || addType == RepeatShuffled) {
-        if (args(3).get.getClass != classOf[java.lang.Double])
+    var repeatIntervalPeriodType: PeriodType = null
+    var repeatInterval: java.lang.Double = null
+
+    if (addType == Repeat || addType == RepeatShuffled) {
+      if (args(3).get.getClass != classOf[java.lang.Double])
           throw new ExtensionException("time:repeat expecting a number as the fourth argument")
-        repeatInterval = args(3).getDoubleValue
-        if (repeatInterval <= 0)
+      repeatInterval = args(3).getDoubleValue
+      if (repeatInterval <= 0)
           throw new ExtensionException("time:repeat the repeat interval must be a positive number")
-        if (args.length == 5) {
-          if (!this.isAnchored)
-            throw new ExtensionException(
-              """A LogoEvent can only be scheduled to repeat using a period type if the discrete
-                 event schedule has been anchored to a LogoTime, see time:anchor-schedule""")
-          repeatIntervalPeriodType = TimeUtils.stringToPeriodType(TimeUtils.getStringFromArgument(args, 4))
-          if (repeatIntervalPeriodType != Month && repeatIntervalPeriodType != Year) {
-            repeatInterval = this.timeAnchor.getDifferenceBetween(this.tickType,
-                this.timeAnchor.plus(repeatIntervalPeriodType, repeatInterval)) / this.tickValue
-            repeatIntervalPeriodType = null
-          }
+      if (args.length == 5) {
+        if (!this.isAnchored)
+           throw new ExtensionException(
+           """A LogoEvent can only be scheduled to repeat using a period type if the discrete
+              event schedule has been anchored to a LogoTime, see time:anchor-schedule""")
+        repeatIntervalPeriodType = TimeUtils.stringToPeriodType(TimeUtils.getStringFromArgument(args, 4))
+        if (repeatIntervalPeriodType != Month && repeatIntervalPeriodType != Year) {
+          repeatInterval = this.timeAnchor
+            .getDifferenceBetween(this.tickType,
+              this.timeAnchor.plus(repeatIntervalPeriodType, repeatInterval)) / this.tickValue
+          repeatIntervalPeriodType = null
         }
       }
-      val shuffleAgentSet: Boolean = addType == Shuffle || addType == RepeatShuffled
-      val agentSet = args(0).get match {
-        case agent: Agent =>
-          val theAgent: Agent = args(0).getAgent.asInstanceOf[org.nlogo.agent.Agent]
-          new ArrayAgentSet(AgentKindJ.Turtle, theAgent.toString, Array(theAgent))
-        case agentset: AgentSet => args(0).getAgentSet.asInstanceOf[AgentSet]
-        case _ => null
-      }
-      val event: LogoEvent = new LogoEvent(agentSet, args(1).getCommand.asInstanceOf[AnonymousCommand], eventTick,repeatInterval, repeatIntervalPeriodType, shuffleAgentSet)
-      scheduleTree.add(event)
+    }
+    val shuffleAgentSet: Boolean = addType == Shuffle || addType == RepeatShuffled
+    val agentSet = args(0).get match {
+      case agent: Agent =>
+        val theAgent: Agent = args(0).getAgent.asInstanceOf[org.nlogo.agent.Agent]
+        new ArrayAgentSet(AgentKindJ.Turtle, theAgent.toString, Array(theAgent))
+      case agentset: AgentSet => args(0).getAgentSet.asInstanceOf[AgentSet]
+      case _ => null
+    }
+    val event: LogoEvent = new LogoEvent(agentSet, args(1).getCommand.asInstanceOf[AnonymousCommand], eventTick,repeatInterval, repeatIntervalPeriodType, shuffleAgentSet)
+    scheduleTree.add(event)
   }
 
   def getTickCounter(): TickCounter =

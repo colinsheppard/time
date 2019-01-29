@@ -46,10 +46,7 @@ object TimeUtils {
       case logoTime: LogoTime => logoTime
       case obj =>
         throw new ExtensionException(
-          "time: was expecting a LogoTime object as argument " +
-            (argIndex + 1) +
-            ", found this instead: " +
-            Dump.logoObject(obj))
+          s"time: was expecting a LogoTime object as argument ${argIndex + 1}, found this instead: ${Dump.logoObject(obj)}")
     }
     time.updateFromTick()
     time

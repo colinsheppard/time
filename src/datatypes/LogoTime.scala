@@ -79,7 +79,7 @@ class LogoTime extends ExtensionObject {
   def this(dateString: String) = this(dateString, None)
 
   def this(time: LogoTime) = {
-    this(time.show(time.defaultFmt))
+    this(time.show(if(time.customFmt == null) time.defaultFmt else time.customFmt))
   }
 
   def this(dt: LocalDate) = {
@@ -220,7 +220,6 @@ class LogoTime extends ExtensionObject {
     val test = this.dateType match {
       case DateTime =>
         val fmt = if(this.customFmt == null) this.defaultFmt else this.customFmt
-        println("DateTime")
         datetime.format(fmt)
       case Date =>
         val fmt = if(this.customFmt == null) this.defaultFmt else this.customFmt
@@ -264,7 +263,9 @@ class LogoTime extends ExtensionObject {
           .monthDay
     }
   }
-
+/*  time:anchor-schedule time:create "2000-01-01" 0.5 "day"
+  set current-time time:anchor-to-ticks time:create "2000-01-01" 0.5 "day"
+ */
   def getExtensionName(): String = "time"
   def getNLTypeName(): String = "logotime"
   def recursivelyEqual(arg0: AnyRef): Boolean = equals(arg0)
@@ -385,9 +386,11 @@ class LogoTime extends ExtensionObject {
       case Date =>
         per match {
           case None => {
-            new LogoTime(refTime
+            var logotime = refTime
               .asInstanceOf[LocalDate].atStartOfDay
-              .plus(Duration.of(TimeUtils.dToL(durVal), MILLIS)))
+              .plus(Duration.of(TimeUtils.dToL(durVal), MILLIS)).toLocalDate
+            new LogoTime(logotime)
+
           }
           case Some(period) =>
             new LogoTime(refTime.asInstanceOf[LocalDate].plus(period))
@@ -396,8 +399,8 @@ class LogoTime extends ExtensionObject {
         per match {
           case None => {
             val milliDurVal: java.lang.Integer = durVal.asInstanceOf[java.lang.Double].intValue()*1000000
-            new LogoTime(refTime.asInstanceOf[MonthDay].atYear(2000).atStartOfDay
-              .plusNanos(milliDurVal.asInstanceOf[Long]))
+            new LogoTime(MonthDay.from(refTime.asInstanceOf[MonthDay].atYear(2000).atStartOfDay
+              .plusNanos(milliDurVal.asInstanceOf[Long])))
           }
           case Some(period) =>
             new LogoTime(refTime.asInstanceOf[MonthDay].atYear(2000).atStartOfDay.plus(period))

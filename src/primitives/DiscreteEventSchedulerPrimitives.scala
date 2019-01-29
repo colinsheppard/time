@@ -62,8 +62,6 @@ object DiscreteEventSchedulerPrimitives {
     def report(args: Array[Argument], context: Context): AnyRef = {
       if (TimeExtension.debug)
         TimeUtils.printToConsole(context, "size of schedule: " + TimeExtension.schedule.scheduleTree.size)
-      println(s"The schedule arguments ${args}")
-      println(s"The schedule data ${TimeExtension.schedule.scheduleTree}")
       new java.lang.Double(TimeExtension.schedule.scheduleTree.size)
     }
   }
