@@ -57,8 +57,8 @@ Compare your date/time to some other date/time:
 
 [Download this example time series file](https://github.com/colinsheppard/Time-Extension/raw/master/examples/time-series-data.csv) and place in the same directory as your NetLogo model.  Here are the first 10 lines of the file:
 
-    ; meta data at the top of the file 
-	; is skipped when preceded by 
+    ; meta data at the top of the file
+	; is skipped when preceded by
 	; a semi-colon
 	timestamp,flow,temp
 	2000-01-01 00:00:00,1000,10
@@ -72,18 +72,18 @@ Compare your date/time to some other date/time:
 Create a global to store a LogoTimeSeries object.  In your setup procedure, load the data from the CSV file:
 
     globals[time-series]
-	
-	set time-series time:ts-load "time-series-data.csv"
- 
 
-   
+	set time-series time:ts-load "time-series-data.csv"
+
+
+
 Create a LogoTime and use it to extract the value from the "flow" column that is nearest in time to that object:
 
     let current-time time:create "2000-01-01 01:20:00"
 
     let current-flow time:ts-get time-series current-time "flow"
 
-    ;; By default, the nearest record in the time series is retrieved (in this case 1010), 
+    ;; By default, the nearest record in the time series is retrieved (in this case 1010),
 	;; you can alternatively require an exact match or do linear interpolation.
 
 **Discrete Event Scheduler**
@@ -99,7 +99,7 @@ Execute the discrete event schedule (all events will be executed in order of tim
 
     time:go
 
-    ;; turtle 1 will go foward at tick 5, 
+    ;; turtle 1 will go foward at tick 5,
     ;; then all 5 turtles will go forward at tick 10
 
 [back to top](#netlogo-time-extension)
@@ -172,7 +172,7 @@ The **time extension** has the following notable behavior:
   * A DATE is a fully specified day in time but lacks any information about the time of day (e.g. January 2, 2000).
   * A DAY is a generic date that does not specify a year (e.g. January 2).<br/>
 
-  The behavior of the **time extension** primitives depend on which variety of LogoTime you are storing.  For example, the difference between two DATETIMES will have millisecond resolution, while the difference between two DATES or two DAYS will only have resolution to the nearest whole day.  
+  The behavior of the **time extension** primitives depend on which variety of LogoTime you are storing.  For example, the difference between two DATETIMES will have millisecond resolution, while the difference between two DATES or two DAYS will only have resolution to the nearest whole day.
 
   As another example, a DAY representing 01/01 is always considered to be before 12/31.  Because there's no wrapping around for DAYs, they are only useful if your entire model occurs within one year and doesn't pass from December to January.  If you need to wrap, use a DATE and pick a year for your model, even if there's no basis in reality for that year.
 
@@ -205,7 +205,7 @@ The **time extension** has the following notable behavior:
   Note that if you do not include a time in your string, the **time extension** will assume you want a DATE.  If you want a DATETIME that happens to be at midnight, specify the time as zeros: "2000-01-02 00:00".
 
 * **Time extension recognizes "period types"** - In order to make it easy to specify a time period like "2 days" or "4 weeks", the **time extension** will accept strings to specify a period type.  The following is a table of the period types and strings that **time** recognizes (note: any of these period type strings can be pluralized and are case **in**sensitive):
-  
+
   | PERIOD TYPE | Valid string specifiers		|
   | ------------|-----------------------------------------|
   | YEAR	      | "year"					|
@@ -251,7 +251,7 @@ The **time extension** has the following notable behavior:
 
 *time:create time-string*
 
-Reports a LogoTime created by parsing the *time-string* argument.  A LogoTime is a custom data type included with this extension, used to store time in the form of a DATETIME, a DATE, or a DAY.  All other primitives associated with this extension take one or more LogoTimes as as an argument.  See the "Behavior" section above for more information on the behavior of LogoTime objects. 
+Reports a LogoTime created by parsing the *time-string* argument.  A LogoTime is a custom data type included with this extension, used to store time in the form of a DATETIME, a DATE, or a DAY.  All other primitives associated with this extension take one or more LogoTimes as as an argument.  See the "Behavior" section above for more information on the behavior of LogoTime objects.
 
     ;; Create a datetime, a date, and a day
     let t-datetime time:create "2000-01-02 03:04:05.678"
@@ -264,7 +264,7 @@ Reports a LogoTime created by parsing the *time-string* argument.  A LogoTime is
 
 *time:create-with-format time-string format-string*
 
-Like time:create, but reports a LogoTime created by parsing the *time-string* argument using the *format-string* argument as the format specifier.  
+Like time:create, but reports a LogoTime created by parsing the *time-string* argument using the *format-string* argument as the format specifier.
 
     ;; Create a datetime, a date, and a day using American convention for dates: Month/Day/Year
     let t-datetime time:create-with-format "01-02-2000 03:04:05.678" "MM-dd-YYYY HH:mm:ss.SSS"
@@ -281,8 +281,8 @@ See the following link for a full description of the available format options:
 
 *time:show logotime string-format*
 
-Reports a string containing the *logotime* formatted according the *string-format* argument. 
-    
+Reports a string containing the *logotime* formatted according the *string-format* argument.
+
     let t-datetime time:create "2000-01-02 03:04:05.678"
 
     print time:show t-datetime "EEEE, MMMM d, yyyy"
@@ -326,18 +326,18 @@ Retrieves the numeric value from the *logotime* argument corresponding to the *p
 
 *time:plus logotime number period-type-string*
 
-Reports a LogoTime resulting from the addition of some time period to the *logotime* argument.  The time period to be added is specified by the *number* and *period-type-string* arguments.  Valid period types are YEAR, MONTH, WEEK, DAY, DAYOFYEAR, HOUR, MINUTE, SECOND, and MILLI. 
+Reports a LogoTime resulting from the addition of some time period to the *logotime* argument.  The time period to be added is specified by the *number* and *period-type-string* arguments.  Valid period types are YEAR, MONTH, WEEK, DAY, DAYOFYEAR, HOUR, MINUTE, SECOND, and MILLI.
 
     let t-datetime (time:create "2000-01-02 03:04:05.678")
-    
+
     ;; Add some period to the datetime
-    print time:plus t-datetime 1.0 "seconds"  
+    print time:plus t-datetime 1.0 "seconds"
     ;; prints "{{time:logotime 2000-01-02 03:04:06.678}}"
 
-    print time:plus t-datetime 1.0 "minutes"  
+    print time:plus t-datetime 1.0 "minutes"
     ;; prints "{{time:logotime 2000-01-02 03:05:05.678}}"
 
-    print time:plus t-datetime (60.0 * 24) "minutes"  
+    print time:plus t-datetime (60.0 * 24) "minutes"
     ;; prints "{{time:logotime 2000-01-03 03:04:05.678}}"
 
     print time:plus t-datetime 1 "week"  
@@ -605,9 +605,9 @@ Anchors the discrete event schedule to the native time tracking mechanism in Net
 
 *time:schedule-event agent anonymous-command tick-or-time*  <br/>
 *time:schedule-event agentset anonymous-command tick-or-time*<br/>
-*time:schedule-event "observer" anonymous-command tick-or-time*  
+*time:schedule-event "observer" anonymous-command tick-or-time*
 
-Add an event to the discrete event schedule.  The order in which events are added to the schedule is not important; they will be dispatched in order of the times specified as the last argument of this command. An *agent*, an *agentset*, or the string "observer" can be passed as the first argument along with an *anonymous command* as the second. The anonymous command is executed by the agent(s) or the observer at *tick-or-time* (either a number indicating the tick or a LogoTime), which is a time greater than or equal to the present moment (*>= ticks*).*.   
+Add an event to the discrete event schedule.  The order in which events are added to the schedule is not important; they will be dispatched in order of the times specified as the last argument of this command. An *agent*, an *agentset*, or the string "observer" can be passed as the first argument along with an *anonymous command* as the second. The anonymous command is executed by the agent(s) or the observer at *tick-or-time* (either a number indicating the tick or a LogoTime), which is a time greater than or equal to the present moment (*>= ticks*).*.
 
 If *tick-or-time* is a LogoTime, then the discrete event schedule must be anchored (see time:anchor-schedule).  If <em>tick-or-time</em> is in the past (less than the current tick/time), a run-time error is raised. (The *is-after* primitive can be used to defend against this error: add an event to the schedule only if its scheduled time is after the current time.)
 
@@ -637,7 +637,7 @@ Add an event to the discrete event schedule and shuffle the agentset during exec
 *time:schedule-repeating-event agent "observer" tick-or-time interval-number*  <br/>
 *time:schedule-repeating-event-with-period agent anonymous-command tick-or-time period-duration period-type-string*  <br/>
 *time:schedule-repeating-event-with-period agentset anonymous-command tick-or-time-number period-duration period-type-string*<br/>
-*time:schedule-repeating-event-with-period "observer" anonymous-command tick-or-time period-duration period-type-string*  
+*time:schedule-repeating-event-with-period "observer" anonymous-command tick-or-time period-duration period-type-string*
 
 Add a repeating event to the discrete event schedule.  This primitive behaves almost identically to *time:schedule-event* except that after the event is dispatched it is immediately rescheduled *interval-number* ticks into the future using the same *agent* (or *agentset*) and *anonymous-command *. If the schedule is anchored (see time:anchor-schedule), then *time:schedule-repeating-event-with-period* can be used to expressed the repeat interval as a period (e.g. 1 "day" or 2.5 "hours").  Warning: repeating events can cause an infinite loop to occur if you execute the schedule with time:go.  To avoid infinite loops, use time:go-until.
 
@@ -647,7 +647,7 @@ Add a repeating event to the discrete event schedule.  This primitive behaves al
 ---------------------------------------
 
 **time:schedule-repeating-event-shuffled** <br/>
-**time:schedule-repeating-event-shuffled-with-period** 
+**time:schedule-repeating-event-shuffled-with-period**
 
 *time:schedule-repeating-event-shuffled agentset anonymous-command tick-or-time-number interval-number*<br/>
 *time:schedule-repeating-event-shuffled-with-period agentset anonymous-command tick-or-time-number interval-number*
@@ -669,7 +669,7 @@ Clear all events from the discrete event schedule.
 
 ---------------------------------------
 
-**time:go** 
+**time:go**
 
 *time:go*
 
@@ -679,7 +679,7 @@ Dispatch all of the events in the discrete event schedule.  When each event is e
 
 ---------------------------------------
 
-**time:go-until** 
+**time:go-until**
 
 *time:go-until halt-tick-or-time*
 
@@ -688,7 +688,7 @@ Dispatch all of the events in the discrete event schedule that are scheduled for
     time:go-until 100.0
     ;; Execute events up to tick 100
 
-    time:go-until time:plus t-datetime 1.0 "hour" 
+    time:go-until time:plus t-datetime 1.0 "hour"
     ;; Execute events within the next hour; t-datetime is the current time.
 
 
@@ -700,11 +700,11 @@ Dispatch all of the events in the discrete event schedule that are scheduled for
 
 Reports as a string all of the events in the schedule in tab-separated format with three columns: tick,semi-colon-separated-list-of-agents,anonymous-command.
 
-    print time:show-schedule 
+    print time:show-schedule
 
 ---------------------------------------
 
-**time:size-of-schedule** 
+**time:size-of-schedule**
 
 *time:size-of-schedule*
 
@@ -718,13 +718,21 @@ Reports the number of events in the discrete event schedule.
 
 [back to top](#netlogo-time-extension)
 
-## Building
+## Building with SBT (New)
+
+Using SBT, create a package that will generate the time.jar. For example:
+
+    sbt package
+
+If compilation succeeds, `time.jar` will be created. See [Installation](#installation) for instructions on where to put your compiled extension.
+
+## Building (Previous Version)
 
 Use the NETLOGO environment variable to tell the Makefile which NetLogoLite.jar to compile against.  For example:
 
     NETLOGO=/Applications/NetLogo\\\ 5.0 make
 
-If compilation succeeds, `time.jar` will be created.  See [Installation](#installation) for instructions on where to put your compiled extension.
+If compilation succeeds, `time.jar` will be created. See [Installation](#installation) for instructions on where to put your compiled extension.
 
 ## Authors
 
@@ -736,7 +744,7 @@ Please visit the [github issue tracker](https://github.com/colinsheppard/Time-Ex
 
 ## Credits
 
-This extension is in part powered by [Joda Time](http://joda-time.sourceforge.net/) and inspired by the [Ecoswarm Time Manager Library](http://www.humboldt.edu/ecomodel/software.htm).  Allison Campbell helped benchmark discrete event scheduling versus static scheduling.
+This extension is in part powered by [Joda Time](http://joda-time.sourceforge.net/)/ Java Time library and inspired by the [Ecoswarm Time Manager Library](http://www.humboldt.edu/ecomodel/software.htm).  Allison Campbell helped benchmark discrete event scheduling versus static scheduling.
 
 ## Terms of Use
 
