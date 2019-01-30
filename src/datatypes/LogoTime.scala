@@ -6,6 +6,7 @@ import java.time.temporal.ChronoField._
 import java.time.chrono.{ Chronology, IsoChronology }
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE
+import java.time.format.DateTimeParseException
 import java.time.format.FormatStyle.{ FULL }
 import org.nlogo.agent.World
 import org.nlogo.api.ExtensionException
@@ -33,6 +34,7 @@ class LogoTime extends ExtensionObject {
     this.datetime = dt
   }
 
+  @throws[ExtensionException]
   def this(dateStringArg: String, customFormat: Option[String]) = {
     this()
     var dateString: String = dateStringArg.replace('T',' ')
@@ -55,7 +57,9 @@ class LogoTime extends ExtensionObject {
       case Date => DateTimeFormatter.ofPattern("yyyy-MM-dd")
       case DayDate => DateTimeFormatter.ofPattern("MM-dd")
     }
-    customFormat match {
+
+    try
+      customFormat match {
       case None =>
         this.dateType match {
           case DateTime =>
@@ -73,6 +77,8 @@ class LogoTime extends ExtensionObject {
           case Date => this.date = LocalDate.parse(dateString, this.customFmt)
           case DayDate => this.monthDay = MonthDay.parse(dateString, this.customFmt)
       }
+    } catch {
+      case e: DateTimeParseException => throw new ExtensionException("Time extension could not parse input")
     }
   }
 
@@ -150,7 +156,7 @@ class LogoTime extends ExtensionObject {
         }
         if(len == 4){
           dateString = dateString.substring(0, 3) + "0" + dateString.substring(3, 4)
-          len = len + 1
+          len += 1
         } else if(len < 5){
           throw new ExtensionException("Illegal time string(Less than 5): '" + dateString + "'")
         }
@@ -173,27 +179,43 @@ class LogoTime extends ExtensionObject {
         }
     }
     this.dateType = len match {
-      case length if len == 23 || len == 21 || len == 3 || len == 0 =>
+      case length if len == "01-02-2000T01:00:00:00.000".length || len == "01-02-2000T01:00:00.000".length || len == "1-1".length || len == "".length => // a full DATETIME
         DateTime
-      case length if len == 19 || len == 17 => {
+      case length if len == "01-02-2000T01:00:00".length || len == "01-02-2000T01:00:00".length => { // a DATETIME without millis
         dateString += ".000"
         DateTime
       }
-      case length if len == 16 || len == 14 => {
+      case length if len == "01-02-2000T01:00".length || len == "01-02-2000T01:00".length => { // a DATETIME without seconds and millis
         dateString += ":00.000"
         DateTime
-      }
-      case length if len == 13 || len == 11 => {
+      } // "01-02-2000T01"
+      case length if len == "01-02-2000T01".length || len == "2000-1-1T01".length => { // a DATETIME without minutes, seconds, and millis
         dateString += ":00:00.000"
         DateTime
       }
-      case length if len == 10 =>
+      case length if len == "01-02-2000".length => // a DATE
         Date
-      case length if len == 5 =>
+      case length if len == "01-02".length => // a DAY
         DayDate
       case _ => throw new ExtensionException(s"Illegal time string(No matching type): '$dateString'")
     }
     dateString
+  }
+
+  def parseDateStringImmutable(dateStringT: String): String = {
+    val dateString: String = dateStringT.replace('/', '-').replace(' ', 'T').trim()
+    val timefragments = dateString.split("T").map(_.trim)
+    val datetime = timefragments(0)
+    val time = timefragments(1)
+    val condition4Date = datetime.count(_ == '-') == 2
+    val condition4Day = datetime.count(_ == '-') == 1 && (datetime.indexOf('-') == 1 || datetime.indexOf('-') == 2) && datetime.length <= 5
+    "StringDefault"
+  }
+  def parseDate(str:String): String = {
+    if(str.count(_ == '-') == 2 &&
+      (str.indexOf('-') == 1 || str.indexOf('-') == 2) && str.length <= 5)
+      {str.split('-'); ""}
+    else ""
   }
 
   def setAnchor(tickCount: java.lang.Double, tickType: PeriodType, world: World): Unit = {
@@ -276,62 +298,62 @@ class LogoTime extends ExtensionObject {
      case Milli =>
         this.dateType match {
           case DateTime => (datetime.getNano) / 1000000
-          case Date => LocalDateTime.from(date).getNano() / 1000000
-          case DayDate => LocalDateTime.from(monthDay).getNano() / 1000000
+          case Date => date.atStartOfDay.getNano() / 1000000
+          case DayDate => monthDay.atYear(2000).atStartOfDay.getNano() / 1000000
       }
       case Second =>
         this.dateType match {
           case DateTime => datetime.getSecond
-          case Date =>LocalDateTime.from(date).getSecond()
-          case DayDate =>LocalDateTime.from(monthDay).getSecond()
+          case Date => date.atStartOfDay.getSecond()
+          case DayDate => monthDay.atYear(2000).atStartOfDay.getSecond()
         }
       case Minute =>
         this.dateType match {
           case DateTime => datetime.getMinute()
-          case Date => LocalDateTime.from(date).getMinute()
-          case DayDate => LocalDateTime.from(monthDay).getMinute()
+          case Date => date.atStartOfDay.getMinute()
+          case DayDate => monthDay.atYear(2000).atStartOfDay.getMinute()
         }
       case Hour =>
         this.dateType match {
           case DateTime => datetime.getHour
-          case Date => LocalDateTime.from(date).getHour()
-          case DayDate => LocalDateTime.from(monthDay).getHour()
+          case Date => date.atStartOfDay.getHour()
+          case DayDate => monthDay.atYear(2000).atStartOfDay.getHour()
         }
       case Day =>
         this.dateType match {
           case DateTime => datetime.getDayOfMonth()
-          case Date => LocalDateTime.from(date).getDayOfMonth()
-          case DayDate => LocalDateTime.from(monthDay).getDayOfMonth()
+          case Date => date.getDayOfMonth()
+          case DayDate => monthDay.atYear(2000).getDayOfMonth()
         }
       case DayOfYear =>
         this.dateType match {
           case DateTime => datetime.getDayOfYear
-          case Date => LocalDateTime.from(date).getDayOfYear()
-          case DayDate => LocalDateTime.from(monthDay).getDayOfYear()
+          case Date => date.getDayOfYear()
+          case DayDate => monthDay.atYear(2000).getDayOfYear()
         }
       case DayOfWeek =>
         this.dateType match {
           case DateTime => datetime.getDayOfWeek.getValue()
-          case Date => LocalDateTime.from(date).getDayOfWeek().getValue()
-          case DayDate => LocalDateTime.from(monthDay).getDayOfWeek().getValue()
+          case Date => date.getDayOfWeek().getValue()
+          case DayDate => monthDay.atYear(2000).getDayOfWeek().getValue()
         }
       case Week => // not accurate
         this.dateType match {
           case DateTime => datetime.getDayOfYear() / 52
-          case Date => LocalDateTime.from(date).getDayOfYear() / 52
-          case DayDate => LocalDateTime.from(monthDay).getDayOfYear() / 52
+          case Date => date.getDayOfYear() / 52
+          case DayDate => monthDay.atYear(2000).getDayOfYear() / 52
         }
       case Month =>
         this.dateType match {
           case DateTime => datetime.getMonthValue()
-          case Date => LocalDateTime.from(date).getMonthValue()
-          case DayDate => LocalDateTime.from(monthDay).getMonthValue()
+          case Date => date.getMonthValue()
+          case DayDate => monthDay.atYear(2000).getMonthValue()
         }
       case Year =>
         this.dateType match {
           case DateTime => datetime.getYear()
-          case Date => LocalDateTime.from(date).getYear()
-          case DayDate => LocalDateTime.from(monthDay).getYear()
+          case Date => date.atStartOfDay.getYear()
+          case DayDate => monthDay.atYear(2000).getYear()
 
         }
       case _ => 0

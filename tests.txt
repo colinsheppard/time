@@ -209,3 +209,53 @@ TimeDiscreteRepeating
   O> tick time:go
   [ ycor ] of one-of turtles => 3
   O> tick time:go
+
+TimeGetCommandDateTime
+   extensions [time]
+   globals [t-datetime]
+   O> set t-datetime (time:create "2000-01-02 03:04:05.678")
+   time:get "year" t-datetime => 2000
+   time:get "month" t-datetime => 1
+   time:get "dayofyear" t-datetime => 2
+   time:get "hour" t-datetime => 3
+   time:get "second" t-datetime => 5
+
+TimeGetCommandDate
+   extensions [time]
+   globals [t-datetime]
+   O> set t-datetime (time:create "2000-01-02")
+   time:get "year" t-datetime => 2000
+   time:get "month" t-datetime => 1
+   time:get "dayofyear" t-datetime => 2
+   time:get "hour" t-datetime => 0
+   time:get "second" t-datetime => 0
+
+TimeGetCommandDay
+   extensions [time]
+   globals [t-datetime]
+   O> set t-datetime (time:create "01-02")
+   time:get "year" t-datetime => 2000
+   time:get "month" t-datetime => 1
+   time:get "dayofyear" t-datetime => 2
+   time:get "hour" t-datetime => 0
+   time:get "second" t-datetime => 0
+
+TimeFormatting
+   extensions [time]
+   time:show time:create-with-format "01-02-2000 03:04:05.678" "MM-dd-yyyy HH:mm:ss.SSS" "MM-dd-yyyy HH:mm:ss.SSS" => "01-02-2000 03:04:05.678"
+   time:show time:create-with-format "01-02-2000 03" "MM-dd-yyyy HH" "MM-dd-yyyy HH" => "01-02-2000 03"
+   time:show time:create-with-format "01-02-2000 03:00:00" "MM-dd-yyyy HH:mm:ss" "MM-dd-yyyy HH:mm" => "01-02-2000 03:00"
+   time:show time:create-with-format "01-02-2000 03:00:00.001" "MM-dd-yyyy HH:mm:ss.SSS" "MM-dd-yyyy HH:mm:ss" => "01-02-2000 03:00:00"
+   time:show (time:plus (time:create-with-format "01-02-2000" "MM-dd-yyyy") 3 "day") "MM-dd-yyyy" => "01-05"
+
+MoreTimePlusExamples
+   extensions [time]
+   globals [t-datetime t-date]
+   O> ;set t-datetime time:create-with-format "01-01-2000 03:04:05.678" "MM-dd-yyyy HH:mm:ss.SSS"
+   O> set t-datetime time:create-with-format "2000-01-01 03:04:05.678" "yyyy-MM-dd HH:mm:ss.SSS"
+   O> set t-date (time:create-with-format "2000-01-01 03:04:05.678" "yyyy-MM-dd HH:mm:ss.SSS") ; wow this fails quietly if you don't have the current orientation
+   time:show t-datetime "MM-dd-yyyy HH:mm:ss.SSS" => "01-01-2000 03:04:05.678"
+   time:show (time:plus (time:create "2000-01-01 10:00:00.000") 1 "hour") "MM-dd-yyyy" => "01-01-2000"
+   time:show (time:plus (time:create-with-format "2000-01-01 10:00:00.000" "yyyy-MM-dd HH:mm:ss.SSS") 1 "hour") "MM-dd-yyyy" => "01-01-2000"
+   O> ;time:show (time:plus t-date 1 "hour") "MM-dd-yyyy" this needs attention
+   O> set t-date time:plus t-date 1 "hour"
