@@ -33,6 +33,7 @@ to setup
 
   ;; Show what's possible in terms of formatting DATETIME, DATE, and DAY
   ; VALID DATETIME's
+  print time:create "2000-01-02T03:04:0.678"
   print time:create "2000-01-02T03:04:05.678"
   print time:create "2000-01-02 03:04:05"
   print time:create "2000-01-02 03:04"
@@ -143,10 +144,10 @@ to go
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-336
-18
-773
-456
+0
+0
+437
+438
 -1
 -1
 13.0
@@ -548,7 +549,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0
+NetLogo 6.0.4
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
@@ -567,4 +568,3 @@ Line -7500403 true 150 150 210 180
 @#$#@#$#@
 0
 @#$#@#$#@
-

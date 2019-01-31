@@ -41,7 +41,7 @@ class LogoTime extends ExtensionObject {
     // First we parse the string to determine the date type
     customFormat match {
       case None =>
-      dateString = parseDateString(dateString)
+        dateString = parseDateStringI(dateString)
       case Some(customForm) =>
         this.dateType =
         if (customForm.indexOf('H') >= 0 || customForm.indexOf('h') >= 0 ||
@@ -60,16 +60,16 @@ class LogoTime extends ExtensionObject {
 
     try
       customFormat match {
-      case None =>
-        this.dateType match {
-          case DateTime =>
-            this.datetime =
-              if (dateString.length == 0 || dateString.==("now"))
-                LocalDateTime.now
-              else LocalDateTime.parse(dateString)
-          case Date => this.date = LocalDate.parse(dateString)
-          case DayDate => this.monthDay = MonthDay.parse(dateString, this.defaultFmt)
-        }
+        case None =>
+          this.dateType match {
+            case DateTime =>
+              this.datetime =
+                if (dateString.length == 0 || dateString.==("now"))
+                  LocalDateTime.now
+                else LocalDateTime.parse(dateString)
+            case Date => this.date = LocalDate.parse(dateString)
+            case DayDate => this.monthDay = MonthDay.parse(dateString, this.defaultFmt)
+          }
       case Some(customForm) =>
         this.customFmt = DateTimeFormatter.ofPattern(customForm)
         this.dateType match {
@@ -179,7 +179,7 @@ class LogoTime extends ExtensionObject {
         }
     }
     this.dateType = len match {
-      case length if len == "01-02-2000T01:00:00:00.000".length || len == "01-02-2000T01:00:00.000".length || len == "1-1".length || len == "".length => // a full DATETIME
+      case length if len == "01-02-2000T01:00:00.000".length || len == "2000-1-2T01:00:00.000".length || len == "1-1".length || len == "".length => // a full DATETIME
         DateTime
       case length if len == "01-02-2000T01:00:00".length || len == "01-02-2000T01:00:00".length => { // a DATETIME without millis
         dateString += ".000"
@@ -202,21 +202,82 @@ class LogoTime extends ExtensionObject {
     dateString
   }
 
-  def parseDateStringImmutable(dateStringT: String): String = {
+  @throws[ExtensionException]
+  def parseDateStringI(dateStringT: String): String = {
     val dateString: String = dateStringT.replace('/', '-').replace(' ', 'T').trim()
     val timefragments = dateString.split("T").map(_.trim)
-    val datetime = timefragments(0)
-    val time = timefragments(1)
-    val condition4Date = datetime.count(_ == '-') == 2
-    val condition4Day = datetime.count(_ == '-') == 1 && (datetime.indexOf('-') == 1 || datetime.indexOf('-') == 2) && datetime.length <= 5
-    "StringDefault"
+    dateString match {
+      case "" => ""
+      case "now" => "now"
+      case str if timefragments.length == 2 && dateString.contains('-') =>
+        this.dateType = DateTime
+        parseDate(timefragments(0)) + "T" + parseTime(timefragments(1))
+      case str if timefragments.length == 1 && !str.contains(':') &&  str.contains('-') =>
+        if(str.length < 6) this.dateType = DayDate else this.dateType = Date
+        parseDate(timefragments(0))
+      case _ => throw new ExtensionException(s"Illegal Time String(Top Level)")
+    }
   }
-  def parseDate(str:String): String = {
-    if(str.count(_ == '-') == 2 &&
-      (str.indexOf('-') == 1 || str.indexOf('-') == 2) && str.length <= 5)
-      {str.split('-'); ""}
-    else ""
-  }
+
+  @throws[ExtensionException]
+  def parseDate(dateTimeStr:String): String =
+    dateTimeStr match {
+      case "" => ""
+      case str if (str.count(_ == '-') == 2 && str.length < 11) =>
+        val dates = str.split('-')
+        dates.length match {
+          case 3 =>
+            dates.map(v =>
+                v.length match {
+                  case 1 => "0" + v
+                  case 2 => v
+                  case 4 => v
+                  case _ => throw new ExtensionException(s"Illegal Time String")}).mkString("-")
+          case _ =>
+            throw new ExtensionException(s"Illegal Time String")
+        }
+      case str if (str.count(_ == '-') == 1 && str.length < 6) =>
+        val dates = str.split('-')
+        dates.length match {
+          case 2 =>
+            dates.map(v =>
+              v.length match {
+                case 1 => "0" + v
+                case 2 => v
+                case _ => throw new ExtensionException(s"Illegal Time String")}).mkString("-")
+          case _ => throw new ExtensionException(s"Illegal Date String(Error)")
+        }
+      case _ => throw new ExtensionException(s"Illegal Date String(DateTime Error)")
+    }
+
+  @throws[ExtensionException]
+  def parseTime(dateTimeStr:String): String =
+    dateTimeStr match {
+      case "" => ""
+      case format if format.count(_ == ':') < 3 && format.count(_ == ':') >= 0 && format.length < 13 =>
+        val times = format.split(':')
+        def reformatter = (timeslots:Array[String]) =>
+            timeslots.map(v =>
+               v.length match {
+                  case 1 => "0" + v
+                  case 2 => v
+                  case 5 =>
+                   if(v.indexOf('.') == 1)
+                     "0" + v
+                   else throw new ExtensionException(s"Illegal Time String(Invalid Second)")
+                  case 6 => v
+                  case x => throw new ExtensionException(s"Illegal Time String(Size): $x")}).mkString(":")
+        times.length match {
+          case 3 =>
+            reformatter(times)
+          case 2 =>
+            reformatter(times :+ "00.000")
+          case 1 =>
+            reformatter(times :+ "00" :+ "00.000")
+          case _ => throw new ExtensionException(s"Illegal Time String(Formatting Length")
+        }
+      case _ => throw new ExtensionException(s"Illegal Time String")
+    }
 
   def setAnchor(tickCount: java.lang.Double, tickType: PeriodType, world: World): Unit = {
     if (tickType == DayOfWeek)
