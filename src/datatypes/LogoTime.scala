@@ -41,7 +41,7 @@ class LogoTime extends ExtensionObject {
     // First we parse the string to determine the date type
     customFormat match {
       case None =>
-        dateString = parseDateStringI(dateString)
+        dateString = parseDateString(dateString)
       case Some(customForm) =>
         this.dateType =
         if (customForm.indexOf('H') >= 0 || customForm.indexOf('h') >= 0 ||
@@ -145,65 +145,6 @@ class LogoTime extends ExtensionObject {
 
   @throws[ExtensionException]
   def parseDateString(dateStringT: String): String = {
-    var dateString: String = dateStringT.replace('/', '-').replace(' ', 'T').trim()
-    var len: Int = dateString.length
-    val firstDash: Int = dateString.indexOf('-')
-    firstDash match {
-      case fDash if fDash == 1 || fDash == 2 =>
-        if(firstDash == 1){
-          dateString = "0" + dateString
-          len = len + 1
-        }
-        if(len == 4){
-          dateString = dateString.substring(0, 3) + "0" + dateString.substring(3, 4)
-          len += 1
-        } else if(len < 5){
-          throw new ExtensionException("Illegal time string(Less than 5): '" + dateString + "'")
-        }
-      case fDash if fDash != 4 && fDash != -1 =>
-        throw new ExtensionException(s"Illegal time string(Not 4 or 1): '${dateString.substring(3,4)}'")
-      case _ =>
-        val secondDash = dateString.lastIndexOf('-')
-        if (secondDash == 6) { // month is single digit
-          dateString = dateString.substring(0, 5) + "0" + dateString.substring(5,len)
-          len += 1
-        }
-        if (len == 9 || dateString.indexOf('T') == 9) { // day is single digit
-          dateString = dateString.substring(0, 8) + "0" + dateString.substring(8,len)
-          len += 1
-        }
-        if (dateString.indexOf('T') == 10 & (dateString.indexOf(':') == 12 || len == 12)) {
-          // DATETIME without leading 0 on hour, pad it
-          dateString = dateString.substring(0, 11) + "0" + dateString.substring(11, len)
-          len += 1
-        }
-    }
-    this.dateType = len match {
-      case length if len == "01-02-2000T01:00:00.000".length || len == "2000-1-2T01:00:00.000".length || len == "1-1".length || len == "".length => // a full DATETIME
-        DateTime
-      case length if len == "01-02-2000T01:00:00".length || len == "01-02-2000T01:00:00".length => { // a DATETIME without millis
-        dateString += ".000"
-        DateTime
-      }
-      case length if len == "01-02-2000T01:00".length || len == "01-02-2000T01:00".length => { // a DATETIME without seconds and millis
-        dateString += ":00.000"
-        DateTime
-      } // "01-02-2000T01"
-      case length if len == "01-02-2000T01".length || len == "2000-1-1T01".length => { // a DATETIME without minutes, seconds, and millis
-        dateString += ":00:00.000"
-        DateTime
-      }
-      case length if len == "01-02-2000".length => // a DATE
-        Date
-      case length if len == "01-02".length => // a DAY
-        DayDate
-      case _ => throw new ExtensionException(s"Illegal time string(No matching type): '$dateString'")
-    }
-    dateString
-  }
-
-  @throws[ExtensionException]
-  def parseDateStringI(dateStringT: String): String = {
     val dateString: String = dateStringT.replace('/', '-').replace(' ', 'T').trim()
     val timefragments = dateString.split("T").map(_.trim)
     dateString match {
@@ -218,66 +159,46 @@ class LogoTime extends ExtensionObject {
       case _ => throw new ExtensionException(s"Illegal Time String(Top Level)")
     }
   }
+  /* Format to the desired length for datetime, date, and daydate formats */
+  def formatToLength(dateString: String, desiredLength: Int): String =
+    if(dateString.length >= desiredLength) dateString
+    else "0" * (desiredLength - dateString.length) + dateString
 
+  /* parseDate assumes the traditional 3 date format (year, month, day | though not in that order)
+     [CBR 2019/31/01] */
   @throws[ExtensionException]
   def parseDate(dateTimeStr:String): String =
-    dateTimeStr match {
-      case "" => ""
-      case str if (str.count(_ == '-') == 2 && str.length < 11) =>
-        val dates = str.split('-')
-        dates.length match {
-          case 3 =>
-            dates.map(v =>
-                v.length match {
-                  case 1 => "0" + v
-                  case 2 => v
-                  case 4 => v
-                  case _ => throw new ExtensionException(s"Illegal Time String")}).mkString("-")
-          case _ =>
-            throw new ExtensionException(s"Illegal Time String")
-        }
-      case str if (str.count(_ == '-') == 1 && str.length < 6) =>
-        val dates = str.split('-')
-        dates.length match {
-          case 2 =>
-            dates.map(v =>
-              v.length match {
-                case 1 => "0" + v
-                case 2 => v
-                case _ => throw new ExtensionException(s"Illegal Time String")}).mkString("-")
-          case _ => throw new ExtensionException(s"Illegal Date String(Error)")
-        }
+    dateTimeStr.split('-') match {
+      case Array("") => ""
+      case Array(date1,date2,date3)
+        if dateTimeStr.length < 11 || date1.length != 3 || date2.length != 3 || date1.length != 3 =>
+        formatToLength(date1,2) + "-" + formatToLength(date2,2) + "-" + formatToLength(date3,2)
+      case Array(date1,date2) if dateTimeStr.length < 6 =>
+        formatToLength(date1,2) + "-" + formatToLength(date2,2)
       case _ => throw new ExtensionException(s"Illegal Date String(DateTime Error)")
     }
 
   @throws[ExtensionException]
-  def parseTime(dateTimeStr:String): String =
-    dateTimeStr match {
-      case "" => ""
-      case format if format.count(_ == ':') < 3 && format.count(_ == ':') >= 0 && format.length < 13 =>
-        val times = format.split(':')
-        def reformatter = (timeslots:Array[String]) =>
-            timeslots.map(v =>
-               v.length match {
-                  case 1 => "0" + v
-                  case 2 => v
-                  case 5 =>
-                   if(v.indexOf('.') == 1)
-                     "0" + v
-                   else throw new ExtensionException(s"Illegal Time String(Invalid Second)")
-                  case 6 => v
-                  case x => throw new ExtensionException(s"Illegal Time String(Size): $x")}).mkString(":")
-        times.length match {
-          case 3 =>
-            reformatter(times)
-          case 2 =>
-            reformatter(times :+ "00.000")
-          case 1 =>
-            reformatter(times :+ "00" :+ "00.000")
-          case _ => throw new ExtensionException(s"Illegal Time String(Formatting Length")
-        }
+  def parseTime(dateTimeStr:String): String = {
+    def formatSeconds = (secondAndMillis:String) =>
+      secondAndMillis.split('.') match {
+        case Array(sec,milli) if sec.length <= 2 && milli.length <= 3 =>
+          formatToLength(sec,2) + "." + (milli + "0" * (3 - milli.length))
+          /* In this case, millisecond adds zeros at the end to match decimal formatting */
+        case Array(sec) if sec.length <= 2 =>
+          formatToLength(sec,2) + ".000"
+        case _ => throw new ExtensionException(s"Illegal Second String")
+      }
+    dateTimeStr.split(':') match {
+      case Array(hour,minute,second) if dateTimeStr.length < 13 =>
+        formatToLength(hour,2) + ":" + formatToLength(minute,2) + ":" + formatSeconds(second)
+      case Array(hour,minute) if dateTimeStr.length < 6 =>
+        formatToLength(hour,2) + ":" + formatToLength(minute,2) + ":00.000"
+      case Array(hour) if dateTimeStr.length < 3 =>
+        formatToLength(hour,2) + ":00" + ":00.000"
       case _ => throw new ExtensionException(s"Illegal Time String")
     }
+  }
 
   def setAnchor(tickCount: java.lang.Double, tickType: PeriodType, world: World): Unit = {
     if (tickType == DayOfWeek)

@@ -1,153 +1,78 @@
-extensions [time]
-globals[
-  tick-datetime
-  tick-date
-  tick-day
-  ts
+extensions [ time csv ]
+
+globals
+[
+  the-logotime
+  the-output-string
 ]
-to setup
-  ;;print __dump-extensions
-  ;;print __dump-extension-prims
-  __clear-all-and-reset-ticks
-  print ""
-  print "============================"
-  print ""
 
-  ;; A logotime can be one of three varieties: a DATETIME, a DATE, and a DAY
-  ;; The variety is inferred by the length of the string passed to time:create
-  ;;
-  ;; The date delimiter can be '-' or '/' and the delimeter between the date and time
-  ;; can be a 'T' or a ' '.  Single digit months and days can have an optional leading zero.
-  ;; Single digit hours, minutes, and seconds must have a leading zero.  Hours are basd on a
-  ;; 24-hour clock (e.g. midnight is '00', noon is '12', and 11pm is '23').
-  ;;
-  ;; DATETIME strings are based on the ISO8601 Standard which can by month, day, or week based:
-  ;;   month based:  "yyyy-mm-ddTHH:MM:SS.SSS"
-  ;;   day based:    "yyyy-dddTHH:MM:SS.SSS"
-  ;;   week based:   "yyyy-Www-dTHH:MM:SS.SSS"
-  ;;   more info: http://joda-time.sourceforge.net/cal_iso.html
-  ;;
-  ;; DATE must be ordered as year-month-day, and DAY must be month-day.
-  ;;
-  ;; Use "" or "now" to get the system datetime
+to test-date-times
 
-  ;; Show what's possible in terms of formatting DATETIME, DATE, and DAY
-  ; VALID DATETIME's
-  print time:create "2000-01-02T03:04:0.678"
-  print time:create "2000-01-02T03:04:05.678"
-  print time:create "2000-01-02 03:04:5"
-  print time:create "2000-01-02 03:4"
-  print time:create "2000-01-02 3"
-  print time:create "2000/01/02 03:04:05.678"
-  print time:create "2000-1-02 03:04:05.678"
-  print time:create "2000-01-2 03:04:05.678"
-  print time:create "2000-1-2 03:04:05.678"
-  print time:create "2000-01-02"
-  print time:create "2000-01-2"
-  print time:create "2000-1-02"
-  print time:create "01-02"
-  print time:create "01-2"
-  print time:create "1-02"
-  print ""
-  print "============================"
-  print ""
+  file-close-all
 
-  ; prints the current datetime, two different ways
-  print time:create "now"
-  print time:create ""
-  print ""
-  print "============================"
-  print ""
-
-  ;; Create a datetime, a date, and a day
-  let t-datetime time:create "2000-01-02 03:04:05.678"
-  let t-date time:create "2000-01-02"
-  let t-day time:create "01-02"
-
-  ;; Print out the logotime using user specified format, for full description of options, see:
-  ;; http://joda-time.sourceforge.net/api-release/org/joda/time/format/DateTimeFormat.html
-  print time:show t-datetime "yyyy-MM-dd"
-  print ""
-  print "============================"
-  print ""
-
-  ;; Print out specific fields from the datetime
-  print time:get "year" t-datetime
-  print time:get "month" t-datetime
-  print time:get "week" t-datetime
-  print time:get "day" t-datetime
-  print time:get "dayofyear" t-datetime
-  print time:get "dayofweek" t-datetime
-  print time:get "hour" t-datetime
-  print time:get "minute" t-datetime
-  print time:get "second" t-datetime
-  print time:get "millis" t-datetime
-  print ""
-  print "============================"
-  print ""
-
-  ;; Add some interval to the datetime
-  print time:plus t-datetime 1.0 "seconds"
-  print time:plus t-datetime 1.0 "minutes"
-  print time:plus t-datetime (60.0 * 24) "minutes"
-  print time:plus t-datetime 1 "week"
-  print time:plus t-datetime 1.0 "weeks"
-  print time:plus t-datetime 1.0 "months"  ;; note that decimal months or years are
-  print time:plus t-datetime 1.0 "years"   ;; rounded to the nearest whole number
-  print ""
-  print "============================"
-  print ""
-
-  ;; any of the three varieties of logotime can be achored to the tick,
-  ;; the time value of the logotime is assumed to be tick zero.
-  ;; the other arguments to this call describe how much time one tick is worth,
-  ;; e.g. below one tick is with one hour, two days, and three months respectively
-  set tick-datetime time:anchor-to-ticks t-datetime 1 "hour"
-  set tick-date time:anchor-to-ticks t-date 2 "days"
-  set tick-day time:anchor-to-ticks t-day 3 "months"
-
-  ;; make comparisons between LogoTimes
-  print "before, before, after, equal, equal"
-  print time:is-before (time:create "2000-01-02") (time:create "2000-01-03")
-  print time:is-before (time:create "2000-01-03") (time:create "2000-01-02")
-  print time:is-after  (time:create "2000-01-03") (time:create "2000-01-02")
-  print time:is-equal  (time:create "2000-01-02") (time:create "2000-01-02")
-  print time:is-equal  (time:create "2000-01-02") (time:create "2000-01-03")
-  print "before days"
-  print time:is-before (time:create "01-02") (time:create "01-03")
-  print "is between"
-  print time:is-between (time:create "2000-03-08") (time:create "1999-12-02") (time:create "2000-05-03")
-  print time:is-between (time:create "2000-03-08") (time:create "2000-05-03") (time:create "1999-12-02")
-  print ""
-  print "============================"
-  print ""
-
-  ;; find the amount of time between two LogoTimes, make sure to specify a time unit and recall that months
-  ;; and years will only be reported as whole numbers
-  print time:difference-between (time:create "2000-01-02 00:00") (time:create "2000-02-02 00:00") "days"
-  print time:difference-between (time:create "2000-01-02") (time:create "2001-02-02") "days"
-  print time:difference-between (time:create "01-02") (time:create "01-01") "hours"
-end
-
-to go
-  setup
-  ;; during model execution, any logotime that has been achored to ticks will automatically
-  ;; hold the appropriate date, and can be used analogously to using the "ticks" primitive
-  while[ticks < 20][
-    tick
-    print (word "tick " ticks)
-    print (word "tick-datetime " tick-datetime)
-    print (word "tick-date " tick-date)
-    print (word "tick-day " tick-day)
+  let the-file-name "test-date-times.csv"
+  if file-exists? the-file-name
+  [
+    file-delete the-file-name
   ]
-  tick
+
+  file-open the-file-name
+  file-print "Year,Month,Day,Hour,Minute,Second,Millisecond,Output string"
+
+  repeat 10000
+  [
+    ; Create random dates over a wide range, including infeasible days
+    let the-year 1000 + random 2000
+    let the-month 1 + random 12
+    let the-day 1 + random 30 ; This will cause mistakes which we test for.
+    let the-hour random 24
+    let the-minute random 60
+    let the-second random 60
+    let the-milliseconds random 1000
+
+    let the-time-list (list
+      the-year
+      the-month
+      the-day
+      the-hour
+      the-minute
+      the-second
+      the-milliseconds
+      )
+
+    let the-time-string (word
+      the-year "-"
+      the-month "-"
+      the-day " "
+      the-hour ":"
+      the-minute ":"
+      the-second "."
+      the-milliseconds
+      )
+
+    carefully
+    [
+      set the-logotime time:create the-time-string
+      set the-output-string time:show the-time-string "yyyy-MM-dd HH:mm:ss.SSS"
+    ]
+    [
+      set the-output-string "Time extension could not create a logotime"
+    ]
+
+    set the-time-list lput the-output-string the-time-list
+    file-print csv:to-row the-time-list
+  ]
+
+  file-close
+
 end
+
 @#$#@#$#@
 GRAPHICS-WINDOW
 0
 0
-437
-438
+47
+48
 -1
 -1
 13.0
@@ -160,10 +85,10 @@ GRAPHICS-WINDOW
 1
 1
 1
--16
-16
--16
-16
+-1
+1
+-1
+1
 0
 0
 1
@@ -171,47 +96,13 @@ ticks
 30.0
 
 BUTTON
-28
-56
-94
-89
+39
+88
+156
+121
 NIL
-setup
+test-date-times
 NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-BUTTON
-27
-106
-90
-139
-NIL
-go
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-BUTTON
-26
-154
-105
-187
-stop
-stop
-T
 1
 T
 OBSERVER
@@ -224,39 +115,11 @@ NIL
 @#$#@#$#@
 ## WHAT IS IT?
 
-(a general understanding of what the model is trying to show or explain)
-
-## HOW IT WORKS
-
-(what rules the agents use to create the overall behavior of the model)
-
-## HOW TO USE IT
-
-(how to use the model, including a description of each of the items in the Interface tab)
-
-## THINGS TO NOTICE
-
-(suggested things for the user to notice while running the model)
-
-## THINGS TO TRY
-
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
-
-## EXTENDING THE MODEL
-
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
-
-## NETLOGO FEATURES
-
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
-
-## RELATED MODELS
-
-(models in the NetLogo Models Library and elsewhere which are of related interest)
+This file contains test and example codes for the time extension.
 
 ## CREDITS AND REFERENCES
 
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+Created 1/28/2019 Steven F. Railsback
 @#$#@#$#@
 default
 true
@@ -452,12 +315,19 @@ Polygon -7500403 true true 135 90 120 45 150 15 180 45 165 90
 
 sheep
 false
-0
-Rectangle -7500403 true true 151 225 180 285
-Rectangle -7500403 true true 47 225 75 285
-Rectangle -7500403 true true 15 75 210 225
-Circle -7500403 true true 135 75 150
-Circle -16777216 true false 165 76 116
+15
+Circle -1 true true 203 65 88
+Circle -1 true true 70 65 162
+Circle -1 true true 150 105 120
+Polygon -7500403 true false 218 120 240 165 255 165 278 120
+Circle -7500403 true false 214 72 67
+Rectangle -1 true true 164 223 179 298
+Polygon -1 true true 45 285 30 285 30 240 15 195 45 210
+Circle -1 true true 3 83 150
+Rectangle -1 true true 65 221 80 296
+Polygon -1 true true 195 285 210 285 210 240 240 210 195 210
+Polygon -7500403 true false 276 85 285 105 302 99 294 83
+Polygon -7500403 true false 219 85 210 105 193 99 201 83
 
 square
 false
@@ -542,6 +412,13 @@ Line -7500403 true 216 40 79 269
 Line -7500403 true 40 84 269 221
 Line -7500403 true 40 216 269 79
 Line -7500403 true 84 40 221 269
+
+wolf
+false
+0
+Polygon -16777216 true false 253 133 245 131 245 133
+Polygon -7500403 true true 2 194 13 197 30 191 38 193 38 205 20 226 20 257 27 265 38 266 40 260 31 253 31 230 60 206 68 198 75 209 66 228 65 243 82 261 84 268 100 267 103 261 77 239 79 231 100 207 98 196 119 201 143 202 160 195 166 210 172 213 173 238 167 251 160 248 154 265 169 264 178 247 186 240 198 260 200 271 217 271 219 262 207 258 195 230 192 198 210 184 227 164 242 144 259 145 284 151 277 141 293 140 299 134 297 127 273 119 270 105
+Polygon -7500403 true true -1 195 14 180 36 166 40 153 53 140 82 131 134 133 159 126 188 115 227 108 236 102 238 98 268 86 269 92 281 87 269 103 269 113
 
 x
 false
