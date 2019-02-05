@@ -54,7 +54,7 @@ class LogoTime extends ExtensionObject {
           DayDate
     }
     this.defaultFmt = this.dateType match {
-      case DateTime => DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss.SSS")//"yyyy-MM-dd HH:mm:ss.SSS")
+      case DateTime => DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
       case Date => DateTimeFormatter.ofPattern("yyyy-MM-dd")
       case DayDate => DateTimeFormatter.ofPattern("MM-dd")
     }
@@ -398,7 +398,7 @@ class LogoTime extends ExtensionObject {
           case None => {
             val milliDurVal: java.lang.Integer = durVal.asInstanceOf[java.lang.Double].intValue()*1000000
             new LogoTime(MonthDay.from(refTime.asInstanceOf[MonthDay].atYear(2000).atStartOfDay
-              .plusNanos(milliDurVal.asInstanceOf[Long])))
+              .plusNanos(milliDurVal.longValue)))
           }
           case Some(period) =>
             new LogoTime(MonthDay.from(refTime.asInstanceOf[MonthDay].atYear(2000).atStartOfDay.plus(period)))
