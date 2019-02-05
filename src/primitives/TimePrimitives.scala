@@ -77,7 +77,8 @@ object TimePrimitives {
       TimeExtension.context = context
       val customFormat = TimeUtils.getStringFromArgument(args, 1) match {
         case null => None
-        case x => Some(x) }
+        case x => Some(x)
+      }
       new LogoTime(TimeUtils.getStringFromArgument(args, 0),customFormat)
     }
   }

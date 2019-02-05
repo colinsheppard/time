@@ -6,6 +6,7 @@ import java.time.temporal.ChronoField._
 import java.time.chrono.{ Chronology, IsoChronology }
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE
+import java.time.format.DateTimeFormatter.ISO_DATE_TIME
 import java.time.format.DateTimeParseException
 import java.time.format.FormatStyle.{ FULL }
 import org.nlogo.agent.World
@@ -38,10 +39,10 @@ class LogoTime extends ExtensionObject {
   def this(dateStringArg: String, customFormat: Option[String]) = {
     this()
     var dateString: String = dateStringArg.replace('T',' ')
+    dateString = parseDateString(dateString).replace('T',' ')
     // First we parse the string to determine the date type
     customFormat match {
       case None =>
-        dateString = parseDateString(dateString)
       case Some(customForm) =>
         this.dateType =
         if (customForm.indexOf('H') >= 0 || customForm.indexOf('h') >= 0 ||
@@ -53,11 +54,10 @@ class LogoTime extends ExtensionObject {
           DayDate
     }
     this.defaultFmt = this.dateType match {
-      case DateTime => DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
+      case DateTime => DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss.SSS")//"yyyy-MM-dd HH:mm:ss.SSS")
       case Date => DateTimeFormatter.ofPattern("yyyy-MM-dd")
       case DayDate => DateTimeFormatter.ofPattern("MM-dd")
     }
-
     try
       customFormat match {
         case None =>
@@ -66,20 +66,21 @@ class LogoTime extends ExtensionObject {
               this.datetime =
                 if (dateString.length == 0 || dateString.==("now"))
                   LocalDateTime.now
-                else LocalDateTime.parse(dateString)
-            case Date => this.date = LocalDate.parse(dateString)
+                else LocalDateTime.parse(dateString, this.defaultFmt)
+            case Date => this.date = LocalDate.parse(dateString, this.defaultFmt)
             case DayDate => this.monthDay = MonthDay.parse(dateString, this.defaultFmt)
           }
-      case Some(customForm) =>
-        this.customFmt = DateTimeFormatter.ofPattern(customForm)
-        this.dateType match {
-          case DateTime => this.datetime = LocalDateTime.parse(dateString, this.customFmt)
-          case Date => this.date = LocalDate.parse(dateString, this.customFmt)
-          case DayDate => this.monthDay = MonthDay.parse(dateString, this.customFmt)
+        case Some(customForm) =>
+          this.customFmt = DateTimeFormatter.ofPattern(customForm)
+          this.dateType match {
+            case DateTime => this.datetime = LocalDateTime.parse(dateString, this.customFmt)
+            case Date => this.date = LocalDate.parse(dateString, this.customFmt)
+            case DayDate => this.monthDay = MonthDay.parse(dateString, this.customFmt)
+          }
       }
-    } catch {
-      case e: DateTimeParseException => throw new ExtensionException("Time extension could not parse input")
-    }
+      catch {
+        case e: DateTimeParseException => throw new ExtensionException(s"Time extension could not parse input $customFormat, this.customFmt ${this.customFmt} and dates $dateString")
+      }
   }
 
   def this(dateString: String) = this(dateString, None)
@@ -138,16 +139,16 @@ class LogoTime extends ExtensionObject {
         millisToB = Math.abs((Duration.between(
           timeB.monthDay.atYear(2000).`with`(refDateTime),
           this.monthDay.atYear(2000).`with`(refDateTime))).toMillis)
-
     }
     millisToA < millisToB
   }
 
   @throws[ExtensionException]
   def parseDateString(dateStringT: String): String = {
-    val dateString: String = dateStringT.replace('/', '-').replace(' ', 'T').trim()
+    val delimiter = if(dateStringT.contains('-')) '-' else '/'
+    val dateString: String = dateStringT.replace('/', '-').replace(' ', 'T')
     val timefragments = dateString.split("T").map(_.trim)
-    dateString match {
+    (dateString match {
       case "" => ""
       case "now" => "now"
       case str if timefragments.length == 2 && dateString.contains('-') =>
@@ -157,7 +158,7 @@ class LogoTime extends ExtensionObject {
         if(str.length < 6) this.dateType = DayDate else this.dateType = Date
         parseDate(timefragments(0))
       case _ => throw new ExtensionException(s"Illegal Time String(Top Level)")
-    }
+    }).replace('-',delimiter)
   }
   /* Format to the desired length for datetime, date, and daydate formats */
   def formatToLength(dateString: String, desiredLength: Int): String =
@@ -185,12 +186,14 @@ class LogoTime extends ExtensionObject {
         case Array(sec,milli) if sec.length <= 2 && milli.length <= 3 =>
           formatToLength(sec,2) + "." + (milli + "0" * (3 - milli.length))
           /* In this case, millisecond adds zeros at the end to match decimal formatting */
+        case Array(sec,milli) if sec.length <= 2 && milli.length > 3 =>
+          formatToLength(sec,2) + "." + milli.take(3)
         case Array(sec) if sec.length <= 2 =>
           formatToLength(sec,2) + ".000"
         case _ => throw new ExtensionException(s"Illegal Second String")
       }
     dateTimeStr.split(':') match {
-      case Array(hour,minute,second) if dateTimeStr.length < 13 =>
+      case Array(hour,minute,second) if (hour + ":" + minute + ":").length < 7 =>
         formatToLength(hour,2) + ":" + formatToLength(minute,2) + ":" + formatSeconds(second)
       case Array(hour,minute) if dateTimeStr.length < 6 =>
         formatToLength(hour,2) + ":" + formatToLength(minute,2) + ":00.000"
@@ -221,7 +224,7 @@ class LogoTime extends ExtensionObject {
     catch {
       case e: ExtensionException => {}
     }
-    val test = this.dateType match {
+    this.dateType match {
       case DateTime =>
         val fmt = if(this.customFmt == null) this.defaultFmt else this.customFmt
         datetime.format(fmt)
@@ -233,7 +236,6 @@ class LogoTime extends ExtensionObject {
         monthDay.format(fmt)
       case _ => ""
     }
-    test
   }
 
   def updateFromTick(): Unit = {
