@@ -21,8 +21,7 @@ object TimePrimitives {
       SyntaxJ.reporterSyntax(Array(Syntax.StringType), Syntax.WildcardType)
     def report(args: Array[Argument], context: Context): AnyRef = {
       TimeExtension.context = context
-      val time: LogoTime = new LogoTime(TimeUtils.getStringFromArgument(args, 0))
-      time
+      new LogoTime(TimeUtils.getStringFromArgument(args, 0))
     }
   }
 
@@ -49,9 +48,10 @@ object TimePrimitives {
                              Syntax.StringType)
     def report(args: Array[Argument], context: Context): AnyRef = {
       val time: LogoTime = TimeUtils.getTimeFromArgument(args, 0)
+      /* Above ^
+         There is an implicit LogoTime initialization */
       val fmtString: String = TimeUtils.getStringFromArgument(args, 1)
-      var fmt: DateTimeFormatter = null
-      fmt =
+      val fmt =
         if (fmtString.trim().==(""))
           DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
         else DateTimeFormatter.ofPattern(fmtString)

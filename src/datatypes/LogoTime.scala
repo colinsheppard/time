@@ -63,12 +63,13 @@ class LogoTime extends ExtensionObject {
         case None =>
           this.dateType match {
             case DateTime =>
+              dateString = dateString.replace(' ','T').replace('/','-')
               this.datetime =
                 if (dateString.length == 0 || dateString.==("now"))
                   LocalDateTime.now
-                else LocalDateTime.parse(dateString, this.defaultFmt)
-            case Date => this.date = LocalDate.parse(dateString, this.defaultFmt)
-            case DayDate => this.monthDay = MonthDay.parse(dateString, this.defaultFmt)
+                else LocalDateTime.parse(dateString)
+            case Date => this.date = LocalDate.parse(dateString)
+            case DayDate => this.monthDay = MonthDay.parse(dateString)
           }
         case Some(customForm) =>
           this.customFmt = DateTimeFormatter.ofPattern(customForm)
@@ -79,7 +80,7 @@ class LogoTime extends ExtensionObject {
           }
       }
       catch {
-        case e: DateTimeParseException => throw new ExtensionException(s"Time extension could not parse input $customFormat, this.customFmt ${this.customFmt} and dates $dateString")
+        case e: DateTimeParseException => throw new ExtensionException(s"Time extension could not parse input")
       }
   }
 

@@ -42,8 +42,8 @@ object TimeUtils {
 
   def getTimeFromArgument(args: Array[Argument], argIndex: java.lang.Integer): LogoTime = {
     var time = args(argIndex).get match {
-      case str: String => new LogoTime(args(argIndex).getString)
       case logoTime: LogoTime => logoTime
+      case str: String => new LogoTime(args(argIndex).getString)
       case obj =>
         throw new ExtensionException(
           s"time: was expecting a LogoTime object as argument ${argIndex + 1}, found this instead: ${Dump.logoObject(obj)}")
@@ -155,7 +155,7 @@ object TimeUtils {
       .workspace
       .outputObject(msg, null, true, true, OutputDestinationJ.OUTPUT_AREA)
     Files.write(
-      Paths.get("/Users/critter/Dropbox/netlogo/time/debugging/log.txt"),
+      Paths.get("~/log.txt"),
       (msg + "\n").getBytes,
       StandardOpenOption.APPEND)
   }

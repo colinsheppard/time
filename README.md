@@ -92,8 +92,8 @@ Create a few turtles and schedule them to go forward at tick 10, then schedule o
 
     create-turtles 5
 
-    time:schedule-event turtles ([ [] -> fd]) 10
-    time:schedule-event (turtle 1) ([ [] -> fd]) 5
+    time:schedule-event turtles ([ [] -> fd 1]) 10
+    time:schedule-event (turtle 1) ([ [] -> fd 1]) 5
 
 Execute the discrete event schedule (all events will be executed in order of time):
 
@@ -112,7 +112,7 @@ This package contains the NetLogo **time extension**, which provides NetLogo wit
 
 The extension provides tools for representing time explicitly, especially by linking NetLogo’s ticks to a specific time interval. It allows users to do things such as starting a simulation on 1 January of 2010 and end on 31 December 2015, have each tick represent 6 hours, and check whether the current simulation date is between 1 and 15 March.
 
-This extension is powered by the [Joda Time API for Java](http://joda-time.sourceforge.net/), which has very sophisticated and comprehensive date/time facilities.  A subset of these capabilities have been extended to NetLogo.  The **time extension** makes it easy to convert string representations of dates and date/times to a **LogoTime** object which can then be used to do many common time manipulations such as incrementing the time by some amount (e.g. add 3.5 days to 2001-02-22 10:00 to get 2001-02-25 22:00).
+This extension is powered by the Java Time Library, which has very sophisticated and comprehensive date/time facilities.  A subset of these capabilities have been extended to NetLogo.  The **time extension** makes it easy to convert string representations of dates and date/times to a **LogoTime** object which can then be used to do many common time manipulations such as incrementing the time by some amount (e.g. add 3.5 days to 2001-02-22 10:00 to get 2001-02-25 22:00).
 
 **Time Series Utilities**
 
@@ -219,9 +219,9 @@ The **time extension** has the following notable behavior:
   | SECOND      | "second"				|
   | MILLI	      | "milli"					|
 
-* **Time extension has millisecond resolution** - This is a fundamental feature of Joda Time and cannot be changed.  The biggest reason Joda Time does not support micro or nano seconds is performance: going to that resolution would require the use of BigInts which would substantially slow down computations.  [Read more on this topic](http://joda-time.sourceforge.net/faq.html#submilli).
+* **Time extension has millisecond resolution** - This is a fundamental feature of the Java Time library and cannot be changed. LogoTime instances can be converted to use milliseconds, but will be initialized to zero. As for representing milliseconds, milliseconds are represented by floats and can have formatting issues for some values. The time extension truncates milliseconds to the third decimal place to prevent parsing issues with the Java Time library.
 
-* **Daylight savings time is ignored** - All times are treated as local, or "zoneless", and daylight savings time (DST) is ignored.  It is assumed that most NetLogo users don't need to convert times between time zones or be able to follow the rules of DST for any particular locale.  Instead, users are much more likely to need the ability to load a time series and perform date and time operations without worrying about when DST starts and whether an hour of their time series will get skipped in the spring or repeated in the fall.  It should be noted that Joda Time definitely can handle DST for most locales on Earth, but that capability is not extended to NetLogo here and won't be unless by popular demand.
+* **Daylight savings time is ignored** - All times are treated as local, or "zoneless", and daylight savings time (DST) is ignored.  It is assumed that most NetLogo users don't need to convert times between time zones or be able to follow the rules of DST for any particular locale.  Instead, users are much more likely to need the ability to load a time series and perform date and time operations without worrying about when DST starts and whether an hour of their time series will get skipped in the spring or repeated in the fall.  It should be noted that the Time library definitely can handle DST for most locales on Earth, but that capability is not extended to NetLogo here and won't be unless by popular demand.
 
 * **Leap days are included** - While we simplify things by excluding time zones and DST, leap days are kept to allow users to reliably use real world time series in their NetLogo model.
 
@@ -231,7 +231,7 @@ The **time extension** has the following notable behavior:
 
 * **LogoTimeSeries must have unique LogoTimes** - The LogoTimes in the timestamp column of the LogoTimeSeries must be unique.  In other words, there cannot be more than one row indexed by a particular timestamp. If you add a row to a LogoTimeSeries using a LogoTime already in the table, the data in the table will be overwritten by the new row.
 
-* **LogoTimeSeries columns are numeric or string valued** - The data columns in a LogoTimeSeries will be typed as numbers or strings depending on the value in the first row of the input file (or the first row added using *time:ts-add-row*).  A number added to a string column will be encoded as a string and a string added to a number column will throw an error. 
+* **LogoTimeSeries columns are numeric or string valued** - The data columns in a LogoTimeSeries will be typed as numbers or strings depending on the value in the first row of the input file (or the first row added using *time:ts-add-row*).  A number added to a string column will be encoded as a string and a string added to a number column will throw an error.
 
 * **LogoEvents are dispatched in order, and ties go to the first created** - If multiple LogoEvents are scheduled for the exact same time, they are dispatched (executed) in the order in which they were added to the discrete event schedule.
 
@@ -267,8 +267,8 @@ Reports a LogoTime created by parsing the *time-string* argument.  A LogoTime is
 Like time:create, but reports a LogoTime created by parsing the *time-string* argument using the *format-string* argument as the format specifier.
 
     ;; Create a datetime, a date, and a day using American convention for dates: Month/Day/Year
-    let t-datetime time:create-with-format "01-02-2000 03:04:05.678" "MM-dd-YYYY HH:mm:ss.SSS"
-    let t-date time:create-with-format "01/02/2000" "MM/dd/YYYY"
+    let t-datetime time:create-with-format "01-02-2000 03:04:05.678" "MM-dd-yyyy HH:mm:ss.SSS"
+    let t-date time:create-with-format "01/02/2000" "MM/dd/yyyy"
     let t-day time:create-with-format "01-02" "MM-dd"
 
 See the following link for a full description of the available format options:
@@ -293,7 +293,7 @@ Reports a string containing the *logotime* formatted according the *string-forma
 
 See the following link for a full description of the available format options:
 
-[http://joda-time.sourceforge.net/api-release/org/joda/time/format/DateTimeFormat.html](http://joda-time.sourceforge.net/api-release/org/joda/time/format/DateTimeFormat.html)
+[https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html](https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html)
 
 ---------------------------------------
 
@@ -340,17 +340,17 @@ Reports a LogoTime resulting from the addition of some time period to the *logot
     print time:plus t-datetime (60.0 * 24) "minutes"
     ;; prints "{{time:logotime 2000-01-03 03:04:05.678}}"
 
-    print time:plus t-datetime 1 "week"  
+    print time:plus t-datetime 1 "week"
     ;; prints "{{time:logotime 2000-01-09 03:04:05.678}}"
 
-    print time:plus t-datetime 1.0 "weeks"  
+    print time:plus t-datetime 1.0 "weeks"
     ;; prints "{{time:logotime 2000-01-09 03:04:05.678}}"
 
-    print time:plus t-datetime 1.0 "months"  
+    print time:plus t-datetime 1.0 "months"
     ;; note that decimal months or years are rounded to the nearest whole number
     ;; prints "{{time:logotime 2000-02-02 03:04:05.678}}"
 
-    print time:plus t-datetime 1.0 "years"   
+    print time:plus t-datetime 1.0 "years"
     ;; prints "{{time:logotime 2001-01-02 03:04:05.678}}"
 
 
@@ -395,6 +395,13 @@ Reports a boolean for the test of whether *logotime1* is before/after/equal-to *
 Reports the amount of time between *logotime1* and *logotime2* in units of *period-type-string*.  Note that if the period type is YEAR or MONTH, then the reported value will be a whole number based soley on the month and year components of the LogoTimes.  If *logotime2* is smaller (earlier than) *logotime1*, the reported value will be negative.
 
 This primitive is useful for recording the elapsed time between model events because (unlike time:get) it reports the total number of time units, including fractions of units. For example, if *start-time* is a LogoTime variable for the time a simulation starts and *end-time* is when the simulation stops, then use *show time:difference-between start-time end-time "days"* to see how many days were simulated.
+
+** Note **
+
+For period type of "MONTH", difference-between calculates the number of months between dates as the number of months there are between two logotime instances, which have the same day value. For example, if logotime1 is 2000-01-02 then difference-between reports 0 months for logotime2 = 2000-02-01 and 1 month for 2000-02-02. However, the value reported is never greater than 11 or less than -11; it reverts to zero when logotime2 reaches one year from logotime1 and then is 1 when logotime2 is 13 months after logotime1, etc.
+
+For "YEAR", difference-between reports the number [integers] of years there are between two logotime instances. The difference is calculated through matching the day and month while truncating values around that date. This should apply for leap years, as well. For example, if logotime1 is 2000-01-02 then difference-between reports 0 years for logotime2 = 2001-01-01, 1 year for 2000-01-02, and 5 years for 2005-01-02. The total number of months between two dates can therefore be calculated as 12 times the value of of difference-between in years plus the value of difference-between in months.
+
 
 	print time:difference-between (time:create "2000-01-02 00:00") (time:create "2000-02-02 00:00") "days"
 	;;prints "31"
