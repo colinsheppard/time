@@ -64,15 +64,15 @@ class LogoTime extends ExtensionObject {
     try
       customFormat match {
         case None =>
+          dateString = dateString.replace(' ','T').replace('/','-')
           this.dateType match {
             case DateTime =>
-              dateString = dateString.replace(' ','T').replace('/','-')
               this.datetime =
                 if (dateString.length == 0 || dateString.==("now"))
                   LocalDateTime.now
                 else LocalDateTime.parse(dateString)
             case Date => this.date = LocalDate.parse(dateString)
-            case DayDate => this.monthDay = MonthDay.parse(dateString)
+            case DayDate => this.monthDay = MonthDay.parse(dateString, this.defaultFmt)
           }
         case Some(customForm) =>
           this.customFmt = DateTimeFormatter.ofPattern(customForm)
@@ -275,8 +275,8 @@ class LogoTime extends ExtensionObject {
   def show(fmt: DateTimeFormatter): String = {
     this.dateType match {
       case DateTime => this.datetime.format(fmt)
-      case Date => this.date.format(fmt)
-      case DayDate => this.monthDay.format(fmt)
+      case Date => this.date.atStartOfDay().format(fmt)
+      case DayDate => this.monthDay.atYear(2000).atStartOfDay().format(fmt)
       case _ => ""
     }
   }
@@ -402,7 +402,7 @@ class LogoTime extends ExtensionObject {
       case DayDate =>
         per match {
           case None => {
-            val milliDurVal: java.lang.Integer = durVal.asInstanceOf[java.lang.Double].intValue()*1000000
+            val milliDurVal:java.lang.Long = TimeUtils.dToL(durVal)*1000000
             new LogoTime(MonthDay.from(refTime.asInstanceOf[MonthDay].atYear(2000).atStartOfDay
               .plusNanos(milliDurVal.longValue)))
           }
