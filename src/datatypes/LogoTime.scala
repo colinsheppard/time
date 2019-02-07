@@ -9,6 +9,9 @@ import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE
 import java.time.format.DateTimeFormatter.ISO_DATE_TIME
 import java.time.format.DateTimeParseException
 import java.time.format.FormatStyle.{ FULL }
+import java.util.GregorianCalendar
+import java.util.Calendar
+import java.time.temporal.WeekFields
 import org.nlogo.agent.World
 import org.nlogo.api.ExtensionException
 import org.nlogo.core.ExtensionObject
@@ -322,11 +325,14 @@ class LogoTime extends ExtensionObject {
           case Date => date.getDayOfWeek().getValue()
           case DayDate => monthDay.atYear(2000).getDayOfWeek().getValue()
         }
-      case Week => // not accurate
+      case Week =>
         this.dateType match {
-          case DateTime => datetime.getDayOfYear() / 52
-          case Date => date.getDayOfYear() / 52
-          case DayDate => monthDay.atYear(2000).getDayOfYear() / 52
+          case DateTime =>
+            datetime.get(WeekFields.SUNDAY_START.weekOfYear)
+          case Date =>
+            date.get(WeekFields.SUNDAY_START.weekOfYear)
+          case DayDate =>
+            monthDay.atYear(2000).get(WeekFields.SUNDAY_START.weekOfYear)
         }
       case Month =>
         this.dateType match {
@@ -339,9 +345,8 @@ class LogoTime extends ExtensionObject {
           case DateTime => datetime.getYear()
           case Date => date.atStartOfDay.getYear()
           case DayDate => monthDay.atYear(2000).getYear()
-
         }
-      case _ => 0
+      case _ => throw new ExtensionException("Incorrect Time Unit")
     }
   }
 
