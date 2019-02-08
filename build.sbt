@@ -10,5 +10,7 @@ publishMavenStyle in ThisBuild := false
 lazy val src = (project in file("."))
   .settings(
     scalaSource in Compile := baseDirectory.value / "src",
-    scalaSource in Test    := baseDirectory.value / "test"
+    scalaSource in Test    := baseDirectory.value / "test",
+    scalacOptions ++= Seq()
+      //"-deprecation -unchecked -Xlint -Xfatal-warnings".split(" ").toSeq
   )

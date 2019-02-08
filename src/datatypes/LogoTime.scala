@@ -5,10 +5,8 @@ import java.time.temporal.ChronoUnit._
 import java.time.temporal.ChronoField._
 import java.time.chrono.{ Chronology, IsoChronology }
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE
-import java.time.format.DateTimeFormatter.ISO_DATE_TIME
+import java.time.format.ResolverStyle.STRICT
 import java.time.format.DateTimeParseException
-import java.time.format.FormatStyle.{ FULL }
 import java.util.GregorianCalendar
 import java.util.Calendar
 import java.time.temporal.WeekFields
@@ -23,7 +21,7 @@ class LogoTime extends ExtensionObject {
   var date: LocalDate = null
   var monthDay: MonthDay = null
   private var customFmt: DateTimeFormatter = null
-  private var defaultFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
+  private var defaultFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").withResolverStyle(STRICT)
   private var isAnchored: java.lang.Boolean = false
   private var tickValue: java.lang.Double = _
   private var tickType: PeriodType = _
@@ -57,9 +55,9 @@ class LogoTime extends ExtensionObject {
           DayDate
     }
     this.defaultFmt = this.dateType match {
-      case DateTime => DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
-      case Date => DateTimeFormatter.ofPattern("yyyy-MM-dd")
-      case DayDate => DateTimeFormatter.ofPattern("MM-dd")
+      case DateTime => DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").withResolverStyle(STRICT)
+      case Date => DateTimeFormatter.ofPattern("yyyy-MM-dd").withResolverStyle(STRICT)
+      case DayDate => DateTimeFormatter.ofPattern("MM-dd").withResolverStyle(STRICT)
     }
     try
       customFormat match {
@@ -75,7 +73,7 @@ class LogoTime extends ExtensionObject {
             case DayDate => this.monthDay = MonthDay.parse(dateString, this.defaultFmt)
           }
         case Some(customForm) =>
-          this.customFmt = DateTimeFormatter.ofPattern(customForm)
+          this.customFmt = DateTimeFormatter.ofPattern(customForm).withResolverStyle(STRICT)
           this.dateType match {
             case DateTime => this.datetime = LocalDateTime.parse(dateString, this.customFmt)
             case Date => this.date = LocalDate.parse(dateString, this.customFmt)
@@ -96,14 +94,14 @@ class LogoTime extends ExtensionObject {
   def this(dt: LocalDate) = {
     this()
     this.date = dt
-    this.defaultFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    this.defaultFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd").withResolverStyle(STRICT)
     this.dateType = Date
   }
 
   def this(dt: MonthDay) = {
     this()
     this.monthDay = dt
-    this.defaultFmt = DateTimeFormatter.ofPattern("MM-dd")
+    this.defaultFmt = DateTimeFormatter.ofPattern("MM-dd").withResolverStyle(STRICT)
     this.dateType = DayDate
   }
 
