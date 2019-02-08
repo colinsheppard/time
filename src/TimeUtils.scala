@@ -12,8 +12,8 @@ import org.nlogo.extensions.time.datatypes.{LogoTimeSeries, LogoTime, LogoSchedu
 
 /* This object holds convenient methods for time and types */
 object TimeUtils {
-  def dToL(d: Double): java.lang.Long =
-    d.asInstanceOf[java.lang.Double].longValue()
+  def dToL(d: java.lang.Double): java.lang.Long =
+    d.longValue()
 
   def stringToPeriodType(typeString: String): PeriodType = {
     val typ = typeString.trim().toLowerCase() match {
@@ -117,7 +117,7 @@ object TimeUtils {
     }
 
   def roundDouble(d: java.lang.Double): java.lang.Integer =
-    Math.round(d).asInstanceOf[java.lang.Long].intValue()
+    Math.round(d).longValue().intValue()
 
   def intToDouble(i: Int): java.lang.Double =
     (new java.lang.Integer(i)).doubleValue()

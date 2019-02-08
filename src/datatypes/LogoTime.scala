@@ -363,12 +363,12 @@ class LogoTime extends ExtensionObject {
     var per: Option[Period] = None
     var durVal: java.lang.Double = durValArg
     pType match { //conversions
-      case Week => durVal *= 1 * 1000 * 60 * 60 * 24 * 7
-      case Day | DayOfYear => durVal *= 1 * 1000 * 60 * 60 * 24
-      case Hour => durVal *= 1 * 1000 * 60 * 60
-      case Minute => durVal *= 1 * 1000 * 60
-      case Second => durVal *= 1 * 1000
-      case Milli => durVal *= 1
+      case Week => durVal *= 7
+      case Day | DayOfYear =>
+      case Hour => durVal *= 7 * 24
+      case Minute => durVal *= 7 * 24 * 60
+      case Second => durVal *= 7 * 24 * 60 * 60
+      case Milli => durVal *= 7 * 24 * 60 * 60 * 1000
       case Month =>
         per = Some (Period.of(0, TimeUtils.roundDouble(durVal), 0))
       case Year =>
@@ -383,7 +383,7 @@ class LogoTime extends ExtensionObject {
           case None =>
             new LogoTime(refTime
               .asInstanceOf[LocalDateTime]
-              .plus(Duration.of(TimeUtils.dToL(durVal), MILLIS))) // you need to set it to the correct unit
+              .plus(Duration.of(TimeUtils.dToL(durVal), DAYS)))
           case Some(period) =>
           new LogoTime(refTime.asInstanceOf[LocalDateTime].plus(period))
         }
@@ -392,7 +392,7 @@ class LogoTime extends ExtensionObject {
           case None => {
             var logotime = refTime
               .asInstanceOf[LocalDate].atStartOfDay
-              .plus(Duration.of(TimeUtils.dToL(durVal), MILLIS)).toLocalDate
+              .plus(Duration.of(TimeUtils.dToL(durVal), DAYS)).toLocalDate
             new LogoTime(logotime)
 
           }
@@ -402,9 +402,8 @@ class LogoTime extends ExtensionObject {
       case DayDate =>
         per match {
           case None => {
-            val milliDurVal:java.lang.Long = TimeUtils.dToL(durVal)*1000000
             new LogoTime(MonthDay.from(refTime.asInstanceOf[MonthDay].atYear(2000).atStartOfDay
-              .plusNanos(milliDurVal.longValue)))
+              .plus(Duration.of(TimeUtils.dToL(durVal), DAYS))))
           }
           case Some(period) =>
             new LogoTime(MonthDay.from(refTime.asInstanceOf[MonthDay].atYear(2000).atStartOfDay.plus(period)))

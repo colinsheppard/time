@@ -1,7 +1,7 @@
 extensions [time]
 
 to-report test-temporal-fields [ dt2 ]
-  let dt time:plus dt2 24 "second"
+  let dt time:plus dt2 24 "hour"
   let milli time:get "milli" dt
   let second time:get "second" dt
   let minute time:get "minute" dt
@@ -16,13 +16,14 @@ to-report test-temporal-fields [ dt2 ]
 end
 
 to run-test
-  let dt-month time:create "02-01"
+  ;let dt-month time:create-with-format "02-02-2000 11" "MM-dd-yyyy ss"
   let dt-date time:create "2000-02-01"
+  let dt-day time:create "01-02"
   let dt-datetime time:create "2000-02-01 10:00:00"
-  print test-temporal-fields dt-month
+  ;print test-temporal-fields dt-month
   print test-temporal-fields dt-date
   print test-temporal-fields dt-datetime
-  print time:show dt-month "yyyy-MM-dd"
+  ;print time:show dt-month "yyyy-MM-dd"
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
