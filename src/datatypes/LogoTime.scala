@@ -500,7 +500,7 @@ class LogoTime extends ExtensionObject {
               (Period.between(this.date, endTime.date)).getMonths)
           case DayDate =>
             TimeUtils.intToDouble(
-              (Period.between(LocalDate.from(this.monthDay), LocalDate.from(endTime.monthDay))).getMonths)
+              (Period.between(this.monthDay.atYear(2000), endTime.monthDay.atYear(2000))).getMonths)
         }
       case Week | Day | DayOfYear | Hour | Minute | Second | Milli => {
         pType match {
