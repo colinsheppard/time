@@ -40,14 +40,17 @@ class LogoTime extends ExtensionObject {
   def this(dateStringArg: String, customFormat: Option[String]) = {
     this()
     var dateString: String = dateStringArg.replace('T',' ')
-    dateString = parseDateString(dateString).replace('T',' ')
+ //   dateString = parseDateString(dateString).replace('T',' ')
     // First we parse the string to determine the date type
     customFormat match {
       case None =>
+           dateString = parseDateString(dateString).replace('T',' ')
       case Some(customForm) =>
         this.dateType =
-        if (customForm.indexOf('H') >= 0 || customForm.indexOf('h') >= 0 ||
-            customForm.indexOf('K') >= 0 || customForm.indexOf('k') >= 0)
+          if (customForm.indexOf('H') >= 0 || customForm.indexOf('h') >= 0 ||
+              customForm.indexOf('S') >= 0 || customForm.indexOf('s') >= 0 ||
+              customForm.indexOf('K') >= 0 || customForm.indexOf('k') >= 0 ||
+              customForm.indexOf('m') >= 0)
           DateTime
         else if (customForm.indexOf('Y') >= 0 || customForm.indexOf('y') >= 0)
           Date
@@ -69,11 +72,11 @@ class LogoTime extends ExtensionObject {
                 if (dateString.length == 0 || dateString.==("now"))
                   LocalDateTime.now
                 else LocalDateTime.parse(dateString)
-            case Date => this.date = LocalDate.parse(dateString)
+            case Date    => this.date = LocalDate.parse(dateString)
             case DayDate => this.monthDay = MonthDay.parse(dateString, this.defaultFmt)
           }
         case Some(customForm) =>
-          this.customFmt = DateTimeFormatter.ofPattern(customForm).withResolverStyle(STRICT)
+          this.customFmt = DateTimeFormatter.ofPattern(customForm.replace('y','u')).withResolverStyle(STRICT)
           this.dateType match {
             case DateTime => this.datetime = LocalDateTime.parse(dateString, this.customFmt)
             case Date => this.date = LocalDate.parse(dateString, this.customFmt)
@@ -81,7 +84,8 @@ class LogoTime extends ExtensionObject {
           }
       }
       catch {
-        case e: DateTimeParseException => throw new ExtensionException(s"Time extension could not parse input")
+        case e: DateTimeParseException =>
+          throw new ExtensionException(s"Time extension could not parse input")
       }
   }
 
@@ -429,9 +433,7 @@ class LogoTime extends ExtensionObject {
     if (this.dateType != timeB.dateType)
       throw new ExtensionException(
         "time comparisons only work if the LogoTime's are the same variety, but you called with a " +
-          this.dateType.toString +
-          " and a " +
-          timeB.dateType.toString)
+          this.dateType.toString + " and a " + timeB.dateType.toString)
     this.dateType match {
       case DateTime => this.datetime.isEqual(timeB.datetime)
       case Date => this.date.isEqual(timeB.date)

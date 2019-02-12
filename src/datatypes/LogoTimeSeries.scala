@@ -58,8 +58,7 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
   def getNumColumns(): java.lang.Integer = columns.size
 
   def write(filename: String, context: ExtensionContext): Unit = {
-    var dataFile: File = null
-    dataFile =
+    val dataFile =
       if (filename.charAt(0) == '/' || filename.charAt(0) == '\\')
         new File(filename)
       else new File(context.workspace.getModelDir + "/" + filename)
@@ -132,11 +131,14 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
       lineData = strLine.split(delim)
       val newTime: LogoTime = new LogoTime(lineData(0), customFormat)
       times.put(newTime, new TimeSeriesRecord(newTime, { numRows += 1; numRows - 1 }))
-      var colInd: Int = 1
-      while (colInd <= columns.size) {
-        columns.get(columnNames(colInd - 1)).add(lineData(colInd))
+      var colInd: Int = 0
+      while (colInd < columns.size) {
+
+        val grab = columns.get(columnNames(colInd))
+        if(grab != null) {
+          grab.add(lineData(colInd))
+        }
         colInd += 1
-        colInd - 1
       }
     }
     br.close()
@@ -150,8 +152,7 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
     if (columnName.==("ALL_-_COLUMNS")) {
       columnList.addAll(columns.keySet)
     } else if (!columns.containsKey(columnName)) {
-      throw new ExtensionException(
-        "The LogoTimeSeries does not contain the column " + columnName)
+      throw new ExtensionException("The LogoTimeSeries does not contain the column " + columnName)
     } else {
       columnList.add(columnName)
     }
@@ -170,10 +171,8 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
       } else {
         getMethod match {
           case Exact =>
-            throw new ExtensionException("The LogoTime " + time.dump(
-              false,
-              false,
-              false) + " does not exist in the time series.")
+            throw new ExtensionException("The LogoTime " + time.dump(false,false,false)
+              + " does not exist in the time series.")
           case Nearest =>
             finalKey =
               if (time.isCloserToAThanB(lowerKey, higherKey)) lowerKey
