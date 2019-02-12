@@ -164,9 +164,17 @@ TimeCreateWithFormat
 
 TimeCreateCopy
   extensions [time]
+  globals [ dt logotime ]
   time:show time:copy (time:create "2000/01/01 10:00") "yyyy/MM/dd" => "2000/01/01"
   time:show time:copy (time:plus (time:create "2000/01/01 10:00") 3 "day") "yyyy/MM/dd" => "2000/01/04"
   time:show time:copy (time:plus (time:create "2000/01/01 10:00") 0 "day") "yyyy/MM/dd" => "2000/01/01"
+  time:show time:copy (time:plus (time:create "2000/01/01 10:00") 0 "day") "yyyy/MM/dd" => "2000/01/01"
+  time:show time:copy time:copy (time:plus (time:create "2000/01/01 10:00") 0 "day") "MM/dd/yyyy" => "01/01/2000"
+  O> set dt time:copy (time:plus (time:create "2000/01/01 10:00") 2 "day")
+  O> set logotime time:copy (time:plus dt 3 "day")
+  time:get "day" dt => 3
+  time:get "day" logotime => 6
+  time:get "day" (time:plus logotime 24 "hour") => 7
 
 TimeDiscreteEventAddEventTick
   extensions [time]
@@ -313,6 +321,16 @@ TimeGetCommandDay
    time:get "hour" t-datetime => 0
    time:get "second" t-datetime => 0
 
+TimeGetCommandVaried
+   extensions [time]
+   globals [t-datetime]
+   O> set t-datetime (time:create-with-format "01-02" "MM-dd")
+   time:get "year" t-datetime => 2000
+   time:get "month" t-datetime => 1
+   time:get "dayofyear" t-datetime => 2
+   time:get "hour" t-datetime => 0
+   time:get "second" t-datetime => 0
+
 TimeFormatting
    extensions [time]
    time:show time:create-with-format "01-02-2000 03:04:05.678" "MM-dd-yyyy HH:mm:ss.SSS" "MM-dd-yyyy HH:mm:ss.SSS" => "01-02-2000 03:04:05.678"
@@ -320,6 +338,8 @@ TimeFormatting
    time:show time:create-with-format "01-02-2000 03:00:00" "MM-dd-yyyy HH:mm:ss" "MM-dd-yyyy HH:mm" => "01-02-2000 03:00"
    time:show time:create-with-format "01-02-2000 03:00:00.001" "MM-dd-yyyy HH:mm:ss.SSS" "MM-dd-yyyy HH:mm:ss" => "01-02-2000 03:00:00"
    time:show (time:plus (time:create-with-format "01-02-2000" "MM-dd-yyyy") 3 "day") "MM-dd-yyyy" => "01-05-2000"
+   time:show (time:plus (time:create-with-format "01-02-2000" "MM-dd-yyyy") 3 "day") "MM dd yyyy" => "01 05 2000"
+   time:show (time:plus (time:create-with-format "01 02 2000" "MM dd yyyy") 3 "day") "MM dd yyyy" => "01 05 2000"
 
 MoreTimePlusExamples
    extensions [time]
