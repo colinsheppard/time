@@ -1,6 +1,7 @@
 package org.nlogo.extensions.time.primitives
 
 import java.time.format.DateTimeFormatter
+import java.time.format.ResolverStyle.STRICT
 import org.nlogo.api.Argument
 import org.nlogo.api.Context
 import org.nlogo.api.Reporter
@@ -53,8 +54,8 @@ object TimePrimitives {
       val fmtString: String = TimeUtils.getStringFromArgument(args, 1)
       val fmt =
         if (fmtString.trim().==(""))
-          DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
-        else DateTimeFormatter.ofPattern(fmtString)
+          DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss.SSS").withResolverStyle(STRICT)
+        else DateTimeFormatter.ofPattern(fmtString.replace('y','u')).withResolverStyle(STRICT)
       time.show(fmt)
     }
   }

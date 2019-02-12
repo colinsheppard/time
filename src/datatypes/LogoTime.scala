@@ -21,7 +21,7 @@ class LogoTime extends ExtensionObject {
   var date: LocalDate = null
   var monthDay: MonthDay = null
   private var customFmt: DateTimeFormatter = null
-  private var defaultFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").withResolverStyle(STRICT)
+  private var defaultFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss.SSS").withResolverStyle(STRICT)
   private var isAnchored: java.lang.Boolean = false
   private var tickValue: java.lang.Double = _
   private var tickType: PeriodType = _
@@ -40,7 +40,6 @@ class LogoTime extends ExtensionObject {
   def this(dateStringArg: String, customFormat: Option[String]) = {
     this()
     var dateString: String = dateStringArg.replace('T',' ')
- //   dateString = parseDateString(dateString).replace('T',' ')
     // First we parse the string to determine the date type
     customFormat match {
       case None =>
@@ -58,8 +57,8 @@ class LogoTime extends ExtensionObject {
           DayDate
     }
     this.defaultFmt = this.dateType match {
-      case DateTime => DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").withResolverStyle(STRICT)
-      case Date => DateTimeFormatter.ofPattern("yyyy-MM-dd").withResolverStyle(STRICT)
+      case DateTime => DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss.SSS").withResolverStyle(STRICT)
+      case Date => DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(STRICT)
       case DayDate => DateTimeFormatter.ofPattern("MM-dd").withResolverStyle(STRICT)
     }
     try
@@ -91,14 +90,25 @@ class LogoTime extends ExtensionObject {
 
   def this(dateString: String) = this(dateString, None)
 
+  def this(dateString: String, dateFormat: DateTimeFormatter, datetype: DateType) = {
+    this()
+    this.dateType = datetype
+    this.customFmt = dateFormat
+    this.dateType match {
+      case DateTime => this.datetime = LocalDateTime.parse(dateString, dateFormat)
+      case Date => this.date = LocalDate.parse(dateString, dateFormat)
+      case DayDate => this.monthDay = MonthDay.parse(dateString, dateFormat)
+    }
+  }
+
   def this(time: LogoTime) = {
-    this(time.show(if(time.customFmt == null) time.defaultFmt else time.customFmt))
+    this(time.show(if(time.customFmt == null) time.defaultFmt else time.customFmt), if(time.customFmt == null) time.defaultFmt else time.customFmt, time.dateType)
   }
 
   def this(dt: LocalDate) = {
     this()
     this.date = dt
-    this.defaultFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd").withResolverStyle(STRICT)
+    this.defaultFmt = DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(STRICT)
     this.dateType = Date
   }
 
@@ -279,7 +289,6 @@ class LogoTime extends ExtensionObject {
       case DateTime => this.datetime.format(fmt)
       case Date => this.date.atStartOfDay().format(fmt)
       case DayDate => this.monthDay.atYear(2000).atStartOfDay().format(fmt)
-      case _ => ""
     }
   }
 
@@ -365,12 +374,12 @@ class LogoTime extends ExtensionObject {
     var per: Option[Period] = None
     var durVal: java.lang.Double = durValArg
     pType match { //conversions
-      case Week => durVal *= 7
-      case Day | DayOfYear =>
-      case Hour => durVal *= 7 * 24
-      case Minute => durVal *= 7 * 24 * 60
-      case Second => durVal *= 7 * 24 * 60 * 60
-      case Milli => durVal *= 7 * 24 * 60 * 60 * 1000
+      case Week => durVal *= 7 * 24 * 60 * 60 * 1000
+      case Day | DayOfYear => durVal *= 24 * 60 * 60 * 1000
+      case Hour => durVal *= 60 * 60 * 1000
+      case Minute => durVal *= 60 * 1000
+      case Second => durVal *= 1000
+      case Milli =>
       case Month =>
         per = Some (Period.of(0, TimeUtils.roundDouble(durVal), 0))
       case Year =>
@@ -385,7 +394,7 @@ class LogoTime extends ExtensionObject {
           case None =>
             new LogoTime(refTime
               .asInstanceOf[LocalDateTime]
-              .plus(Duration.of(TimeUtils.dToL(durVal), DAYS)))
+              .plus(Duration.of(TimeUtils.dToL(durVal), MILLIS)))
           case Some(period) =>
           new LogoTime(refTime.asInstanceOf[LocalDateTime].plus(period))
         }
@@ -394,9 +403,8 @@ class LogoTime extends ExtensionObject {
           case None => {
             var logotime = refTime
               .asInstanceOf[LocalDate].atStartOfDay
-              .plus(Duration.of(TimeUtils.dToL(durVal), DAYS)).toLocalDate
+              .plus(Duration.of(TimeUtils.dToL(durVal), MILLIS)).toLocalDate
             new LogoTime(logotime)
-
           }
           case Some(period) =>
             new LogoTime(refTime.asInstanceOf[LocalDate].plus(period))
@@ -405,7 +413,7 @@ class LogoTime extends ExtensionObject {
         per match {
           case None => {
             new LogoTime(MonthDay.from(refTime.asInstanceOf[MonthDay].atYear(2000).atStartOfDay
-              .plus(Duration.of(TimeUtils.dToL(durVal), DAYS))))
+              .plus(Duration.of(TimeUtils.dToL(durVal), MILLIS))))
           }
           case Some(period) =>
             new LogoTime(MonthDay.from(refTime.asInstanceOf[MonthDay].atYear(2000).atStartOfDay.plus(period)))
