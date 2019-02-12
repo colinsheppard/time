@@ -301,7 +301,7 @@ See the following link for a full description of the available format options:
 
 *time:get period-type-string logotime*
 
-Retrieves the numeric value from the *logotime* argument corresponding to the *period-type-string* argument.  For DATETIME variables, all period types are valid; for DATEs, only period types of a day or higher are valid; for DAYs, the only valid period types are "day" and "month".
+Retrieves the numeric value from the *logotime* argument corresponding to the *period-type-string* argument.  For DATETIME variables, all period types are valid; for DATEs, only period types of a day or higher are valid; for DAYs, the only valid period types are "day" and "month". For accessing seconds, seconds are not rounded to the nearest integer, but are provided as is. When time:get is used with a sub-day period type ("hour", "minute") and a logotime that is a date day instead of a datetime, it returns zero. This, also, applies, for year for day, in which the default would be 2000.
 
     let t-datetime (time:create "2000-01-02 03:04:05.678")
 
@@ -326,7 +326,7 @@ Retrieves the numeric value from the *logotime* argument corresponding to the *p
 
 *time:plus logotime number period-type-string*
 
-Reports a LogoTime resulting from the addition of some time period to the *logotime* argument.  The time period to be added is specified by the *number* and *period-type-string* arguments.  Valid period types are YEAR, MONTH, WEEK, DAY, DAYOFYEAR, HOUR, MINUTE, SECOND, and MILLI.
+Reports a LogoTime resulting from the addition of some time period to the *logotime* argument.  The time period to be added is specified by the *number* and *period-type-string* arguments.  Valid period types are YEAR, MONTH, WEEK, DAY, DAYOFYEAR, HOUR, MINUTE, SECOND, and MILLI. When applying additions to LogoTimes, addition is applied through converting the format to datetime, adding the values, and reconverting LogoTime to its respective format. This can lead to incorrectly applying time updates and lost information.
 
     let t-datetime (time:create "2000-01-02 03:04:05.678")
 
