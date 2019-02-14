@@ -53,6 +53,8 @@ TimePlusOperatorMillisecond
   time:show (time:plus (time:create "2000/01/04 10:00") 59999 "milli") "yyyy/MM/dd HH:mm" => "2000/01/04 10:00"
   time:show (time:plus (time:create "2000/01/04 10:00") 60000 "milli") "yyyy/MM/dd HH:mm" => "2000/01/04 10:01"
 
+
+
 TimeIsBefore
   extensions [time]
   time:is-before (time:create "2000/01/01 10:00")  (time:create "2000/01/01 11:00") => true
@@ -76,6 +78,17 @@ TimeIsAfter
   time:is-after (time:create "2001/01/01 10:00")  (time:create "2000/01/01 10:00") => true
   time:is-after (time:create "2000/01/01 10:01")  (time:create "2000/01/01 10:00") => true
   time:is-after (time:create "2000/01/01 10:00")  (time:create "2000/01/01 10:01") => false
+
+  time:is-after (time:create "2000/01/01 10:00")  (time:create "2000-01-01 11:00") => false
+  time:is-after (time:create "2000/01/01 10:00")  (time:create "2000-01-01 09:00") => true
+  time:is-after (time:create "2000/01/01 10:00")  (time:create "2000-01-01 10:00") => false
+  time:is-after (time:create "2001/01/01 10:00")  (time:create "2001-01-01 10:00") => false
+  time:is-after (time:create "2001/01/01 10:00")  (time:create "2000-01-01 10:00") => true
+  time:is-after (time:create "2000/01/01 10:00")  (time:create "2001-01-01 10:00") => false
+  time:is-after (time:create "2001/01/01 10:00")  (time:create "2000-01-01 10:00") => true
+  time:is-after (time:create "2000/01/01 10:01")  (time:create "2000-01-01 10:00") => true
+  time:is-after (time:create "2000/01/01 10:00")  (time:create "2000-01-01 10:01") => false
+
 
 TimeIsEqual
   extensions [time]
@@ -341,7 +354,7 @@ TimeFormatting
    time:show (time:plus (time:create-with-format "01-02-2000" "MM-dd-yyyy") 3 "day") "MM dd yyyy" => "01 05 2000"
    time:show (time:plus (time:create-with-format "01 02 2000" "MM dd yyyy") 3 "day") "MM dd yyyy" => "01 05 2000"
 
-MoreTimePlusExamples
+TimePlusExamples
    extensions [time]
    globals [t-datetime t-date]
    O> ;set t-datetime time:create-with-format "01-01-2000 03:04:05.678" "MM-dd-yyyy HH:mm:ss.SSS"

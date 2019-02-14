@@ -1,308 +1,111 @@
-extensions [time]
+extensions [time table]
 
-; Order of testing
-  ;; time:show-schedule
-  ;; time:schedule-event
-  ;; time:schedule-repeating-events
-
-  ;; time:go
-  ;; time:go-until
-
-to setup
-  reset-ticks
-  create-turtles 5
-  time:anchor-schedule (time:create "2001-01-01 10:00:00.000") 1 "hour"
-end
-
-; DateTime formatting
-
-to queue-second-datetime
-  let value 0
-  reset-ticks
-  time:anchor-schedule (time:create "2001-01-01 10:00:00.000") 1 "second"
-  time:clear-schedule
-  repeat 60 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-01-01 10:00:" value ".000"))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 60 [
-    error "The size of the schedule should be 24"
-  ] [ print "Second-DateTime: Pass" ]
-end
-
-to run-queue-second-datetime
-  let value 0
-  while [ value < 60 ]
-  [ time:go
-    if time:size-of-schedule != 60 - (value + 1) [
-      error "The queue doesn't match"
-    ]
-    set value value + 1
-    tick
-  ]
-end
-
-to queue-minute-datetime
-  let value 0
-  reset-ticks
-  time:anchor-schedule (time:create "2001-01-01 10:00:00.000") 1 "minute"
-  time:clear-schedule
-  repeat 60 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-01-01 10:" value ":00.000"))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 60 [
-    error "The size of the schedule should be 60"
-  ] [ print "Minute-DateTime: Pass" ]
-end
-
-to run-queue-minute-datetime
-  let value 0
-  while [ value < 60 ]
-  [ time:go
-    if time:size-of-schedule != 60 - (value + 1) [
-      error "The queue doesn't match"
-    ]
-    set value value + 1
-    tick
-  ]
-end
-
-
-to queue-hour-datetime
-  let value 0
-  reset-ticks
-  time:anchor-schedule (time:create "2001-01-01 00:00:00.000") 1 "hour"
-  time:clear-schedule
-  repeat 24 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-01-01 " value ":00:00.000"))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 24 [
-    error "The size of the schedule should be 24"
-  ] [ print "Hour-DateTime: Pass" ]
-end
-
-
-to run-queue-hour-datetime
-  let value 0
-  while [ value < 24 ]
-  [ time:go
-    if time:size-of-schedule != 24 - (value + 1) [
-      error "The queue doesn't match"
-    ]
-    set value value + 1
-    tick
-  ]
-end
-
-to queue-day-datetime
-  let value 1
-  reset-ticks
-  time:anchor-schedule (time:create "2001-01-01 10:00:00.000") 1 "day"
-  time:clear-schedule
-  repeat 28 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-01-" value " 10:00:00.000"))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 28 [
-    error "The size of the schedule should be 28"
-  ] [ print "Day-DateTime: Pass" ]
-end
-
-to queue-month-datetime
-  let value 1
-  reset-ticks
-  time:anchor-schedule (time:create "2001-01-01 10:00:00.000") 1 "month"
-  time:clear-schedule
-  repeat 12 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-" value "-01 10:00:00.000"))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 12 [
-    error "The size of the schedule should be 12"
-  ] [ print "Month-DateTime: Pass" ]
-end
-
-to queue-year-datetime
-  let value 1
-  reset-ticks
-  time:anchor-schedule (time:create "2001-01-01 10:00:00.000") 1 "year"
-  time:clear-schedule
-  repeat 12 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "20" (ifelse-value (value < 10) [(word "0" value)] [value])  "-01-01 10:00:00.000"))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 12 [
-    error "The size of the schedule should be 12"
-  ] [ print "Year-Date: Pass" ]
-end
-
-;; Date Formatting
-
-
-to run-queue-day-date
-  let value 1
-  while [ value < 28 ]
-  [ time:go
-    if time:size-of-schedule != 28 - value [
-      error "The queue doesn't match"
-    ]
-    set value value + 1
-    tick
-  ]
-end
-
-to queue-day-date
-  let value 1
-  reset-ticks
-  time:anchor-schedule (time:create "2001-01-01") 1 "day"
-  time:clear-schedule
-  repeat 28 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-01-" value ""))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 28 [
-    error "The size of the schedule should be 28"
-  ] [ print "Day-Date: Pass" ]
-end
-
-to run-queue-month-date
-  let value 1
-  while [ value < 12 ]
-  [ time:go
-    if time:size-of-schedule != 12 - value [
-      error "The queue doesn't match"
-    ]
-    set value value + 1
-    tick
-  ]
-end
-
-to queue-month-date
-  let value 1
-  reset-ticks
-  time:anchor-schedule (time:create "2001-01-01") 1 "month"
-  time:clear-schedule
-  repeat 12 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-" value "-01"))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 12 [
-    error "The size of the schedule should be 12"
-  ] [ print "Month-Date: Pass" ]
-end
-
-to run-queue-year-date
-  let value 1
-  while [ value < 12 ]
-  [ time:go
-    if time:size-of-schedule != 12 - value [
-      error "The queue doesn't match"
-    ]
-    set value value + 1
-    tick
-  ]
-end
-
-
-to queue-year-date
-  let value 1
-  reset-ticks
-  time:anchor-schedule (time:create "2001-01-01") 1 "year"
-  time:clear-schedule
-  repeat 12 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "20" (ifelse-value (value < 10) [(word "0" value)] [value]) "-01-01"))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 12 [
-    error "The size of the schedule should be 12"
-  ] [ print "Month-Date: Pass" ]
-end
-
-to run-queue-month-day
-  let value 1
-  while [ value < 12 ]
-  [ time:go
-    if time:size-of-schedule != 12 - value [
-      error "The queue doesn't match"
-    ]
-    set value value + 1
-    tick
-  ]
-end
-
-to queue-month-day
-  let value 1
-  reset-ticks
-  time:anchor-schedule (time:create "01-01") 1 "month"
-  time:clear-schedule
-  repeat 12 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word (ifelse-value (value < 10) [word "0" value] [value]) "-01"))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 12 [
-    error "The size of the schedule should be 12"
-  ] [ print "Month-Date: Pass" ]
-end
-
-
-to run-queue-day-day
-  let value 1
-  while [ value < 28 ]
-  [ time:go
-    if time:size-of-schedule != 28 - value [
-      error "The queue doesn't match"
-    ]
-    set value value + 1
-    tick
-  ]
-end
-
-to queue-day-day
-  let value 1
-  reset-ticks
-  time:anchor-schedule (time:create "01-01") 1 "day"
-  time:clear-schedule
-  repeat 28 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "01-" value))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 28 [
-    error "The size of the schedule should be 28"
-  ] [ print "Month-Date: Pass" ]
-end
-
+; All these tests in this model are meant to test the behavior of anchoring
+; and copying LogoTime. Since LogoTime has some implicit conversions with
+; copying these tests are meant to draw out those conversions
+; These tests do not check for truncating, datetype conversions
+; , or loss of information
 to run-tests
-  queue-month-day
-  run-queue-month-day
+  reset-ticks
+  copy-anchor-date
+  copy-anchor-datetime
+  copy-anchor-daydate
+end
 
-  queue-day-day
-  run-queue-day-day
+; copy-anchor-date permutes through a series of random dates
+; to check for any issues with anchoring
+to copy-anchor-date
+  print "Starting Tests......"
+  let dict table:make
+  table:put dict 0 "year"
+  table:put dict 1 "month"
+  table:put dict 2 "day"
+  repeat 10000 [
+    let year 1000 + random 2000
+    let month 1 + random 12
+    let day 1 + random 28
+    let duration 1 + random 1000
+    let selected-duration-type random 3
+    let tick-date time:anchor-to-ticks (time:create (word year "-" month "-" day))
+           duration table:get dict selected-duration-type
+    reset-ticks
+    tick
+    let store-date time:copy tick-date
+    let store-same-date time:copy store-date
+    tick
+    if not time:is-before store-date tick-date
+      [ error (word store-date " is not before" tick-date) ]
+    if not time:is-after tick-date store-date
+      [ error (word store-date " is not after " tick-date) ]
+    if not time:is-equal store-date store-same-date
+        [ error (word store-date " is not equal to " store-same-date) ]
+  ]
+  print "Finishing Tests......"
+end
 
-  queue-year-date
-  run-queue-year-date
-  queue-year-datetime
-  run-queue-year-date
+; copy-anchor-daytime permutes through a series of random months and days
+; to check for any issues with anchoring
+to copy-anchor-daydate
+  ; this is just running
+  print "Starting Tests......"
+  let dict table:make
+  table:put dict 0 "day"
+  table:put dict 1 "month"
+  repeat 10000 [
+    let month 1 + random 12
+    let day 1 + random 28
+    let duration 1 + random 1000
+    let selected-duration-type random 2
+    let tick-date time:anchor-to-ticks (time:create (word month "-" day))
+           duration table:get dict selected-duration-type
+    reset-ticks
+    tick
+    let store-date time:copy tick-date
+    let store-same-date time:copy store-date
+    tick
+  ]
+  print "Finishing Tests......"
+end
 
-  queue-month-date
-  run-queue-month-date
-  queue-month-datetime
-  run-queue-month-date
 
-  queue-day-date
-  run-queue-day-date
-  queue-day-datetime
-  run-queue-day-date
+; copy-anchor-datetime permutes through a series of random dates and times
+; to check for any issues with anchoring
+to copy-anchor-datetime
+  print "Starting Tests......"
+  let dict table:make
+  table:put dict 0 "year"
+  table:put dict 1 "month"
+  table:put dict 2 "day"
+  table:put dict 3 "hour"
+  table:put dict 4 "minute"
+  table:put dict 5 "second"
+  table:put dict 6 "milli"
 
-  queue-hour-datetime
-  run-queue-hour-datetime
-
-  queue-minute-datetime
-  run-queue-minute-datetime
-
-  queue-second-datetime
-  run-queue-second-datetime
+  repeat 10000 [
+    let year 1000 + random 2000
+    let month 1 + random 12
+    let day 1 + random 28
+    let hour random 24
+    let minute random 60
+    let second random 60
+    let milli random 1000
+    let duration 1 + random 1000
+    let selected-duration-type random 7
+    let tick-date time:anchor-to-ticks (time:create (word year "-" month "-" day " " hour ":" minute ":" second "." milli))
+           duration table:get dict selected-duration-type
+    reset-ticks
+    tick
+    let store-date time:copy tick-date ; copy the current ticked value
+    let store-same-date time:copy store-date ; create a second copy for comparison
+    tick
+    if not time:is-before store-date tick-date
+      [ error (word store-date " is not before" tick-date) ]
+    if not time:is-after tick-date store-date
+      [ error (word store-date " is not after " tick-date) ]
+    if not time:is-equal store-date store-same-date
+        [ error (word store-date " is not equal to " store-same-date) ]
+  ]
+  print "Finishing Tests......"
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -332,38 +135,27 @@ GRAPHICS-WINDOW
 ticks
 30.0
 
+BUTTON
+43
+95
+184
+128
+Run Test Batch
+run-tests
+NIL
+1
+T
+OBSERVER
+NIL
+R
+NIL
+NIL
+1
+
 @#$#@#$#@
 ## WHAT IS IT?
 
-(a general understanding of what the model is trying to show or explain)
-
-## HOW IT WORKS
-
-(what rules the agents use to create the overall behavior of the model)
-
-## HOW TO USE IT
-
-(how to use the model, including a description of each of the items in the Interface tab)
-
-## THINGS TO NOTICE
-
-(suggested things for the user to notice while running the model)
-
-## THINGS TO TRY
-
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
-
-## EXTENDING THE MODEL
-
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
-
-## NETLOGO FEATURES
-
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
-
-## RELATED MODELS
-
-(models in the NetLogo Models Library and elsewhere which are of related interest)
+(This file contains test and example codes for the time extension)
 
 ## CREDITS AND REFERENCES
 

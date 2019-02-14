@@ -1,29 +1,311 @@
 extensions [time]
 
-to-report test-temporal-fields [ dt2 ]
-  let dt time:plus dt2 24 "hour"
-  let milli time:get "milli" dt
-  let second time:get "second" dt
-  let minute time:get "minute" dt
-  let hour time:get "hour" dt
-  let day time:get "day" dt
-  let dayofyear time:get "dayofyear" dt
-  let dayofweek time:get "dayofweek" dt
-  let week time:get "week" dt
-  let month time:get "month" dt
-  let year time:get "year" dt
-  report (word "Year: " year " Month: " month " Week: " week " Day: " day " Hour: " hour " Minute " minute " Second: " second " Milli: " milli)
+; Order of testing
+  ;; time:show-schedule
+  ;; time:schedule-event
+  ;; time:schedule-repeating-events
+
+  ;; time:go
+  ;; time:go-until
+
+to setup
+  ; this procedure creates 5 turtles and anchors the scheduler to test if any of the actions took place
+  reset-ticks
+  create-turtles 5
+  time:anchor-schedule (time:create "2001-01-01 10:00:00.000") 1 "hour"
 end
 
-to run-test
-  ;let dt-month time:create-with-format "02-02-2000 11" "MM-dd-yyyy ss"
-  let dt-date time:create "2000-02-01"
-  let dt-day time:create "01-02"
-  let dt-datetime time:create "2000-02-01 10:00:00"
-  ;print test-temporal-fields dt-month
-  print test-temporal-fields dt-date
-  print test-temporal-fields dt-datetime
-  ;print time:show dt-month "yyyy-MM-dd"
+; DateTime formatting and event-scheduling
+; These procedures are meant to check the number of scheduled events along
+ ; checking if the schedulers does remove events
+ ; this applies for all possible units
+to queue-second-datetime
+  let value 0
+  reset-ticks
+  time:anchor-schedule (time:create "2001-01-01 10:00:00.000") 1 "second"
+  time:clear-schedule
+  repeat 60 [
+    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-01-01 10:00:" value ".000"))
+    set value value + 1
+  ]
+  ifelse time:size-of-schedule != 60 [
+    error "The size of the schedule should be 24"
+  ] [ print "Second-DateTime: Pass" ]
+end
+
+to run-queue-second-datetime
+  let value 0
+  while [ value < 60 ]
+  [ time:go
+    if time:size-of-schedule != 60 - (value + 1) [
+      error "The queue doesn't match"
+    ]
+    set value value + 1
+    tick
+  ]
+end
+
+to queue-minute-datetime
+  let value 0
+  reset-ticks
+  time:anchor-schedule (time:create "2001-01-01 10:00:00.000") 1 "minute"
+  time:clear-schedule
+  repeat 60 [
+    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-01-01 10:" value ":00.000"))
+    set value value + 1
+  ]
+  ifelse time:size-of-schedule != 60 [
+    error "The size of the schedule should be 60"
+  ] [ print "Minute-DateTime: Pass" ]
+end
+
+to run-queue-minute-datetime
+  let value 0
+  while [ value < 60 ]
+  [ time:go
+    if time:size-of-schedule != 60 - (value + 1) [
+      error "The queue doesn't match"
+    ]
+    set value value + 1
+    tick
+  ]
+end
+
+
+to queue-hour-datetime
+  let value 0
+  reset-ticks
+  time:anchor-schedule (time:create "2001-01-01 00:00:00.000") 1 "hour"
+  time:clear-schedule
+  repeat 24 [
+    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-01-01 " value ":00:00.000"))
+    set value value + 1
+  ]
+  ifelse time:size-of-schedule != 24 [
+    error "The size of the schedule should be 24"
+  ] [ print "Hour-DateTime: Pass" ]
+end
+
+
+to run-queue-hour-datetime
+  let value 0
+  while [ value < 24 ]
+  [ time:go
+    if time:size-of-schedule != 24 - (value + 1) [
+      error "The queue doesn't match"
+    ]
+    set value value + 1
+    tick
+  ]
+end
+
+to queue-day-datetime
+  let value 1
+  reset-ticks
+  time:anchor-schedule (time:create "2001-01-01 10:00:00.000") 1 "day"
+  time:clear-schedule
+  repeat 28 [
+    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-01-" value " 10:00:00.000"))
+    set value value + 1
+  ]
+  ifelse time:size-of-schedule != 28 [
+    error "The size of the schedule should be 28"
+  ] [ print "Day-DateTime: Pass" ]
+end
+
+to queue-month-datetime
+  let value 1
+  reset-ticks
+  time:anchor-schedule (time:create "2001-01-01 10:00:00.000") 1 "month"
+  time:clear-schedule
+  repeat 12 [
+    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-" value "-01 10:00:00.000"))
+    set value value + 1
+  ]
+  ifelse time:size-of-schedule != 12 [
+    error "The size of the schedule should be 12"
+  ] [ print "Month-DateTime: Pass" ]
+end
+
+to queue-year-datetime
+  let value 1
+  reset-ticks
+  time:anchor-schedule (time:create "2001-01-01 10:00:00.000") 1 "year"
+  time:clear-schedule
+  repeat 12 [
+    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "20" (ifelse-value (value < 10) [(word "0" value)] [value])  "-01-01 10:00:00.000"))
+    set value value + 1
+  ]
+  ifelse time:size-of-schedule != 12 [
+    error "The size of the schedule should be 12"
+  ] [ print "Year-Date: Pass" ]
+end
+
+;; Date Formatting
+
+
+to run-queue-day-date
+  let value 1
+  while [ value < 28 ]
+  [ time:go
+    if time:size-of-schedule != 28 - value [
+      error "The queue doesn't match"
+    ]
+    set value value + 1
+    tick
+  ]
+end
+
+to queue-day-date
+  let value 1
+  reset-ticks
+  time:anchor-schedule (time:create "2001-01-01") 1 "day"
+  time:clear-schedule
+  repeat 28 [
+    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-01-" value ""))
+    set value value + 1
+  ]
+  ifelse time:size-of-schedule != 28 [
+    error "The size of the schedule should be 28"
+  ] [ print "Day-Date: Pass" ]
+end
+
+to run-queue-month-date
+  let value 1
+  while [ value < 12 ]
+  [ time:go
+    if time:size-of-schedule != 12 - value [
+      error "The queue doesn't match"
+    ]
+    set value value + 1
+    tick
+  ]
+end
+
+to queue-month-date
+  let value 1
+  reset-ticks
+  time:anchor-schedule (time:create "2001-01-01") 1 "month"
+  time:clear-schedule
+  repeat 12 [
+    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-" value "-01"))
+    set value value + 1
+  ]
+  ifelse time:size-of-schedule != 12 [
+    error "The size of the schedule should be 12"
+  ] [ print "Month-Date: Pass" ]
+end
+
+to run-queue-year-date
+  let value 1
+  while [ value < 12 ]
+  [ time:go
+    if time:size-of-schedule != 12 - value [
+      error "The queue doesn't match"
+    ]
+    set value value + 1
+    tick
+  ]
+end
+
+
+to queue-year-date
+  let value 1
+  reset-ticks
+  time:anchor-schedule (time:create "2001-01-01") 1 "year"
+  time:clear-schedule
+  repeat 12 [
+    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "20" (ifelse-value (value < 10) [(word "0" value)] [value]) "-01-01"))
+    set value value + 1
+  ]
+  ifelse time:size-of-schedule != 12 [
+    error "The size of the schedule should be 12"
+  ] [ print "Month-Date: Pass" ]
+end
+
+to run-queue-month-day
+  let value 1
+  while [ value < 12 ]
+  [ time:go
+    if time:size-of-schedule != 12 - value [
+      error "The queue doesn't match"
+    ]
+    set value value + 1
+    tick
+  ]
+end
+
+to queue-month-day
+  let value 1
+  reset-ticks
+  time:anchor-schedule (time:create "01-01") 1 "month"
+  time:clear-schedule
+  repeat 12 [
+    time:schedule-event turtles [[] -> fd 10 ] (time:create (word (ifelse-value (value < 10) [word "0" value] [value]) "-01"))
+    set value value + 1
+  ]
+  ifelse time:size-of-schedule != 12 [
+    error "The size of the schedule should be 12"
+  ] [ print "Month-Date: Pass" ]
+end
+
+
+to run-queue-day-day
+  let value 1
+  while [ value < 28 ]
+  [ time:go
+    if time:size-of-schedule != 28 - value [
+      error "The queue doesn't match"
+    ]
+    set value value + 1
+    tick
+  ]
+end
+
+to queue-day-day
+  let value 1
+  reset-ticks
+  time:anchor-schedule (time:create "01-01") 1 "day"
+  time:clear-schedule
+  repeat 28 [
+    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "01-" value))
+    set value value + 1
+  ]
+  ifelse time:size-of-schedule != 28 [
+    error "The size of the schedule should be 28"
+  ] [ print "Month-Date: Pass" ]
+end
+
+to run-tests
+  queue-month-day
+  run-queue-month-day
+
+  queue-day-day
+  run-queue-day-day
+
+  queue-year-date
+  run-queue-year-date
+  queue-year-datetime
+  run-queue-year-date
+
+  queue-month-date
+  run-queue-month-date
+  queue-month-datetime
+  run-queue-month-date
+
+  queue-day-date
+  run-queue-day-date
+  queue-day-datetime
+  run-queue-day-date
+
+  queue-hour-datetime
+  run-queue-hour-datetime
+
+  queue-minute-datetime
+  run-queue-minute-datetime
+
+  queue-second-datetime
+  run-queue-second-datetime
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
