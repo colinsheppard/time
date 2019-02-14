@@ -7,8 +7,6 @@ import java.time.chrono.{ Chronology, IsoChronology }
 import java.time.format.DateTimeFormatter
 import java.time.format.ResolverStyle.STRICT
 import java.time.format.DateTimeParseException
-import java.util.GregorianCalendar
-import java.util.Calendar
 import java.time.temporal.WeekFields
 import org.nlogo.agent.World
 import org.nlogo.api.ExtensionException
@@ -35,6 +33,14 @@ class LogoTime extends ExtensionObject {
     this()
     this.datetime = dt
   }
+  /* The LogoTime constructors below are used thoughout the
+     TimePrimitive class and LogoTime class to allow conversions
+     and re-initialization with different formats and times.
+     This has been a source of confusion since there are
+     many transitions between formatting and strings that
+     have caused a lot of runtime errors
+     [ CBR 02/14/19 ]
+   */
 
   @throws[ExtensionException]
   def this(dateStringArg: String, customFormat: Option[String]) = {
@@ -84,7 +90,7 @@ class LogoTime extends ExtensionObject {
       }
       catch {
         case e: DateTimeParseException =>
-          throw new ExtensionException(s"Time extension could not parse input")
+          throw new ExtensionException(s"Extension could not parse input: $dateString and $customFormat")
       }
   }
 
@@ -292,6 +298,10 @@ class LogoTime extends ExtensionObject {
     }
   }
 
+  /* Get requires a couple assumptions for a successful conversion.
+     There is an implicit conversion to DateTime, which assumes
+     the beginning of the day on year 2000
+  */
   def get(periodType: PeriodType): java.lang.Integer = {
     periodType match {
      case Milli =>
@@ -360,6 +370,15 @@ class LogoTime extends ExtensionObject {
       case _ => throw new ExtensionException("Incorrect Time Unit")
     }
   }
+
+  /* time:plus has been the source of plenty of hidden runtime issues
+     with time conversions and parsing errors. These two errors are
+     often found here because of the number of constructors,
+     implicit conversions, parsing, and formatting that LogoTime
+     tries to automate. Also, since not all DateTime formats are
+     valid sometimes new values don't make sense and error out
+     [ CBR 02/14/19 ]
+   */
 
   def plus(pType: PeriodType, durVal: java.lang.Double): LogoTime = {
     this.dateType match {
@@ -486,6 +505,11 @@ class LogoTime extends ExtensionObject {
     }
   }
 
+  /* getDifferencebetween is another primitive that requires implicit conversions.
+     Since matching types are a required, there shouldn't be any issues,
+     but with time:plus and other primitives with hidden conversions, sometimes type checking at
+     runtime fails. [ CBR 02/14/19 ]
+   */
   def getDifferenceBetween(pType: PeriodType, endTime: LogoTime): java.lang.Double = {
     if (this.dateType != endTime.dateType){
       throw new ExtensionException(s"time comparisons only work if the LogoTimes are the same variety, but you called with a ${this.dateType.toString} and a ${endTime.dateType.toString}")

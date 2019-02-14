@@ -1,100 +1,132 @@
 extensions [time]
 
-to go
-  print "---Starting Test Batch---"
-  access-fields
-  add-time
-  add-dates
+globals [ gvar ]
+
+; The procedures below are meant to test the event scheduler's
+; schedule-event primitives. schedule-event inserts events
+; that are anchored to a specified time with ticks.
+; This primitive applies for turtles, a turtle, and
+; the observer context
+
+to setup
+  ca
+  reset-ticks
+  time:clear-schedule
+  set gvar 0
+  time:anchor-schedule time:create "2001-01-01" 1 "day"
 end
 
-to access-fields
-  print "Test: Access Fields"
-  print "Starting tests........"
-  repeat 10000 [
-    ; provides a random date and time for testing
-    let year 1000 + random 2000
-    let day 1 + random 28
-    let month 1 + random 12
-    let hour 10
-    let minute 10 + random 50
-    let second 10 + random 50
-    let milli 100 + random 900
+;; Scheduling Events in the event scheduler primitives ;;
 
-    ; creates a string of the appropriate time and creates a LogoTime
-    let the-time-string (word year "/" month "/" day " " hour ":" minute ":" second "." milli)
-    let dt time:create-with-format the-time-string "yyyy/MM/dd HH:mm:ss.SSS"
-    ; accesses the LogoTime values
-    let year-record time:get "year" dt
-    let month-record time:get "month" dt
-    let day-record time:get "day" dt
-    let hour-record time:get "hour" dt
-    let minute-record time:get "minute" dt
-    let second-record time:get "second" dt
-    let milli-record time:get "milli" dt
+; schedule-turtles creates two scheduled events one and two days after 2001-01-01
+  ; the value of gvar should be 100 at the end and 50 after the first event
 
-    ; checks whether the value was allocated currently
-    if year != year-record or month != month-record
-       or day != day-record or hour != hour-record or minute != minute-record
-       or second != second-record or milli != milli-record
-       [ print (word year-record "/" month-record "/" day-record " " hour-record ":" minute-record ":" second-record)
-         print (word year "/" month "/" day " " hour ":" minute ":" second)
-         error "Dates don't match up" ]
-  ]
-  print "Finished testing......"
+to schedule-turtles
+  create-turtles 50
+  time:schedule-event turtles [[] -> set gvar gvar + 1] (time:create "2001-01-02")
+  time:schedule-event turtles [[] -> set gvar gvar + 1] (time:create "2001-01-03")
 end
 
-; this isn't complete
-to add-dates
-  print "\nTest: Add Dates"
-  print "Starting tests........"
-  repeat 10000 [
-    let year 1000 + random 2000
-    let day 1 + random 28
-    let month 1 + random 12
-    let hour 10
-    let minute 10 + random 50
-    let second 10 + random 50
-    let milli 100 + random 900
+; schedule-turtle-0 creates two scheduled events one and two days after 2001-01-01
+  ; the value of gvar shoud be 1
 
-    let the-time-string (word year "-" month "-" day " " "00" ":" "00" ":" "00" "." "000")
-    ;let the-time-string (word year "/" month "/" day " " second)
-    let dt time:create the-time-string ;"2000/01/01 10:00:00.000"
-    let newdt time:plus dt random 24 "hour"
-    let newdt2 time:plus dt (24 + random 24) "hour"
-    if not time:is-between newdt dt newdt
-     [ print time:show dt "yyyy/MM/dd HH:mm:ss.SSS"
-       print time:show newdt "yyyy/MM/dd HH:mm:ss.SSS"
-       print time:show newdt2 "yyyy/MM/dd HH:mm:ss.SSS"
-       error "False" ]
-  ]
-  print "Finished testing......"
+to schedule-turtle-0
+  create-turtles 1
+  time:schedule-event turtle 0 [[] -> set gvar gvar + 1] (time:create "2001-01-02")
+  time:schedule-event turtle 0 [[] -> set gvar gvar + 1] (time:create "2001-01-03")
 end
 
-to add-time
-  print "\nTest: Add Time"
-  print "Starting tests......."
-  repeat 10000 [
-    ; assign a random date and time
-    let year 1000 + random 2000
-    let day 1 + random 28
-    let month 1 + random 12
+; schedule-observer creates one scheduled event after 2001-01-01 to modify gvar
+  ; the value of gvar should be 1
+to schedule-observer
+  time:schedule-event "observer" [[] -> set gvar gvar + 1] (time:create "2001-01-02")
+end
 
-    let seconds random 60
-    let minutes random 60
-    let hours   random 24
+to run-test ; test observer scheduling events
+  setup     ; there should only be one observer event
+  schedule-observer
+  time:go
+  if time:size-of-schedule != 1 [ error "Failed to enter" ]
+  tick
+  if time:size-of-schedule != 1 [ error "Failed to enter" ]
+  time:go
+  if time:size-of-schedule != 0 [ error "Failed to enter" ]
+  if gvar != 1 [ error "Failed to increase" ]
+end
 
-    ;; find total distance from a time
-    let total-duration seconds + minutes * 60 + hours * 3600 + day * 24 * 3600
-    let the-time-string (word year "-" month "-" day " " "00" ":" "00" ":" "00" "." "000")
-    let dt time:create the-time-string
-    set dt time:plus dt seconds "second"
-    set dt time:plus dt minutes "minute"
-    set dt time:plus dt hours   "hour"
+to run-turtle-test ; test turtle agentset
+  setup            ; there should be 50 turtles in total
+  schedule-turtles
+  time:go
+  if time:size-of-schedule != 2 [ error (word "Failed to enter: " time:size-of-schedule) ]
+  tick
+  if time:size-of-schedule != 2 [ error (word "Failed to enter: " time:size-of-schedule)]
+  time:go
+  if time:size-of-schedule != 1 [ error "Failed to enter" ]
+  if gvar != 50 [ error (word "Failed to increase to 50 " gvar) ]
+  tick
+  if time:size-of-schedule != 1 [ error (word "Failed to enter: " time:size-of-schedule)]
+  time:go
+  if time:size-of-schedule != 0 [ error "Failed to enter" ]
+  if gvar != 100 [ error (word "Failed to increase to 100 " gvar) ]
+end
 
-    let total-time-duration 24 * 3600 * (time:get "day" dt) + 3600 * (time:get "hour" dt) + 60 * (time:get "minute" dt) + (time:get "second" dt)
-    if total-time-duration != total-duration [ error (word "Recorded time duration: " total-time-duration " actually time length: " total-duration) ]
+to run-one-of-turtle-test ; test an individual turtle
+  setup                   ; there should be 1 turtle and it should be incremented to 1
+  schedule-turtle-0
+  time:go
+  if time:size-of-schedule != 2 [ error (word "Failed to enter: " time:size-of-schedule) ]
+  tick
+  if time:size-of-schedule != 2 [ error (word "Failed to enter: " time:size-of-schedule)]
+  time:go
+  if time:size-of-schedule != 1 [ error "Failed to enter" ]
+  if gvar != 1 [ error (word "Failed to increase to 50 " gvar) ]
+  tick
+  if time:size-of-schedule != 1 [ error (word "Failed to enter: " time:size-of-schedule)]
+  time:go
+  if time:size-of-schedule != 0 [ error "Failed to enter" ]
+  if gvar != 2 [ error (word "Failed to increase to 100 " gvar) ]
+end
+
+to test-decrement ; this tests the number of events added to the scheduler
+  setup             ; , scheduling 30 events and running them
+  let iter 1
+  while [ iter < 30 ] ; set a list of events
+    [ time:schedule-event "observer" [[] -> set gvar gvar + 1]
+      (time:create (word "2001-01-" ifelse-value iter < 10 [ word "0" iter ] [ iter ]))
+      set iter iter + 1 ]
+
+  while [ iter > 0 ] ; run a list of events off the queue
+  [
+    if time:size-of-schedule != (iter - 1) [ error word "Not the correct size " time:size-of-schedule ]
+    time:go tick
+    set iter iter - 1
   ]
-  print "Finished testing....."
+  if gvar != 29 [ error "Failed at incrementing" ]
+end
+
+to test-empty ; this test checks clear-schedule command
+  ; this procedure checks if clear-schedule removes all events without invoking any of
+  ; the commands
+  setup
+  let iter 1
+  ; this while loop is creating 30 events, using the day format
+  while [ iter < 30 ]
+    [ time:schedule-event "observer" [[] -> set gvar gvar + 1] time:create word "2001-01-" iter
+      set iter iter + 1 ]
+  ; clear schedule and check if the queue has been cleared
+  time:clear-schedule
+  if time:size-of-schedule != 0 [ error word "Did not remove elements: " time:size-of-schedule ]
+end
+
+to run-all-tests
+  print "*** Running batch of tests for schedule-event...."
+  run-test
+  run-turtle-test
+  run-one-of-turtle-test
+  test-decrement
+  test-empty
+  print "*** Completed Tests: No runtime errors with schedule-event"
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -127,39 +159,11 @@ ticks
 @#$#@#$#@
 ## WHAT IS IT?
 
-(a general understanding of what the model is trying to show or explain)
-
-## HOW IT WORKS
-
-(what rules the agents use to create the overall behavior of the model)
-
-## HOW TO USE IT
-
-(how to use the model, including a description of each of the items in the Interface tab)
-
-## THINGS TO NOTICE
-
-(suggested things for the user to notice while running the model)
-
-## THINGS TO TRY
-
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
-
-## EXTENDING THE MODEL
-
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
-
-## NETLOGO FEATURES
-
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
-
-## RELATED MODELS
-
-(models in the NetLogo Models Library and elsewhere which are of related interest)
+(This file contains test and example codes for the time extension.)
 
 ## CREDITS AND REFERENCES
 
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+(Created 02/12/2019 Charly B. Resendiz)
 @#$#@#$#@
 default
 true
