@@ -18,7 +18,7 @@ class LogoSchedule extends ExtensionObject {
   var tickType: PeriodType = null
   var tickValue: java.lang.Double = null
   override def equals(obj: Any): Boolean = this == obj
-  def isAnchored(): Boolean = timeAnchor != null
+  def isAnchored(): java.lang.Boolean = timeAnchor != null
 
   def anchorSchedule(time:LogoTime, tickValue:java.lang.Double, tickType:PeriodType): Unit =
     try {
@@ -38,8 +38,11 @@ class LogoSchedule extends ExtensionObject {
 
   @throws[ExtensionException]
   def addEvent(args: Array[Argument], context: Context, addType: AddType): Unit = {
-    // Determines primitives name
-      val primName = addType match {
+    /* It should be mentioned that this match statement
+       is for recording the type of primitive that is
+       calling this function. It only serves for debugging
+       and not much else in the function */
+      val primName = addType match { // initial check
         case Default =>
           if (args.length < 3)
             throw new ExtensionException(
@@ -59,13 +62,14 @@ class LogoSchedule extends ExtensionObject {
           if (args.length < 4)
             throw new ExtensionException("time:repeat-shuffled must have 4 or 5 arguments: schedule agent task tick/time number (period-type)")
           "repeat-shuffled"
-        case _ => null
+        case _ => throw new ExtensionException("Incorrect primitive option in LogoSchedule")
       }
 
     // Throw exception on conditions for agent, agentsets and observer
     val isInvalidEventArgument = !(args(0).get.isInstanceOf[Agent]) &&
         !(args(0).get.isInstanceOf[AgentSet]) &&
         !((args(0).get.isInstanceOf[String]) && args(0).get.toString.toLowerCase().==("observer"))
+
     if (isInvalidEventArgument)
       throw new ExtensionException(
         "time: $primName expected an agent, agentset, or the string \'observer\' as the first argument")
@@ -81,21 +85,22 @@ class LogoSchedule extends ExtensionObject {
       /* --------------------------------------------------------------------------------
          Determine the type of the entered input for addEvent: number, logotime, observer
          -------------------------------------------------------------------------------- */
-      val eventTick: java.lang.Double = args(2).get.getClass match {
-        case clazz if clazz == classOf[java.lang.Double] => args(2).getDoubleValue
-        case clazz if clazz == classOf[LogoTime] =>
-          if (!this.isAnchored)
+    val eventTick: java.lang.Double = args(2).get.getClass match {
+      case clazz if clazz == classOf[java.lang.Double] =>
+        args(2).getDoubleValue
+      case clazz if clazz == classOf[LogoTime] =>
+        if (!this.isAnchored)
             throw new ExtensionException(s"""A LogoEvent can only be scheduled to occur at a LogoTime
             if the discrete event schedule has been anchored to a LogoTime, see time:anchor-schedule""")
-          this.timeToTick(TimeUtils.getTimeFromArgument(args, 2))
-        case _ =>
-          throw new ExtensionException(
-            s"""time: $primName expecting a number or logotime as the third argument""")
-      }
+        this.timeToTick(TimeUtils.getTimeFromArgument(args, 2))
+      case _ =>
+        throw new ExtensionException(
+          s"""time: $primName expecting a number or logotime as the third argument""")
+    }
 
     if (eventTick < context.asInstanceOf[ExtensionContext].workspace.world.ticks)
       throw new ExtensionException(s"""Attempted to schedule an event for tick $eventTick which is
-      before the present 'moment' of ${context.asInstanceOf[ExtensionContext].workspace.world.ticks}""")
+        before the present 'moment' of ${context.asInstanceOf[ExtensionContext].workspace.world.ticks}""")
     var repeatIntervalPeriodType: PeriodType = null
     var repeatInterval: java.lang.Double = null
 
@@ -119,6 +124,7 @@ class LogoSchedule extends ExtensionObject {
         }
       }
     }
+
     val shuffleAgentSet: Boolean = addType == Shuffle || addType == RepeatShuffled
     val agentSet = args(0).get match {
       case agent: Agent =>
@@ -127,7 +133,12 @@ class LogoSchedule extends ExtensionObject {
       case agentset: AgentSet => args(0).getAgentSet.asInstanceOf[AgentSet]
       case _ => null
     }
-    val event: LogoEvent = new LogoEvent(agentSet, args(1).getCommand.asInstanceOf[AnonymousCommand], eventTick,repeatInterval, repeatIntervalPeriodType, shuffleAgentSet)
+    val event: LogoEvent =
+      new LogoEvent(agentSet,
+        args(1).getCommand.asInstanceOf[AnonymousCommand],
+        eventTick,repeatInterval,
+        repeatIntervalPeriodType,
+        shuffleAgentSet)
     scheduleTree.add(event)
   }
 

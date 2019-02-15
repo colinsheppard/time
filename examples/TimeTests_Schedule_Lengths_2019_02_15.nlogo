@@ -1,91 +1,105 @@
-extensions [time]
-globals [global-var]
+extensions [time table]
 
-; this procedure schedules repeating events that will
-; self schedule an event with a later date. Shuffling
-; is part of the primitive to allow randomized order
-to schedule-events-shuffled
-  let dt (time:create "2000-01-01 10:00:00")
-  time:anchor-schedule dt 1 "hour"
-  time:schedule-repeating-event-shuffled turtles [[] -> fd 1] 0 2.0 ; run at 4, and stop (but still run) at 8: [ 4, 6, 8 ] total of three runs
-end
-
-; this procedure schedules repeating events that will
-; schedule an event at a later date. This is calculated
-; internally
-to schedule-events-repeated
-  let dt (time:create "2000-01-01 00:00:00")
-  time:anchor-schedule dt 1 "hour"
-  time:schedule-repeating-event turtles [[] -> fd 1] 0 2.0 ; run at 4, and stop (but still run) at 8: [ 4, 6, 8 ] total of three runs
-end
-
-
-to schedule-events-repeated-observer
-  let dt (time:create "2000-01-01 00:00:00")
-  time:anchor-schedule dt 1 "hour"
-  time:schedule-repeating-event "observer" [[] -> set global-var global-var + 1] 0 2.0 ; run at 4, and stop (but still run) at 8: [ 4, 6, 8 ] total of three runs
-end
-
-to schedule-events-repeated-shuffled-observer
-  let dt (time:create "2000-01-01 00:00:00")
-  time:anchor-schedule dt 1 "hour"
-  time:schedule-repeating-event "observer" [[] -> set global-var global-var + 1] 0 2.0 ; run at 4, and stop (but still run) at 8: [ 4, 6, 8 ] total of three runs
-end
-
-; schedule-event-with-movement-shuffled creates a turtle
-; and assigns total number of ticks. This is to help
-; determine the possible location after a certain number of
-; ticks.
-to schedule-event-with-movement-shuffled
-  clear-all
-  reset-ticks
-  ; crete a bunch of turtles that face a direction
-  crt 1 [ setxy 0 0 facexy 5 0 ]
-  schedule-events-shuffled
-  let increment 1
-  let assigned-iteration ((random 10) + 5) * 2
-  repeat assigned-iteration [
-    time:go
-    tick
-  ]
-  if [ xcor ] of one-of turtles != (assigned-iteration / 2) [ error (word "The interval of runs failed run " [xcor] of one-of turtles " " (assigned-iteration / 2)) ]
-end
-
-; schedule-event-with-movement creates a turtle
-; and assigns total number of ticks. This is to help
-; determine the possible location after a certain number of
-; ticks.
-to schedule-event-with-movement
-  clear-all
-  reset-ticks
-  ; create a bunch of turtles that face a direction
-  crt 1 [ setxy 0 0 facexy 5 0 ]
-  schedule-events-repeated
-  let increment 1
-  let assigned-iteration ((random 10) + 5) * 2
-  repeat assigned-iteration [
-    time:go
-    tick
-  ]
-  if [ xcor ] of one-of turtles != (assigned-iteration / 2) [ error (word "The interval of runs failed run " [xcor] of one-of turtles " " (assigned-iteration / 2)) ]
-end
-
-to schedule-repeated-test
-  print "Starting tests..."
-  repeat 10000 [ schedule-event-with-movement-shuffled ]
-  repeat 10000 [ schedule-event-with-movement ]
-  print "Finished testing..."
-end
+globals [global-time global-var date-table]
 
 to run-tests
-  schedule-repeated-test
+end
+
+to setup-dict
+  set date-table table:make
+  table:put date-table "day" 30
+  table:put date-table "month" 11
+  table:put date-table "year" 100
+  table:put date-table "hour" 23
+  table:put date-table "minute" 60
+  table:put date-table "second" 60
+  table:put date-table "milli" 1000
+end
+;; The test below are focused on behaviors around setup-anchor
+
+to setup-anchor [ date-unit time ]
+  ; don't place anything above clear-all or reset-ticks
+  clear-all
+  reset-ticks
+  setup-dict
+  time:anchor-schedule time 1 date-unit
+end
+
+to test-anchor
+  print "Starting Tests...."
+  test-anchor-progress
+  print "Starting Slow Tests...."
+  slow-test-schedule-events
+  slow-test-schedule-events-shuffled
+  print "Finished Testing...."
+end
+
+to slow-test-schedule-events
+  repeat 10000 [
+    foreach [ "day" "month" "year" "hour" "minute" "second" ] [[ time-unit ] -> test-schedule-events time-unit table:get date-table time-unit (time:create "2000-01-01 00:00:00.000") ]
+    foreach [ "day" "month" "year" ] [[ time-unit ] -> test-schedule-events time-unit table:get date-table time-unit (time:create "2000-01-01") ]
+    foreach [ "day" "month" ] [[ time-unit ] -> test-schedule-events time-unit table:get date-table time-unit (time:create "01-01") ]]
+end
+
+to slow-test-schedule-events-shuffled
+  repeat 10000 [
+    foreach [ "day" "month" "year" "hour" "minute" "second" ] [[ time-unit ] -> test-schedule-events time-unit table:get date-table time-unit (time:create "2000-01-01 00:00:00.000") ]
+    foreach [ "day" "month" "year" ] [[ time-unit ] -> test-schedule-events time-unit table:get date-table time-unit (time:create "2000-01-01") ]
+    foreach [ "day" "month" ] [[ time-unit ] -> test-schedule-events time-unit table:get date-table time-unit (time:create "01-01") ]]
+end
+
+to test-anchor-progress
+  setup-anchor "day" (time:create "2000-01-01 00:00:00.000")
+  set global-var 0
+  time:schedule-event "observer" [[] -> set global-var 1 ] (time:create "2000-01-30 00:00:00.000")
+  time:schedule-event "observer" [[] -> error "We went to far into the future" ] (time:create "2000-01-31 00:00:00.000")
+  repeat 29 [ tick time:go ]
+  time:clear-schedule
+  if global-var != 1 [ error "Scheduler failed to adjust global-var" ]
+  set global-var 0
+end
+
+to test-schedule-events [ date-unit number logotime ]
+  setup-anchor date-unit logotime
+  set global-var 0
+  let n 1 + random number
+  time:schedule-event "observer" [[] -> set global-var 1] time:plus logotime n date-unit
+  repeat n [ tick time:go ]
+  if global-var != 1 [ error "Scheduler failed to adjust global-var" ]
+
+  setup-anchor date-unit logotime
+  set global-var 0
+  time:schedule-event "observer" [[] -> set global-var 1] time:plus logotime n date-unit
+  repeat n [ time:go tick ]
+  if global-var != 0 [ error word "Scheduler should not adjusted value: global-var | unit: " date-unit ]
+  time:go
+  if global-var != 1 [ error "Scheduler failed to adjust global-var" ]
+  set global-var 0
+end
+
+to test-schedule-events-shuffled [ date-unit number logotime ]
+  setup-anchor date-unit logotime
+  set global-var 0
+  let n 1 + random number
+  time:schedule-event-shuffled "observer" [[] -> set global-var 1] time:plus logotime n date-unit
+  repeat n [ tick time:go ]
+  if global-var != 1 [ error "Scheduler failed to adjust global-var" ]
+
+  setup-anchor date-unit logotime
+  set global-var 0
+  time:schedule-event-shuffled "observer" [[] -> set global-var 1] time:plus logotime n date-unit
+  repeat n [ time:go tick ]
+  if global-var != 0 [ error word "Scheduler should not adjusted value: global-var | unit: " date-unit ]
+  time:go
+  if global-var != 1 [ error "Scheduler failed to adjust global-var" ]
+  set global-var 0
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
 10
-1011
-812
+647
+448
 -1
 -1
 13.0
@@ -98,37 +112,48 @@ GRAPHICS-WINDOW
 1
 1
 1
-0
-60
-0
-60
+-16
+16
+-16
+16
 0
 0
 1
 ticks
 30.0
 
-BUTTON
-35
-153
-176
-186
-Run Test Batch
-run-tests
-NIL
-1
-T
-OBSERVER
-NIL
-R
-NIL
-NIL
-1
-
 @#$#@#$#@
 ## WHAT IS IT?
 
-(This file contains test and example codes for the time extension.)
+(a general understanding of what the model is trying to show or explain)
+
+## HOW IT WORKS
+
+(what rules the agents use to create the overall behavior of the model)
+
+## HOW TO USE IT
+
+(how to use the model, including a description of each of the items in the Interface tab)
+
+## THINGS TO NOTICE
+
+(suggested things for the user to notice while running the model)
+
+## THINGS TO TRY
+
+(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
+
+## EXTENDING THE MODEL
+
+(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
+
+## NETLOGO FEATURES
+
+(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
+
+## RELATED MODELS
+
+(models in the NetLogo Models Library and elsewhere which are of related interest)
 
 ## CREDITS AND REFERENCES
 

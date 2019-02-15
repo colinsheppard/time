@@ -1,5 +1,4 @@
 package org.nlogo.extensions.time.primitives
-//import java.time.format.DateTimeFormat
 import java.time.format.DateTimeFormatter
 import org.nlogo.api.Argument
 import org.nlogo.api.Context
@@ -113,7 +112,7 @@ object DiscreteEventSchedulerPrimitives {
               Syntax.WildcardType,
               Syntax.NumberType))
     def perform(args: Array[Argument], context: Context): Unit = {
-      TimeExtension.schedule.addEvent(args, context, Shuffle)
+      TimeExtension.schedule.addEvent(args, context, RepeatShuffled)
     }
 
   }
@@ -127,7 +126,7 @@ object DiscreteEventSchedulerPrimitives {
               Syntax.NumberType,
               Syntax.StringType))
     def perform(args: Array[Argument], context: Context): Unit = {
-      TimeExtension.schedule.addEvent(args, context, Shuffle)
+      TimeExtension.schedule.addEvent(args, context, RepeatShuffled)
     }
 
   }

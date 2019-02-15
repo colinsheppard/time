@@ -32,8 +32,7 @@ object TimePrimitives {
         Array(Syntax.WildcardType, Syntax.NumberType, Syntax.StringType),
         Syntax.WildcardType)
     def report(args: Array[Argument], context: Context): AnyRef = {
-      val time: LogoTime = TimeUtils.getTimeFromArgument(args, 0)
-      val newTime: LogoTime = new LogoTime(time)
+      val newTime: LogoTime = TimeUtils.getTimeFromArgument(args, 0)
       newTime.setAnchor(
         TimeUtils.getDoubleFromArgument(args, 1),
         TimeUtils.stringToPeriodType(TimeUtils.getStringFromArgument(args, 2)),
