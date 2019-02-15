@@ -42,15 +42,15 @@ class TimeExtension extends DefaultClassManager {
      TimeSeries Primitives
      */
     /* Todo List */ /* Null Pointers ! Beware */
-    //primManager.addPrimitive("ts-create", new TimeSeriesPrimitives.TimeSeriesCreate())
-    //primManager.addPrimitive("ts-add-row", new TimeSeriesPrimitives.TimeSeriesAddRow())
-    //primManager.addPrimitive("ts-load", new TimeSeriesPrimitives.TimeSeriesLoad())
-    //primManager.addPrimitive("ts-load-with-format", new TimeSeriesPrimitives.TimeSeriesLoadWithFormat())
-    //primManager.addPrimitive("ts-write", new TimeSeriesPrimitives.TimeSeriesWrite())
-    //primManager.addPrimitive("ts-get", new TimeSeriesPrimitives.TimeSeriesGet())
-    //primManager.addPrimitive("ts-get-interp", new TimeSeriesPrimitives.TimeSeriesGetInterp())
-    //primManager.addPrimitive("ts-get-exact", new TimeSeriesPrimitives.TimeSeriesGetExact())
-    //primManager.addPrimitive("ts-get-range", new TimeSeriesPrimitives.TimeSeriesGetRange())
+    primManager.addPrimitive("ts-create", new TimeSeriesPrimitives.TimeSeriesCreate())
+    primManager.addPrimitive("ts-add-row", new TimeSeriesPrimitives.TimeSeriesAddRow())
+    primManager.addPrimitive("ts-load", new TimeSeriesPrimitives.TimeSeriesLoad())
+    primManager.addPrimitive("ts-load-with-format", new TimeSeriesPrimitives.TimeSeriesLoadWithFormat())
+    primManager.addPrimitive("ts-write", new TimeSeriesPrimitives.TimeSeriesWrite())
+    primManager.addPrimitive("ts-get", new TimeSeriesPrimitives.TimeSeriesGet())
+    primManager.addPrimitive("ts-get-interp", new TimeSeriesPrimitives.TimeSeriesGetInterp())
+    primManager.addPrimitive("ts-get-exact", new TimeSeriesPrimitives.TimeSeriesGetExact())
+    primManager.addPrimitive("ts-get-range", new TimeSeriesPrimitives.TimeSeriesGetRange())
     /*
      DiscreteEventscheduler primitives
      */
