@@ -176,7 +176,7 @@ The **time extension** has the following notable behavior:
 
   As another example, a DAY representing 01/01 is always considered to be before 12/31.  Because there's no wrapping around for DAYs, they are only useful if your entire model occurs within one year and doesn't pass from December to January.  If you need to wrap, use a DATE and pick a year for your model, even if there's no basis in reality for that year.
 
-* **You create LogoTime objects by passing a string** - The time:create primitive was designed to both follow the standard used by joda-time, and to make date time parsing more convenient by allowing a wider range of delimiters and formats.  For example, the following are all valid DATETIME strings: 
+* **You create LogoTime objects by passing a string** - The time:create primitive was designed to both follow the standard used by joda-time, and to make date time parsing more convenient by allowing a wider range of delimiters and formats.  For example, the following are all valid DATETIME strings:
   * "2000-01-02T03:04:05.678"
   * "2000-01-02T3:04:05.678"
   * "2000-01-02 03:04:05"
@@ -223,7 +223,7 @@ The **time extension** has the following notable behavior:
 
 * **Daylight savings time is ignored** - All times are treated as local, or "zoneless", and daylight savings time (DST) is ignored.  It is assumed that most NetLogo users don't need to convert times between time zones or be able to follow the rules of DST for any particular locale.  Instead, users are much more likely to need the ability to load a time series and perform date and time operations without worrying about when DST starts and whether an hour of their time series will get skipped in the spring or repeated in the fall.  It should be noted that the Time library definitely can handle DST for most locales on Earth, but that capability is not extended to NetLogo here and won't be unless by popular demand.
 
-* **Leap days are included** - While we simplify things by excluding time zones and DST, leap days are kept to allow users to reliably use real world time series in their NetLogo model.
+* **Leap days are included** - While we simplify things by excluding time zones and DST, leap days are kept to allow users to reliably use real world time series in their NetLogo model. Day time formatting falls on a leap year, allowing all days to be provided without specifying a year.
 
 * **LogoTimes are mutable when anchored** - If you anchor a LogoTime (using the *time:anchor-to-ticks* primitive) you end up with a variable whose value changes as the value of Netlogo ticks changes.  Say you have an anchored variable called "anchored-time" and you assign it to another variable "set new-time anchored-time", your new variable will *also be mutable* and change with ticks.  If what you want is a snapshot of the anchored-time that doesn't change, then use the time:copy primitive: "set new-time time:copy anchored-time".
 
@@ -295,6 +295,31 @@ See the following link for a full description of the available format options:
 
 [https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html](https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html)
 
+*Note*
+In the case for Day and Date time formats, time:get returns default values for unsupported values. Day has a default year of 2000 to calculate for leap years.
+
+    let t-date (time:create "2000-01-01")
+    let t-day (time:create "01-01")
+
+    print time:show t-date "HH"
+    print time:show t-day "HH"
+    ;; print 00
+
+    print time:show t-date "mm"
+    print time:show t-day "mm"
+    ;; print 00
+
+    print time:show t-date "ss"
+    print time:show t-day "ss"
+    ;; print 00
+
+    print time:show t-date "SSS"
+    print time:show t-day "SSS"
+    ;; print 000
+
+    print time:show t-day "yyyy"
+    ;; print 2000
+
 ---------------------------------------
 
 **time:get**
@@ -319,6 +344,31 @@ Retrieves the numeric value from the *logotime* argument corresponding to the *p
 
     print time:get "second" t-datetime
     ;;prints "5"
+
+*Note*
+In the case for Day and Date time formats, time:get returns default values for unsupported values. Day has a default year of 2000 to calculate for leap years.
+
+    let t-date (time:create "2000-01-01")
+    let t-day (time:create "01-01")
+
+    print time:get "hour" t-date
+    print time:get "hour" t-day
+    ;; print 0
+
+     print time:get "minute" t-date
+     print time:get "minute" t-day
+    ;; print 0
+
+    print time:get "second" t-date
+    print time:get "second" t-day
+    ;; print 0
+
+    print time:get "milli" t-date
+    print time:get "milli" t-day
+    ;; print 0
+
+    print time:get "year" t-day
+    ;; print 2000
 
 ---------------------------------------
 
@@ -353,6 +403,33 @@ Reports a LogoTime resulting from the addition of some time period to the *logot
     print time:plus t-datetime 1.0 "years"
     ;; prints "{{time:logotime 2001-01-02 03:04:05.678}}"
 
+*Addition with Decimals*
+
+- Week, Day, DayOfYear, Hour, Minute, Second, and Millisecond all support decimal addition allowing for adding half a day, a quarter of a second, or another subvalue, except for milliseconds. This is due to the above units converting to milliseconds as a long integer, which causes truncation for the millisecond case. Though all datetypes support decimal additon, Date and Day truncate values to fit their appropriate date. In the case of unsupported units for Date and Day, the time is converted to DateTime, supporting all units. Once the operation is applied, the time's format returns to its initial type, removing units that were not initially supported in the type. This causes some information to be lost in this case.
+
+    print time:plus (time:create "2000-01-01 00:00:00.000") 2.3 "day" => "2000-01-03 07:11:59.999"
+    print time:plus (time:create "2000-01-01 00:00:00.000") 2.3 "day" => "2000-01-03"
+
+    print time:plus (time:create "2000-01-04 00:00:00.000") -2.3 "day" => "2000-01-01 2000-01-01 16:48:00.001"
+    print time:plus (time:create "2000-01-04") -2.3 "day" => "2000-01-01"
+
+- Year and Month both round the provided number to the nearest integer. There is no decimial addition support for year and month.
+
+*Addition with Negative Decimal Numbers*
+
+- Week, Day, DayOfYear, Hour, Minute, Second, and Millisecond all support subtraction through the use of negative numbers. Subtracting with whole numbers works as expected, but when subtracting with decimals the results may produce unexpected behavior. When subtracting with DateTime, DateTime objects maintain accurate times without truncation or rounding. With Date and Day objects, when decimal are subtracted two conversions are applied. First the Date/Day is converted to a DateTime starting at midnight (00:00:00) and second the DateTime is converted back to it's respective type. In this case, Date and Day reflect the updates of DateTime, but don't preserve the same level of accuracy, thanks to remove unsupported units. One example is with subtracting an hour from a Date. If given 01/02/2000, then subtracting 1 hour would generate a date of 01/01/2000 because of the default (00:00:00) conversion and the truncation after applying the addition.
+
+    "2000-01-02" (convert) => "2000-01-02 00:00:00.000" (subtract hour) => "2000-01-01 23:00:00.000" (application) => "2000-01-01" (restore type)
+
+*Rounding and Truncating Rules, and Converting*
+
+- Week, Day, DayOfYear, Hour, Minute, Second, and Millisecond: convert user provided time/unit to milliseconds as a long integer => apply addition => convert to initial format (DateTime, Date, or Day) => Remove unsupported units (Date, Day)
+- Year and Month: round user provided time/value to the nearest integer => apply addition => convert to initial foramt => Remove Unsupported units (Day)
+
+*Carry Over*
+
+- Week, Day, DayOfYear, Hour, Minute, Second, and Millisecond: All time types allow carrying over values from their subunits. This means that if 24 hours is applied to a Date or Day, then the day progresses. If 23 hours are applied to Date or Day, the value will have no effect thanks to truncation. Also, DateTime can have carry over with decimal addition since DateTime can represent decimal values.
+- Year and Month round to the nearest value before applying addition
 
 ---------------------------------------
 
@@ -366,7 +443,7 @@ Reports a LogoTime resulting from the addition of some time period to the *logot
 *time:is-equal  logotime1 logotime2*<br/>
 *time:is-between  logotime1 logotime2 logotime3*
 
-Reports a boolean for the test of whether *logotime1* is before/after/equal-to *logotime2*.  The is-between primitive returns true if *logotime1* is between *logotime2* and *logotime3*.  All LogoTime arguments must be of the same variety (DATETIME, DATE, or DAY). 
+Reports a boolean for the test of whether *logotime1* is before/after/equal-to *logotime2*.  The is-between primitive returns true if *logotime1* is between *logotime2* and *logotime3*.  All LogoTime arguments must be of the same variety (DATETIME, DATE, or DAY).
 
 	print time:is-before (time:create "2000-01-02") (time:create "2000-01-03")
 	;;prints "true"
@@ -402,6 +479,7 @@ For period type of "MONTH", difference-between calculates the number of months b
 
 For "YEAR", difference-between reports the number [integers] of years there are between two logotime instances. The difference is calculated through matching the day and month while truncating values around that date. This should apply for leap years, as well. For example, if logotime1 is 2000-01-02 then difference-between reports 0 years for logotime2 = 2001-01-01, 1 year for 2000-01-02, and 5 years for 2005-01-02. The total number of months between two dates can therefore be calculated as 12 times the value of of difference-between in years plus the value of difference-between in months.
 
+In LogoTime, both "day" and "dayofyear" are calculated in the same manner, only calculating the difference between two dates. This would yield results that are greater than 365 or less than 365, if Julian dates are expected.
 
 	print time:difference-between (time:create "2000-01-02 00:00") (time:create "2000-02-02 00:00") "days"
 	;;prints "31"
@@ -472,7 +550,7 @@ Returns a new LogoTime object that holds the same date/time as the *logotime* ar
 ### Time Series Tool
 
 
-**time:ts-create** 
+**time:ts-create**
 
 *time:ts-create column-name-list*
 
@@ -482,7 +560,7 @@ Reports a new, empty LogoTimeSeries. The number of data columns and their names 
 
 ---------------------------------------
 
-**time:ts-add** 
+**time:ts-add**
 
 *time:ts-add logotimeseries row-list*
 
@@ -495,7 +573,7 @@ Adds a record to an existing LogoTimeSeries. The *row-list* should be a list con
 
 ---------------------------------------
 
-**time:ts-get** 
+**time:ts-get**
 
 *time:ts-get logotimeseries logotime column-name*
 
@@ -506,27 +584,27 @@ Reports the value from the *column-name* column of the *logotimeseries* in the r
 
 ---------------------------------------
 
-**time:ts-get-interp** 
+**time:ts-get-interp**
 
 *time:ts-get-interp logotimeseries logotime column-name*
 
-Behaves almost identical to time:ts-get, but if there is not an exact match with the date/time stamp, then the value is linearly interpolated between the two nearest values.  This command will throw an exception if the values in the column are strings instead of numeric.  
+Behaves almost identical to time:ts-get, but if there is not an exact match with the date/time stamp, then the value is linearly interpolated between the two nearest values.  This command will throw an exception if the values in the column are strings instead of numeric.
 
     print time:ts-get-interp ts (time:create "2000-01-01 10:30:00") "flow"
 
 ---------------------------------------
 
-**time:ts-get-exact** 
+**time:ts-get-exact**
 
 *time:ts-get-exact logotimeseries logotime column-name*
 
-Behaves almost identical to time:ts-get, but if there is not an exact match with the date/time stamp, then an exception is thrown.  
+Behaves almost identical to time:ts-get, but if there is not an exact match with the date/time stamp, then an exception is thrown.
 
     print time:ts-get-exact ts (time:create "2000-01-01 10:30:00") "flow"
 
 ---------------------------------------
 
-**time:ts-get-range** 
+**time:ts-get-range**
 
 *time:ts-get-range logotimeseries logotime1 logotime2 column-name*
 
@@ -537,11 +615,11 @@ Reports a list of all of the values from the *column-name* column of the *logoti
 
 ---------------------------------------
 
-**time:ts-load** 
+**time:ts-load**
 
 *time:ts-load filepath*
 
-Loads time series data from a text input file (comma or tab separated) and reports a new LogoTimeSeries object that contains the data.  
+Loads time series data from a text input file (comma or tab separated) and reports a new LogoTimeSeries object that contains the data.
 
     let ts time:ts-load "time-series-data.csv"
 
@@ -563,7 +641,7 @@ The following is an example of hourly river flow and water temperature data that
 
 ---------------------------------------
 
-**time:ts-load-with-format** 
+**time:ts-load-with-format**
 
 *time:ts-load filepath format-string*
 
@@ -725,19 +803,11 @@ Reports the number of events in the discrete event schedule.
 
 [back to top](#netlogo-time-extension)
 
-## Building with SBT (New)
+## Building with SBT
 
 Using SBT, create a package that will generate the time.jar. For example:
 
     sbt package
-
-If compilation succeeds, `time.jar` will be created. See [Installation](#installation) for instructions on where to put your compiled extension.
-
-## Building (Previous Version)
-
-Use the NETLOGO environment variable to tell the Makefile which NetLogoLite.jar to compile against.  For example:
-
-    NETLOGO=/Applications/NetLogo\\\ 5.0 make
 
 If compilation succeeds, `time.jar` will be created. See [Installation](#installation) for instructions on where to put your compiled extension.
 
