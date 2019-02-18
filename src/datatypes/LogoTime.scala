@@ -45,7 +45,7 @@ class LogoTime extends ExtensionObject {
   @throws[ExtensionException]
   def this(dateStringArg: String, customFormat: Option[String]) = {
     this()
-    var dateString: String = dateStringArg.replace('T',' ')
+    var dateString: String = dateStringArg.replace('T',' ').replace('Y','y')
     // First we parse the string to determine the date type
     customFormat match {
       case None =>
@@ -81,7 +81,7 @@ class LogoTime extends ExtensionObject {
             case DayDate => this.monthDay = MonthDay.parse(dateString, this.defaultFmt)
           }
         case Some(customForm) =>
-          this.customFmt = DateTimeFormatter.ofPattern(customForm.replace('y','u')).withResolverStyle(STRICT)
+          this.customFmt = DateTimeFormatter.ofPattern(customForm.replace('Y','y').replace('y','u')).withResolverStyle(STRICT)
           this.dateType match {
             case DateTime => this.datetime = LocalDateTime.parse(dateString, this.customFmt)
             case Date => this.date = LocalDate.parse(dateString, this.customFmt)

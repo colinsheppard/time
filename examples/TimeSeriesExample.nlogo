@@ -1,115 +1,59 @@
 extensions [time]
-
-globals
- [
-   start-time  ; the time at which the first trap is triggered
-   finish-time ; the time when the last trap is triggered
-   current-time  ; the current simulation time
-   snap-log   ; a log of times at which traps snap
-   ;mean-flight-time ; mean of the uniform distribution for ball flight times (secs) -- on interface
- ]
-
-patches-own [trigger-time] ; The non-integer time at which trap triggers
-
+globals[
+  time-series
+  ts
+]
 to setup
+  ;;print __dump-extensions
+  ;;print __dump-extension-prims
+  __clear-all-and-reset-ticks
+  print ""
+  print "============================"
+  print ""
 
-  clear-all
-  reset-ticks
-  ask patches
-   [
-     set pcolor yellow   ; Yellow means the trap has not triggered
-     ; set trigger-time -1 ; Initialize trigger time to before model starts
-   ]
+  set time-series time:ts-load "time-series-data.csv"
+  print time-series
 
-  ; Initialize the simulation time
-  set start-time time:create "2010-01-01 12:00:00"
-  set current-time time:anchor-to-ticks start-time 1.0 "second"
-  time:anchor-schedule start-time 1.0 "second"
+  print time:ts-get time-series time:create "2000-01-01 01:30:00" "flow"
+  print time:ts-get time-series time:create "2000-01-01 10:20:00" "flow"
+  print time:ts-get time-series time:create "2000-01-01 10:30:00" "flow"
+  print time:ts-get-exact time-series time:create "2000-01-01 10:00" "flow"
 
-  ; Create a log of times at which traps snap
-  set snap-log (time:ts-create ["trap-xcor" "trap-ycor"])
+  print time:ts-get-interp time-series time:create "2000-01-01 10:30:00" "flow"
+  print time:ts-get-interp time-series time:create "2000-01-03 00:30:00" "all"
 
+  print time:ts-get-range time-series time:create "2000-01-02 12:30:00" time:create "2000-01-03 00:30:00" "all"
+
+  set ts time:ts-create ["flow" "temp"]
+  time:ts-add-row ts ["2000-01-08" 5 4]
+  time:ts-add-row ts ["2000-01-01" 6 7]
+  time:ts-write ts "new-ts-file.csv"
+
+  set time-series time:ts-load-with-format "time-series-data-custom-date-format.csv" "dd-MM-YYYY HH:mm:ss.SSS"
+  print time-series
 end
 
-to start  ; Starts a simulation -- which then runs until no more balls are
-          ; in the air.
-
-  ; Set off one trap to start the action
-time:schedule-event (one-of patches) [ [] -> snap ] current-time
-
-  ; Execute the schedule
-  time:go
-
-  ; After the schedule has finished write the log of snap times out to file.
-  ; First, delete the output file if it already exists.
-  if file-exists? "snap-log.csv" [file-delete "snap-log.csv"]
-  ; Then open it.
-  time:ts-write snap-log "snap-log.csv"
-
-  ; Finally, histogram the trap snap times
-  ; We can only histogram numbers, but the snap-log records times in logotime format.
-  ; So we create a temporary list of snap times in seconds using "map".
-  ; Use time:difference-between instead of time:get because time:get reports only integer values.
-  set-current-plot "Snap time distribution"
-  print (time:ts-get-range snap-log start-time current-time "logotime")
-  histogram map [ [?1] -> time:difference-between start-time ?1 "second" ] (time:ts-get-range snap-log start-time current-time "logotime")
-
-end
-
-to snap  ; Executed by a trap when a ball lands on it
-
-    ; Stop if trap has already snapped
-    if pcolor != black [
-      set pcolor red   ; Show the snap
-      display          ; So we can see things happen on the View
-                       ; Set View updates to ??? on-ticks?
-      set pcolor black ; Black means the trap has triggered
-
-      ; Send 2 balls in air, determine where and when they land
-      repeat 2
-      [
-        let trap-ball-lands-on one-of (patches in-radius 5)
-        let ball-travel-time random-float (mean-flight-time * 2)
-        let ball-arrival-time time:plus current-time ball-travel-time "seconds"
-        time:schedule-event trap-ball-lands-on [ [] -> snap ] ball-arrival-time
-      ]
-
-      ; Finally, update outputs
-      update-output
-    ]
-end
-
-to update-output
-
-  ; Plot the number of balls in the air = "snaps" scheduled but not executed
-  set-current-plot "Balls in air"
-  plotxy ticks time:size-of-schedule
-
-  ; Plot number of traps remaining untriggered
-  set-current-plot "Untriggered traps"
-  plotxy ticks count patches with [pcolor = yellow]
-
-  ; Record the snap time, converted to seconds because we don't need the date, hour, etc.
-  time:ts-add-row snap-log (sentence current-time pxcor pycor)
-
+to go
+  setup
+  tick
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-436
-10
-774
-349
+336
+18
+773
+456
 -1
 -1
-10.0
+13.0
 1
 10
 1
 1
 1
 0
-0
-0
+1
+1
 1
 -16
 16
@@ -122,10 +66,10 @@ ticks
 30.0
 
 BUTTON
-7
-18
-78
-51
+28
+56
+94
+89
 NIL
 setup
 NIL
@@ -139,12 +83,12 @@ NIL
 1
 
 BUTTON
-91
-18
-154
-51
+27
+106
+90
+139
 NIL
-start
+go
 NIL
 1
 T
@@ -155,79 +99,59 @@ NIL
 NIL
 1
 
-PLOT
-4
-118
-204
-268
-Balls in air
-Ticks
-Balls in air
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -2674135 true "" ""
-
-PLOT
-4
-276
-204
-426
-Untriggered traps
-Ticks
-Untriggered traps
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -1184463 true "" ""
-
-INPUTBOX
-7
-54
-102
-114
-mean-flight-time
-1.0
+BUTTON
+26
+154
+105
+187
+stop
+stop
+T
 1
-0
-Number
-
-PLOT
-215
-118
-415
-268
-Snap time distribution
-Snap time, seconds
-Number of traps
-0.0
-5.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 0.2 1 -16777216 true "" ""
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
-# Mousetrap Model
+## WHAT IS IT?
 
-This NetLogo code implements the version of the Mousetrap model described in Section 14.2.5 of _Agent-Based and Individual-Based Modeling_, Railsback & Grimm (2012). This model is completely independent of the Mousetrap model in NetLogo's Models library.
+(a general understanding of what the model is trying to show or explain)
 
-The code is provided as a demonstration of continuous time, or discrete event, scheduling as an alternative to the discrete ticks used in the book's other models.
+## HOW IT WORKS
 
-Prepared by Colin Sheppard and Steve Railsback, 7 Nov 2013.
+(what rules the agents use to create the overall behavior of the model)
+
+## HOW TO USE IT
+
+(how to use the model, including a description of each of the items in the Interface tab)
+
+## THINGS TO NOTICE
+
+(suggested things for the user to notice while running the model)
+
+## THINGS TO TRY
+
+(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
+
+## EXTENDING THE MODEL
+
+(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
+
+## NETLOGO FEATURES
+
+(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
+
+## RELATED MODELS
+
+(models in the NetLogo Models Library and elsewhere which are of related interest)
+
+## CREDITS AND REFERENCES
+
+(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
 @#$#@#$#@
 default
 true
@@ -420,6 +344,15 @@ Polygon -7500403 true true 165 180 165 210 225 180 255 120 210 135
 Polygon -7500403 true true 135 105 90 60 45 45 75 105 135 135
 Polygon -7500403 true true 165 105 165 135 225 105 255 45 210 60
 Polygon -7500403 true true 135 90 120 45 150 15 180 45 165 90
+
+sheep
+false
+0
+Rectangle -7500403 true true 151 225 180 285
+Rectangle -7500403 true true 47 225 75 285
+Rectangle -7500403 true true 15 75 210 225
+Circle -7500403 true true 135 75 150
+Circle -16777216 true false 165 76 116
 
 square
 false

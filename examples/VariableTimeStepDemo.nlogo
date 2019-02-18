@@ -1,107 +1,100 @@
-extensions [time]
+extensions [ time ]
 
 globals
- [
-   start-time  ; the time at which the first trap is triggered
-   finish-time ; the time when the last trap is triggered
-   current-time  ; the current simulation time
-   snap-log   ; a log of times at which traps snap
-   ;mean-flight-time ; mean of the uniform distribution for ball flight times (secs) -- on interface
- ]
+[
+  ; Global variables calculated by code
+  ; start-time and end-time are defined on the Interface
+  time                   ;;; A Logo-time value for current time
+  next-time              ;;; The next time (when current time step ends)
+  end-time-code          ;;; Logo-time variable for ending time
+  step-length            ;;; Length of time step (days)
+  flow                   ; River flow
+  temperature            ; River temperature
 
-patches-own [trigger-time] ; The non-integer time at which trap triggers
+  ; Internal data structures
+  input-time-series  ; Time-series input set (time extension's LogoTime data type)
+  input-time-list    ;;; List of times in input-time-series
+
+  ; File names
+  time-series-file-name
+
+]
 
 to setup
 
-  clear-all
+  ca
+
   reset-ticks
-  ask patches
-   [
-     set pcolor yellow   ; Yellow means the trap has not triggered
-     ; set trigger-time -1 ; Initialize trigger time to before model starts
-   ]
 
-  ; Initialize the simulation time
-  set start-time time:create "2010-01-01 12:00:00"
-  set current-time time:anchor-to-ticks start-time 1.0 "second"
-  time:anchor-schedule start-time 1.0 "second"
+  file-close ; Just in case a file got left open.
 
-  ; Create a log of times at which traps snap
-  set snap-log (time:ts-create ["trap-xcor" "trap-ycor"])
+  set time-series-file-name "time-series-with-variable-time-steps.csv"; All time-series inputs (flow, temperature...)
 
-end
+  ;;; Set the current time to the simulation start time
+  set time (time:create start-time)
 
-to start  ; Starts a simulation -- which then runs until no more balls are
-          ; in the air.
+  ; Create a LogoTime variable for simulation end time
+  set end-time-code time:create end-time
 
-  ; Set off one trap to start the action
-time:schedule-event (one-of patches) [ [] -> snap ] current-time
+  ; Some defensive programming
+  if time:is-after time end-time-code [ error "Really, the simulation must end after it starts" ]
+  output-print time:show time "MMMM d, yyyy HH:mm"
 
-  ; Execute the schedule
-  time:go
+  ; Read all the input file's data into a LogoTimeSeries variable
+  if not file-exists? time-series-file-name [ error (word "Input file " time-series-file-name " not found") ]
+  set input-time-series time:ts-load time-series-file-name
 
-  ; After the schedule has finished write the log of snap times out to file.
-  ; First, delete the output file if it already exists.
-  if file-exists? "snap-log.csv" [file-delete "snap-log.csv"]
-  ; Then open it.
-  time:ts-write snap-log "snap-log.csv"
+  ;;; Extract from the LogoTimeSeries a list of the time values in the input file
+  set input-time-list time:ts-get-range input-time-series start-time end-time "LOGOTIME"
+  ; Test output
+  foreach input-time-list
+  [ ?1 -> show time:show ?1 "MMMM d, yyyy HH:mm" ]
 
-  ; Finally, histogram the trap snap times
-  ; We can only histogram numbers, but the snap-log records times in logotime format.
-  ; So we create a temporary list of snap times in seconds using "map".
-  ; Use time:difference-between instead of time:get because time:get reports only integer values.
-  set-current-plot "Snap time distribution"
-  print (time:ts-get-range snap-log start-time current-time "logotime")
-  histogram map [ [?1] -> time:difference-between start-time ?1 "second" ] (time:ts-get-range snap-log start-time current-time "logotime")
+  ;;; Initialize the next-time variable
+  set next-time 0
 
 end
 
-to snap  ; Executed by a trap when a ball lands on it
+to go
 
-    ; Stop if trap has already snapped
-    if pcolor != black [
-      set pcolor red   ; Show the snap
-      display          ; So we can see things happen on the View
-                       ; Set View updates to ??? on-ticks?
-      set pcolor black ; Black means the trap has triggered
+  tick
 
-      ; Send 2 balls in air, determine where and when they land
-      repeat 2
-      [
-        let trap-ball-lands-on one-of (patches in-radius 5)
-        let ball-travel-time random-float (mean-flight-time * 2)
-        let ball-arrival-time time:plus current-time ball-travel-time "seconds"
-        time:schedule-event trap-ball-lands-on [ [] -> snap ] ball-arrival-time
-      ]
+  ;;; Determine length of the current time step: the time (days) between current time and
+  ; the next time in the input file.
+  ; If it is the first tick (next-time = 0) then do not advance the time
+  ; Time values are all taken from the list of time values in the input file
+  ifelse next-time = 0
+  [ set next-time time:copy item 1 input-time-list ]
+  [
+    ; If it is not the first tick, advance the time by reading the first value on the time list
+    set time time:copy first input-time-list
+    ; Then remove the current time from the list, and stop if it is the last time.
+    set input-time-list remove-item 0 input-time-list
+    if empty? input-time-list [ stop ]
+    ; Now, the first item on the time list is the start of the *next* time step
+    set next-time time:copy first input-time-list
+  ]
 
-      ; Finally, update outputs
-      update-output
-    ]
-end
+  ; Finally, calculate the time step length
+  set step-length time:difference-between time next-time "days"
 
-to update-output
+  ; Get the model input from the LogoTimeSeries variable
+  set flow time:ts-get input-time-series time "flow"
+  set temperature time:ts-get input-time-series time "temperature"
 
-  ; Plot the number of balls in the air = "snaps" scheduled but not executed
-  set-current-plot "Balls in air"
-  plotxy ticks time:size-of-schedule
-
-  ; Plot number of traps remaining untriggered
-  set-current-plot "Untriggered traps"
-  plotxy ticks count patches with [pcolor = yellow]
-
-  ; Record the snap time, converted to seconds because we don't need the date, hour, etc.
-  time:ts-add-row snap-log (sentence current-time pxcor pycor)
+  ; Display current time, flow, temperature
+  output-print (word (time:show time "MMMM d, yyyy HH:mm") "; Length: " step-length " flow: " flow " temperature: " temperature)
 
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-436
+210
 10
-774
-349
+383
+184
 -1
 -1
-10.0
+55.0
 1
 10
 1
@@ -111,10 +104,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--16
-16
--16
-16
+0
+2
+0
+2
 0
 0
 1
@@ -122,10 +115,10 @@ ticks
 30.0
 
 BUTTON
-7
-18
-78
-51
+12
+10
+104
+43
 NIL
 setup
 NIL
@@ -138,13 +131,59 @@ NIL
 NIL
 1
 
+INPUTBOX
+11
+107
+153
+167
+start-time
+2000/4/1 00:00
+1
+0
+String
+
+INPUTBOX
+12
+178
+153
+238
+end-time
+2000/10/1 00:00
+1
+0
+String
+
 BUTTON
-91
-18
-154
-51
+12
+61
+75
+94
 NIL
-start
+go
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+OUTPUT
+210
+140
+664
+387
+10
+
+BUTTON
+82
+61
+145
+94
+step
+go
 NIL
 1
 T
@@ -155,79 +194,38 @@ NIL
 NIL
 1
 
-PLOT
-4
+TEXTBOX
+213
 118
-204
-268
-Balls in air
-Ticks
-Balls in air
+287
+136
+Current date
+11
 0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -2674135 true "" ""
-
-PLOT
-4
-276
-204
-426
-Untriggered traps
-Ticks
-Untriggered traps
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -1184463 true "" ""
-
-INPUTBOX
-7
-54
-102
-114
-mean-flight-time
-1.0
 1
-0
-Number
-
-PLOT
-215
-118
-415
-268
-Snap time distribution
-Snap time, seconds
-Number of traps
-0.0
-5.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 0.2 1 -16777216 true "" ""
 
 @#$#@#$#@
-# Mousetrap Model
+# Variable Time Step Demonstration Model
 
-This NetLogo code implements the version of the Mousetrap model described in Section 14.2.5 of _Agent-Based and Individual-Based Modeling_, Railsback & Grimm (2012). This model is completely independent of the Mousetrap model in NetLogo's Models library.
+## WHAT IS IT?
 
-The code is provided as a demonstration of continuous time, or discrete event, scheduling as an alternative to the discrete ticks used in the book's other models.
+This model demonstrates use of the Time extension to provide scheduling of models with variable time steps: when the amount of time represented by one tick varies. Examples of such models include those that (a) represent day and night separately, with the length of day and night varying with the seasons; (b) have environment conditions that change at irregular time intervals; and (c, here) have environment variables that change regularly but also occasionally short-term "events" of major change at time scales less than the normal regular time step.
 
-Prepared by Colin Sheppard and Steve Railsback, 7 Nov 2013.
+## HOW IT WORKS
+
+A time-series input file contains the times at which two environment variables (river flow and temperature) change, and their values at each change. The Time extension's LogoTimeSeries variable type is used to read in the input and extract a NetLogo list of the times at which flow and temperature change (between simulation starting and ending times specified by the user). 
+
+Then, in the go procedure, the list of times at which temperature and flow change is used to keep track of the current simulation time and calculate the time (number of days, including fractions) represented by each tick.
+
+The input file provided with this demonstration (ExampleTimeSeriesInputs.csv) includes one-day time steps with occasional sub-daily "events". Usually, flow and temperature change once per day at midnight. Some days, however, include several changes within a day.
+
+Note that if you edit ExampleTimeSeriesInputs.csv in Excel or other software, you need to tell the software to write the date/time values of Column 1 in the proper yyyy/m/d hh:mm format. In Excel, this requires selecting the values, then using the Format dialog to select "More number formats", then "Custom", and then manually editing the "Type:" input to "yyyy/m/d hh:mm".
+
+## CREDITS AND REFERENCES
+
+This model was developed by Steve Railsback and Colin Sheppard. The Time extension, including this and other demonstration models, is available at: https://github.com/colinsheppard/time
+
+May 2014
 @#$#@#$#@
 default
 true
@@ -371,6 +369,17 @@ Circle -16777216 true false 113 68 74
 Polygon -10899396 true false 189 233 219 188 249 173 279 188 234 218
 Polygon -10899396 true false 180 255 150 210 105 210 75 240 135 240
 
+frog top
+true
+0
+Polygon -7500403 true true 146 18 135 30 119 42 105 90 90 150 105 195 135 225 165 225 195 195 210 150 195 90 180 41 165 30 155 18
+Polygon -7500403 true true 91 176 67 148 70 121 66 119 61 133 59 111 53 111 52 131 47 115 42 120 46 146 55 187 80 237 106 269 116 268 114 214 131 222
+Polygon -7500403 true true 185 62 234 84 223 51 226 48 234 61 235 38 240 38 243 60 252 46 255 49 244 95 188 92
+Polygon -7500403 true true 115 62 66 84 77 51 74 48 66 61 65 38 60 38 57 60 48 46 45 49 56 95 112 92
+Polygon -7500403 true true 200 186 233 148 230 121 234 119 239 133 241 111 247 111 248 131 253 115 258 120 254 146 245 187 220 237 194 269 184 268 186 214 169 222
+Circle -16777216 true false 157 38 18
+Circle -16777216 true false 125 38 18
+
 house
 false
 0
@@ -420,6 +429,22 @@ Polygon -7500403 true true 165 180 165 210 225 180 255 120 210 135
 Polygon -7500403 true true 135 105 90 60 45 45 75 105 135 135
 Polygon -7500403 true true 165 105 165 135 225 105 255 45 210 60
 Polygon -7500403 true true 135 90 120 45 150 15 180 45 165 90
+
+sheep
+false
+15
+Circle -1 true true 203 65 88
+Circle -1 true true 70 65 162
+Circle -1 true true 150 105 120
+Polygon -7500403 true false 218 120 240 165 255 165 278 120
+Circle -7500403 true false 214 72 67
+Rectangle -1 true true 164 223 179 298
+Polygon -1 true true 45 285 30 285 30 240 15 195 45 210
+Circle -1 true true 3 83 150
+Rectangle -1 true true 65 221 80 296
+Polygon -1 true true 195 285 210 285 210 240 240 210 195 210
+Polygon -7500403 true false 276 85 285 105 302 99 294 83
+Polygon -7500403 true false 219 85 210 105 193 99 201 83
 
 square
 false
@@ -504,6 +529,13 @@ Line -7500403 true 216 40 79 269
 Line -7500403 true 40 84 269 221
 Line -7500403 true 40 216 269 79
 Line -7500403 true 84 40 221 269
+
+wolf
+false
+0
+Polygon -16777216 true false 253 133 245 131 245 133
+Polygon -7500403 true true 2 194 13 197 30 191 38 193 38 205 20 226 20 257 27 265 38 266 40 260 31 253 31 230 60 206 68 198 75 209 66 228 65 243 82 261 84 268 100 267 103 261 77 239 79 231 100 207 98 196 119 201 143 202 160 195 166 210 172 213 173 238 167 251 160 248 154 265 169 264 178 247 186 240 198 260 200 271 217 271 219 262 207 258 195 230 192 198 210 184 227 164 242 144 259 145 284 151 277 141 293 140 299 134 297 127 273 119 270 105
+Polygon -7500403 true true -1 195 14 180 36 166 40 153 53 140 82 131 134 133 159 126 188 115 227 108 236 102 238 98 268 86 269 92 281 87 269 103 269 113
 
 x
 false

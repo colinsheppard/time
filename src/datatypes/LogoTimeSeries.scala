@@ -11,26 +11,27 @@ import org.nlogo.nvm.ExtensionContext
 import org.nlogo.extensions.time._
 import scala.collection.JavaConverters._
 
-class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
+class LogoTimeSeries extends ExtensionObject {
 
   var times: TreeMap[LogoTime, TimeSeriesRecord] =
     new TreeMap[LogoTime, TimeSeriesRecord](new LogoTimeComparator())
-  var columns: LinkedHashMap[String, TimeSeriesColumn] =
-    new LinkedHashMap[String, TimeSeriesColumn]()
-  var numRows: java.lang.Integer = 0
+  var columns: LinkedHashMap[java.lang.String, TimeSeriesColumn] =
+    new LinkedHashMap[java.lang.String, TimeSeriesColumn]()
 
-  for (colName <- colNames.asJava.asScala) {
-    columns.put(colName.toString, new TimeSeriesColumn())
+  def this(colNames: LogoList) = {
+    this()
+    for (colName <- colNames) {
+      columns.put(colName.toString, new TimeSeriesColumn())
+    }
   }
 
   def this(filename: String, customFormat: Option[String], context: ExtensionContext) = {
-    this(LogoList(Vector[AnyRef]()): LogoList)
+    this()
     parseTimeSeriesFile(filename, customFormat, context)
-
   }
 
   def this(filename: String, context: ExtensionContext) = {
-    this(LogoList(Vector[AnyRef]()): LogoList)
+    this()
     parseTimeSeriesFile(filename, context)
   }
 
@@ -38,8 +39,8 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
     val index: Int = times.size
     val record = new TimeSeriesRecord(time, index)
     var i: Int = 0
-    for (colName <- columns.keySet.asScala) {
-      columns.get(colName).add(list.get({ i += 1; i - 1 }).toString)
+    columns.keySet.asScala.zipWithIndex.foreach{ case (colName, index) =>
+      columns.get(colName).add(list.get(index).toString)
     }
     try times.put(time, record)
     catch {
@@ -74,7 +75,7 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
       val time: TimeSeriesRecord = times.get(logoTime)
       bw.write(time.time.dump(false, false, false))
       for (colName <- columns.keySet.asScala) {
-        bw.write("," + columns.get(colName).data.get(time.dataIndex))
+        bw.write("," + columns.get(colName).data(time.dataIndex))
       }
       bw.write("\n")
     }
@@ -86,64 +87,36 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
     parseTimeSeriesFile(filename, None, context)
   }
 
-  def parseTimeSeriesFile(filename: String,customFormat: Option[String],context: ExtensionContext): Unit = {
-    var dataFile: File = null
-    dataFile =
-      if (filename.charAt(0) == '/' || filename.charAt(0) == '\\' ||
-          filename.charAt(1) == ':' ||
-          context.workspace.getModelDir == null){ new File(filename) }
-      else new File(context.attachCurrentDirectory(filename))
-    var fstream: FileInputStream = null
-    fstream = new FileInputStream(dataFile)
-    val in: DataInputStream = new DataInputStream(fstream)
-    val br: BufferedReader = new BufferedReader(new InputStreamReader(in))
-    val lineCount: Int = 0
-    var delim: String = null
-    var strLine: String = null
-    var lineData: Array[String] = null
-    strLine = ";"
-    while (strLine.trim().charAt(0) == ';') {
-      strLine = br.readLine()
-      if (strLine == null)
-        throw new ExtensionException("File " + dataFile + " is blank.")
-    }
-    val hasTab: java.lang.Boolean = strLine.contains("\t")
-    val hasCom: java.lang.Boolean = strLine.contains(",")
-    if (hasTab && hasCom) {
-      throw new ExtensionException(
-        "Ambiguous file format in file " + dataFile +
-          ", the header line contains both a tab and a comma character, expecting one or the other.")
-    } else if (hasTab) {
-      delim = "\t"
-    } else if (hasCom) {
-      delim = ","
-    } else {
-      throw new ExtensionException(
-        "Illegal file format in file " + dataFile +
-          ", the header line does not contain a tab or a comma character, expecting one or the other.")
-    }
-    val columnNames: Array[String] = strLine.split(delim)
-    for (columnName <- Arrays.copyOfRange(columnNames, 1, columnNames.length)) {
-      columns.put(columnName, new TimeSeriesColumn())
-    }
-    strLine = br.readLine()
-    while (strLine != null) {
-      lineData = strLine.split(delim)
-      val newTime: LogoTime = new LogoTime(lineData(0), customFormat)
-      times.put(newTime, new TimeSeriesRecord(newTime, { numRows += 1; numRows - 1 }))
-      var colInd: Int = 0
-      while (colInd < columns.size) {
-
-        val grab = columns.get(columnNames(colInd))
-        if(grab != null) {
-          grab.add(lineData(colInd))
-        }
-        colInd += 1
+  def parseTimeSeriesFile(filename: String, customFormat: Option[String], context: ExtensionContext): Unit = {
+    /* parseTimeSeriesFile parses the files and adds them into the LogoTimeSeries
+       object. There are a couple global variables: columns and times
+     */
+    val bufferedSource = io.Source.fromFile(context.attachCurrentDirectory(filename))
+    var columnNames: Array[String] = Array()
+    try bufferedSource.getLines.zipWithIndex.foreach{ case (line, index) =>
+      index match {
+        case 0 =>
+          columnNames = line.split(',').map(_.trim)
+          for ( columnName <- Arrays.copyOfRange(columnNames, 1, columnNames.length)){
+            columns.put(columnName, new TimeSeriesColumn())
+          }
+        case n =>
+          val lineData = line.split(",").map(_.trim)
+          val newTime = new LogoTime(lineData(0), customFormat)
+          times.put(newTime, new TimeSeriesRecord(newTime, n - 1))
+//          if( columns.size != columnNames.length ) throw new ExtensionException("Failed to be the same size")
+          var colInd: Int = 1
+          while (colInd <= columns.size) {
+            if(columns.get(columnNames(colInd)) == null)
+              throw new ExtensionException(s"Failed term: ${columnNames(colInd)} and keyset ${columns.keySet}")
+            columns.get(columnNames(colInd)).add(lineData(colInd))
+            colInd += 1
+          }
       }
     }
-    br.close()
-    in.close()
-    fstream.close()
+    catch {
+      case e:IOException => throw new ExtensionException(e.getMessage());
+    }
   }
 
   def getByTime(time: LogoTime, columnName: String, getMethod: GetTSMethod): AnyRef = {
@@ -178,36 +151,33 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
               if (time.isCloserToAThanB(lowerKey, higherKey)) lowerKey
               else higherKey
           case LinearInterp => finalKey = time
-
         }
       }
     }
-    if (columnName.==("ALL_-_COLUMNS")) resultList.add(finalKey)
+    if (columnName == ("ALL_-_COLUMNS"))
+      resultList.add(finalKey)
     for (colName <- columnList.asScala) {
       if (getMethod == LinearInterp) {
-        if (columns.get(colName).data.get(0).isInstanceOf[String])
-          throw new ExtensionException(
-            "Cannot interpolate between string values, use time:get instead.")
-        resultList.add((
+        try {
+       resultList.add((
           columns
             .get(colName)
-            .data
-            .get(times.get(lowerKey).dataIndex)
-            .asInstanceOf[java.lang.Double] +
+            .data.apply(times.get(lowerKey).dataIndex) +
             (columns
-              .get(colName)
-              .data
-              .get(times.get(higherKey).dataIndex)
-              .asInstanceOf[java.lang.Double] -
-              columns
-                .get(colName)
-                .data
-                .get(times.get(lowerKey).dataIndex)
-                .asInstanceOf[java.lang.Double]) *
-              lowerKey.getDifferenceBetween(Milli, time) / lowerKey.getDifferenceBetween(Milli, higherKey)).asInstanceOf[String])
+              .get(colName).data.map(_.toDouble).apply(times.get(higherKey).dataIndex) -
+             columns
+               .get(colName).data.map(_.toDouble).apply(times.get(lowerKey).dataIndex)) *
+            lowerKey.getDifferenceBetween(Milli, time) / lowerKey.getDifferenceBetween(Milli, higherKey))
+         .toString)
+        }
+        catch {
+          case e: IOException => throw new ExtensionException("Failed with ByTime")
+          case e: IndexOutOfBoundsException => throw new ExtensionException("Failed with ByTime: IndexOutOfBounds")
+          case e: NullPointerException => throw new ExtensionException(s"Failed with ByTime: NullPointerException: lowerKey: $lowerKey, higherKey: $higherKey, finalKey: $finalKey")
+        }
       } else {
         resultList.add(
-          columns.get(colName).data.get(times.get(finalKey).dataIndex))
+          columns.get(colName).data.map(_.toDouble).apply(times.get(finalKey).dataIndex).asInstanceOf[AnyRef])
       }
     }
     if (resultList.size == 1) {
@@ -220,6 +190,7 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
   def getRangeByTime(timeLowArg: LogoTime,
                      timeHighArg: LogoTime,
                      columnName: String): AnyRef = {
+    if(columnName == null){ throw new ExtensionException(s"columnName is null") }
     var timeLow = timeLowArg
     var timeHigh = timeHighArg
     if (!timeLow.isBefore(timeHigh)) {
@@ -227,68 +198,60 @@ class LogoTimeSeries(colNames: LogoList) extends ExtensionObject {
       timeLow = timeHigh
       timeHigh = timeTemp
     }
+
     val columnList: ArrayList[String] = new ArrayList[String](columns.size)
     val resultList: ArrayList[LogoList] = new ArrayList[LogoList](columns.size)
-    if (columnName.==("ALL_-_COLUMNS")) {
-      columnList.addAll(columns.keySet)
-    } else if (columnName.==("LOGOTIME")) {} else if (!columns.containsKey(
-                                                        columnName)) {
-      throw new ExtensionException(
-        "The LogoTimeSeries does not contain the column " + columnName)
-    } else {
-      columnList.add(columnName)
+    columnName match {
+        case "ALL_-_COLUMNS" => columnList.addAll(columns.keySet)
+        case "LOGOTIME" =>
+        case str if !columns.containsKey(columnName) =>
+          throw new ExtensionException(s"The LogoTimeSeries does not contain the column $columnName")
+        case _ => columnList.add(columnName)
     }
+
     var lowerKey: LogoTime = timeLow
-    if (times.get(lowerKey) == null) lowerKey = times.higherKey(timeLow)
     var higherKey: LogoTime = timeHigh
+    if (times.get(lowerKey) == null) lowerKey = times.higherKey(timeLow)
     if (times.get(higherKey) == null) higherKey = times.lowerKey(timeHigh)
+
     if (lowerKey == null || higherKey == null) {
-      if (columnName.==("ALL_-_COLUMNS") || columnName.==("LOGOTIME")) {
-        resultList.add(
-          LogoList.fromVector(scala.collection.immutable.Vector[Any](0, 0, 0).asInstanceOf[Vector[AnyRef]])
-        )
+      if (columnName == "ALL_-_COLUMNS" || columnName == "LOGOTIME") {
+//        resultList.add(LogoList.fromVector(scala.collection.immutable.Vector[Any](0, 0, 0).asInstanceOf[Vector[AnyRef]]))
+        resultList.add(LogoList.fromVector(scala.collection.immutable.Vector[Any](0, 0, 0).asInstanceOf[Vector[AnyRef]]))
       }
       for (colName <- columnList.asScala) {
-         resultList.add(
-          LogoList.fromVector(scala.collection.immutable.Vector[Any](0, 0, 0).asInstanceOf[Vector[AnyRef]])
-         )
+         resultList.add(LogoList.fromVector(scala.collection.immutable.Vector[Any](0, 0, 0).asInstanceOf[Vector[AnyRef]]))
       }
     } else {
       if (columnName.==("ALL_-_COLUMNS") || columnName.==("LOGOTIME")) {
-        resultList.add(
-          LogoList.fromJava(
-            times.subMap(lowerKey, true, higherKey, true).keySet))
+        resultList.add(LogoList.fromJava(times.subMap(lowerKey, true, higherKey, true).keySet))
       }
       for (colName <- columnList.asScala) {
         resultList.add(
-          LogoList.fromJava(
-            columns
-              .get(colName)
-              .data
-              .subList(times.get(lowerKey).dataIndex,
-                       times.get(higherKey).dataIndex + 1)))
+          LogoList(columns
+                  .get(colName).data.toIterable
+                  .slice(times.get(lowerKey).dataIndex,
+                           times.get(higherKey).dataIndex + 1)))
       }
     }
-    if (resultList.size == 1) {
-      resultList.get(0)
-    } else {
-      LogoList.fromJava(resultList)
+    resultList.size match {
+      case 1 => resultList.get(0)
+      case _ => LogoList.fromJava(resultList)
     }
   }
 
   def dump(arg0: Boolean, arg1: Boolean, arg2: Boolean): String = {
     var result: String = "TIMESTAMP"
-    for (colName <- columns.keySet.asScala) {
-      result += "," + colName
-    }
+    columns.keySet.asScala.foreach{ case (colName) => result += "," + colName }
     result += "\n"
-    for (logoTime <- times.keySet.asScala) {
-      val time: TimeSeriesRecord = times.get(logoTime)
-      result += time.time.dump(false, false, false)
-      for (colName <- columns.keySet.asScala) {
-        result = result + "," + columns.get(colName).data.get(time.dataIndex)
-      }
-      result += "\n"
+    times.keySet.asScala.foreach{
+      case (logoTime) =>
+        val time: TimeSeriesRecord = times.get(logoTime)
+        result += time.time.dump(false, false, false)
+        for (colName <- columns.keySet.asScala) {
+          result = result + "," + columns.get(colName).data.apply(time.dataIndex)
+        }
+        result += "\n"
     }
     result
   }

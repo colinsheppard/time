@@ -48,8 +48,7 @@ object TimePrimitives {
                              Syntax.StringType)
     def report(args: Array[Argument], context: Context): AnyRef = {
       val time: LogoTime = TimeUtils.getTimeFromArgument(args, 0)
-      /* Above ^
-         There is an implicit LogoTime initialization */
+      /* There is an implicit LogoTime initialization */
       val fmtString: String = TimeUtils.getStringFromArgument(args, 1)
       val fmt =
         if (fmtString.trim().==(""))
