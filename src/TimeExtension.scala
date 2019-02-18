@@ -41,7 +41,6 @@ class TimeExtension extends DefaultClassManager {
     /*
      TimeSeries Primitives
      */
-    /* Todo List */ /* Null Pointers ! Beware */
     primManager.addPrimitive("ts-create", new TimeSeriesPrimitives.TimeSeriesCreate())
     primManager.addPrimitive("ts-add-row", new TimeSeriesPrimitives.TimeSeriesAddRow())
     primManager.addPrimitive("ts-load", new TimeSeriesPrimitives.TimeSeriesLoad())
@@ -54,7 +53,6 @@ class TimeExtension extends DefaultClassManager {
     /*
      DiscreteEventscheduler primitives
      */
-
     primManager.addPrimitive("schedule-event", new DiscreteEventSchedulerPrimitives.AddEvent())
     primManager.addPrimitive("schedule-event-shuffled", new DiscreteEventSchedulerPrimitives.AddEventShuffled())
     primManager.addPrimitive("schedule-repeating-event", new DiscreteEventSchedulerPrimitives.RepeatEvent())
