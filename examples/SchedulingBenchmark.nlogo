@@ -13,7 +13,7 @@ end
 to setup-schedule
   let ind 1
   while[ind <= nticks][
-    time:schedule-event turtles task go-forward ind
+    time:schedule-event turtles [ ->  go-forward] ind
     set ind ind + n-rest-between-action
   ]
 end
@@ -48,10 +48,10 @@ end
 GRAPHICS-WINDOW
 219
 10
-563
-375
-16
-16
+561
+353
+-1
+-1
 10.121212121212121
 1
 10
@@ -115,7 +115,7 @@ nturtles
 nturtles
 0
 10000
-5000
+5000.0
 100
 1
 NIL
@@ -130,7 +130,7 @@ nticks
 nticks
 0
 5000
-5000
+5000.0
 100
 1
 NIL
@@ -145,7 +145,7 @@ nsteps
 nsteps
 0
 100
-100
+100.0
 1
 1
 NIL
@@ -160,7 +160,7 @@ n-rest-between-action
 n-rest-between-action
 1
 200
-50
+50.0
 1
 1
 NIL
@@ -518,9 +518,8 @@ false
 0
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
-
 @#$#@#$#@
-NetLogo 5.3
+NetLogo 6.0.4
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
@@ -536,8 +535,6 @@ true
 0
 Line -7500403 true 150 150 90 180
 Line -7500403 true 150 150 210 180
-
 @#$#@#$#@
 0
 @#$#@#$#@
-

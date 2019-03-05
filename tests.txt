@@ -1,3 +1,74 @@
+TimeModelDiscreteScheduling
+  OPEN> extensions/time/examples/DiscreteEventScheduling.nlogo
+  O> setup
+  O> go
+  O> go-until
+
+TimeModelSchedulingBenchmark
+  OPEN> extensions/time/examples/SchedulingBenchmark.nlogo
+  O> go-discrete-event
+  O> go-static
+
+TimeModelMouseDiscreteEvent
+  OPEN> extensions/time/examples/MouseDiscreteEvent.nlogo
+  O> setup
+  O> start
+
+TimeModelTimeExample
+  OPEN> extensions/time/examples/TimeExample.nlogo
+  O> setup
+  O> go
+
+TimeModelTimeSeriesExample
+  OPEN> extensions/time/examples/TimeSeriesExample.nlogo
+  O> setup
+  O> go
+
+TimeModelTimeTestAnchored
+  OPEN> extensions/time/examples/TimeTests_Anchored_Copies_2019_02_06.nlogo
+  O> run-tests
+
+TimeModelTimeTests_Formatter_2019_02_05
+  OPEN> extensions/time/examples/TimeTests_Formatter_2019_02_05.nlogo
+  O> run-tests
+
+TimeModelTimeTests_Repeating_Events_2019_02_11
+  OPEN> extensions/time/examples/TimeTests_Repeating_Events_2019_02_11.nlogo
+  O> run-tests
+
+TimeModelTimeTests_Schedule_Event_2019_02_12
+  OPEN> extensions/time/examples/TimeTests_Schedule_Event_2019_02_12.nlogo
+  O> run-all-tests
+
+TimeModelTimeTests_Schedule_Lengths_2019_02_15
+  OPEN> extensions/time/examples/TimeTests_Schedule_Lengths_2019_02_15.nlogo
+  O> run-tests
+
+TimeModelTimeTests_Schedule_Units_2019_02_11
+  OPEN> extensions/time/examples/TimeTests_Schedule_Units_2019_02_11.nlogo
+  O> run-tests
+
+TimeModelTimeTests_SFR_2019-01-29
+  OPEN> extensions/time/examples/TimeTests_SFR_2019-01-29.nlogo
+  O> test-date-times
+
+TimeModelTimeTests_SFR_2019-02-01
+  OPEN> extensions/time/examples/TimeTests_SFR_2019-02-01.nlogo
+  O> write-test-file
+  O> write-test-file-dates
+
+TimeModelTimeTests_SFR_2019-02-05
+  OPEN> extensions/time/examples/TimeTests_SFR_2019-02-05.nlogo
+  O> test-create
+  O> test-create-with-format
+  O> test-plus-is-before
+
+TimeModelTimeTests_VariableTimeStepDemo
+  OPEN> extensions/time/examples/VariableTimeStepDemo.nlogo
+  O> setup
+  O> go
+
+
 TimeCreateDefault
   extensions [time]
   time:show (time:create "2000/01/01 10:00") "yyyy/dd/MM HH:mm" => "2000/01/01 10:00"
