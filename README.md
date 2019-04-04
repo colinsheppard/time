@@ -246,42 +246,62 @@ The **time extension** has the following notable behavior:
 
 ## Format
 
-The time extension contains a set of rules and standards for parsing valid dates.
+The time extension utilizes rules and standards, provided by the Java 8 time library, to parse and accept valid dates. The extension provides default formats for quickly creating time objects, but includes an option for specifying a custom format. In addition, the extension adheres to the ISO 8601 standard, following the Java 8 STRICT format and 24 hour clock format.
 
 ### Date Format
 
-The time extension, loosely, adheres to the ISO 8601 standard for parsing and printing date-time objects, following the Java 8 STRICT format and 24 hour clock format. A typical format that applies for date-time objects is:
+Date formats are encoded strings with unique characters that represent various units of time and their position (date and time). Each character is meant to be placed in a contiguous group to indicate its expected location and type. If a user-provides a date string that does not follow the parsing format or bounds, then an exception will be thrown. With create primitives, the selected default format can create a date-time, date, and day object depending on the string provided. The set of default formats are as follow:
 
-**DateTime Formatter **
+* **DateTime Formatter**
 
 ```
 MM/dd/YYYY HH:mm:ss.SSS
 ```
 
-which specifies that all 7 units (month,day,year,etc) will be available for parsing. With formatters, each unique character represents a unit of time for producing a valid date-time object. If a user-provided date string does not follow the parsing format or bounds, then an exception will be thrown. Along with the date-time format, there are two other formats that follow the Gregorian calendar. Date and Day formats do not require a time and only need their respective dates.
+For date-time formatters, the format specifies all 7 units (month,day,year,etc) will be available for parsing and generating a date-time object. If invalid strings are provided, time:create and other operations will throw an exception.
 
-**Date Formatter **
+* **Date Formatter**
 ```
 MM/dd/YYYY
 ```
-For date formatters, the month, day, and year need to be specified to obtain a Date object. In this case, only 3 date units will be needed. In the case where invalid strings are provided, time:create and other operations will throw an exception.
+For date formatters, the month, day, and year need to be specified to obtain a date object. If invalid strings are provided, time:create and other operations will throw an exception.
 
-**Day Formatter **
+* **Day Formatter**
 ```
 MM/dd
 ```
-For day formatters, the month and day need to be specified to obtain a Day object. In this case, only 2 date units will be need. One thing to keep in mind with the day formatter is that the dates are based on the year 2000, which contains a leap day. This may cause some miscalculations if only months are applied. In the case where invalid strings are provided, time:create and other operations will throw an exception.
+For day formatters, the month and day need to be specified to obtain a day object. One thing to keep in mind with the day formatter is that the dates are based on the year 2000, which contains a leap day, which could lead to miscalculations if only months are applied. In the case where invalid strings are provided, time:create and other operations will throw an exception.
 
 ### Supported Format Characters
 
-For supported format characters ('H','m',etc), there are three main modes for parsing: short hand, sized, and full. Each mode controls the number of acceptable charcters for parsing values. For all units except the millisecond and year field, "short hand" formats contain a single unique character for accepting 1 or 2 digits for the corresponding unit. The short-hand case is a lentient option for values that can fluctuating values between 1 or 2 digits. Sized formats only apply for milliseconds and years since their units have more than 2 digits. "Sized" formats require input with the correct number of digits to be parsed correctly. One example is providing a year "200" on a format of "YYYY" would throw an exception, but "2000" wouldn't. The "full" format applies for all unit of time and is the default size for all units from the date-time format.
+For supported format characters ('H','m',etc), there are three main modes for parsing: short hand, sized, and full. Each mode controls the number of acceptable charcters for parsing digits.
+
+* **Short Hand**
+For all units, except the millisecond and year fields, "short hand" formats use a single unique character meant to accept 1 or 2 digits for the corresponding unit. The short-hand case is a lentient option for values that can fluctuate values between 1 or 2 digits.
+```
+M/d
+```
+
+* **Sized**
+For year and millisecond, the number of characters for a specific unit of time determines the number of acceptable numbers. One example is providing a year "200" on a format of "YYYY", which would throw an exception, but "2000" would not.
+
+```
+MM/dd/YY HH:mm:ss.SS
+MM/dd/YYY HH:mm:ss.S
+```
+
+* **Full**
+For all units of time, the maximum number of representable formatting characters can be used to provide a verbose and accurrate representation of the time objects. If the string does not follow the format, an exception will be thrown.
+```
+MM/dd/YYYY HH:mm:ss.SSS
+```
 
 | Month | Day | Year | Hour | Minute | Second | Millisecond |
 |-------|-----|------|------|--------|--------|-------------|
 |`MM` or `M`| `dd` or `d` | `YYYY` or `YYY` or `YY` or `Y` | `HH` or `H` | `mm` or `m` | `ss` or `s` | `SSS` or `SS` or `S` |
 
 ### Date-time Bounds
-Since not all dates are representable within the time extension, a strict formatting is enforced to minimize the effects of invalid input. For all time objects, dates are bounded by the Gregorian calendar while the time is bounded with their respective unit of time.
+Since not all dates are representable within the time extension, a strict formatting is enforced to minimize the effects of invalid input. Dates are bounded by the Gregorian calendar while the time is bounded with their respective unit of time.
 
 | Month | Day | Year | Hour | Minute | Second | Millisecond |
 |-------|-----|------|------|--------|--------|-------------|
