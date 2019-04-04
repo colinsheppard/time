@@ -246,25 +246,27 @@ The **time extension** has the following notable behavior:
 
 ## Format
 
+The time extension contains a set of rules and standards for parsing valid dates.
+
 ### Date Format
 
-The time primitive, loosely, adheres to the ISO 8601 standard for parsing and printing date-time objects, following the Java 8 STRICT format and 24 hour clock format. A typical format that applies for date-time objects is:
+The time extension, loosely, adheres to the ISO 8601 standard for parsing and printing date-time objects, following the Java 8 STRICT format and 24 hour clock format. A typical format that applies for date-time objects is:
 
-** DateTime Formatter**
+**DateTime Formatter **
 
 ```
 MM/dd/YYYY HH:mm:ss.SSS
 ```
 
-which specifies that all 7 units (month,day,year,etc) will be available for parsing. With formatters, each unique character represents a unit of time for producing a valid date-time object. If a user-provided date string does not follow the parsing format or bounds, then an exception will be thrown. Throwing an exception helps prevent invalid input from interfering with model runs unnoticed. Along with the date-time format, there are two other formats that follow the Gregorian calendar. Date and Day formats do not require a time and only need their respective dates.
+which specifies that all 7 units (month,day,year,etc) will be available for parsing. With formatters, each unique character represents a unit of time for producing a valid date-time object. If a user-provided date string does not follow the parsing format or bounds, then an exception will be thrown. Along with the date-time format, there are two other formats that follow the Gregorian calendar. Date and Day formats do not require a time and only need their respective dates.
 
-**Date Formatter**
+**Date Formatter **
 ```
 MM/dd/YYYY
 ```
 For date formatters, the month, day, and year need to be specified to obtain a Date object. In this case, only 3 date units will be needed. In the case where invalid strings are provided, time:create and other operations will throw an exception.
 
-** Day Formatter**
+**Day Formatter **
 ```
 MM/dd
 ```
@@ -272,22 +274,22 @@ For day formatters, the month and day need to be specified to obtain a Day objec
 
 ### Supported Format Characters
 
-For supported format characters, there are three main modes short hand, sized, and full, that control the number of acceptable charcters for parsing values. For all units except the millisecond and year field, short hand formats contain single unique characters for accepting 1 or 2 digits for the corresponding unit. The short-hand case is a lentient option for values that can fluctuate above and below the tens, though it will throw an exception if the input is invalid. Sized formats only apply for milliseconds and years since their units have more than 2 digits. Sized formats require the input provided contains the correct number of digits to be parsed correctly. One example is providing a year "2000" on a format of "YYYY", throwing an exception on input that isn't within the 4 digit range. The full format applies for all unit of time and is the default size for all units from the date-time format.
+For supported format characters ('H','m',etc), there are three main modes for parsing: short hand, sized, and full. Each mode controls the number of acceptable charcters for parsing values. For all units except the millisecond and year field, "short hand" formats contain a single unique character for accepting 1 or 2 digits for the corresponding unit. The short-hand case is a lentient option for values that can fluctuating values between 1 or 2 digits. Sized formats only apply for milliseconds and years since their units have more than 2 digits. "Sized" formats require input with the correct number of digits to be parsed correctly. One example is providing a year "200" on a format of "YYYY" would throw an exception, but "2000" wouldn't. The "full" format applies for all unit of time and is the default size for all units from the date-time format.
 
 | Month | Day | Year | Hour | Minute | Second | Millisecond |
 |-------|-----|------|------|--------|--------|-------------|
-|`MM` or `M`| `dd` or `d` | `YYYY` or `YYY` or `YY` or `Y` ] `HH` or `H` | `mm` or `m` | `ss` or `s` | `SSS` or `SS` or `S` |
+|`MM` or `M`| `dd` or `d` | `YYYY` or `YYY` or `YY` or `Y` | `HH` or `H` | `mm` or `m` | `ss` or `s` | `SSS` or `SS` or `S` |
 
 ### Date-time Bounds
 Since not all dates are representable within the time extension, a strict formatting is enforced to minimize the effects of invalid input. For all time objects, dates are bounded by the Gregorian calendar while the time is bounded with their respective unit of time.
 
 | Month | Day | Year | Hour | Minute | Second | Millisecond |
 |-------|-----|------|------|--------|--------|-------------|
-| 12    | 31 or 30 or 29 or 28 | 9999 - 1000 | 0-23 | 0-59 | 0-59 | 0 - 999 |
+| 1 - 12 | 1 - 31 or 30 or 29 or 28 | 1000-9999 | 0-23 | 0-59 | 0-59 | 0 - 999 |
 
 ### User Defined Formatting
 
-Along with supporting three date formats, the time extension supports user-defined formatters for variety and brevity. The format allows for reordering unique format characters, along with controlling format unit follows. Here are some examples.
+Along with supporting three date formats, the time extension supports user-defined formatters for brevity and control. The format allows for reordering unique format characters, along with controlling how a unit is parsed.
 
 ```
 M:YYYY:d
