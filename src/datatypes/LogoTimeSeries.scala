@@ -1,9 +1,7 @@
 package org.nlogo.extensions.time.datatypes
 
-import java.io.{BufferedReader, BufferedWriter, DataInputStream, File, FileInputStream, FileNotFoundException, FileWriter, IOException, InputStreamReader}
-import java.net.MalformedURLException
-import java.util.{ArrayList, Arrays, LinkedHashMap, List, TreeMap}
-import scala.collection.immutable.Vector._
+import java.io.{BufferedWriter, File, FileWriter, IOException}
+import java.util.{ArrayList, Arrays, LinkedHashMap, TreeMap}
 
 import org.nlogo.api.ExtensionException
 import org.nlogo.core.{ExtensionObject, LogoList}
@@ -38,7 +36,6 @@ class LogoTimeSeries extends ExtensionObject {
   def add(time: LogoTime, list: LogoList): Unit = {
     val index: Int = times.size
     val record = new TimeSeriesRecord(time, index)
-    var i: Int = 0
     columns.keySet.asScala.zipWithIndex.foreach{ case (colName, index) =>
       columns.get(colName).add(list.get(index).toString)
     }
@@ -194,7 +191,7 @@ class LogoTimeSeries extends ExtensionObject {
     var timeLow = timeLowArg
     var timeHigh = timeHighArg
     if (!timeLow.isBefore(timeHigh)) {
-      var timeTemp: LogoTime = timeLow
+      val timeTemp: LogoTime = timeLow
       timeLow = timeHigh
       timeHigh = timeTemp
     }

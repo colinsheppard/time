@@ -3,11 +3,9 @@ package org.nlogo.extensions.time
 import java.io.IOException
 import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.logging.{FileHandler, Logger, SimpleFormatter}
-import org.nlogo.api.{Argument, Context, Dump, ExtensionException, LogoException, OutputDestination, OutputDestinationJ}
+import org.nlogo.api.{Argument, Context, Dump, ExtensionException, OutputDestinationJ}
 import org.nlogo.core.LogoList
 import org.nlogo.nvm.ExtensionContext
-import org.nlogo.window.OutputArea
-import org.nlogo.extensions.time._
 import org.nlogo.extensions.time.datatypes.{LogoTimeSeries, LogoTime, LogoSchedule}
 
 /* This object holds convenient methods for time and types */
@@ -41,7 +39,7 @@ object TimeUtils {
   }
 
   def getTimeFromArgument(args: Array[Argument], argIndex: java.lang.Integer): LogoTime = {
-    var time = args(argIndex).get match {
+    val time = args(argIndex).get match {
       case logoTime: LogoTime => logoTime
       case str: String => new LogoTime(args(argIndex).getString)
       case obj =>

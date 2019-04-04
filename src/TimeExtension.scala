@@ -1,12 +1,10 @@
 package org.nlogo.extensions.time
 
-import org.nlogo.extensions.time._
 import org.nlogo.extensions.time.datatypes.LogoSchedule
 import org.nlogo.extensions.time.primitives.DiscreteEventSchedulerPrimitives
 import org.nlogo.extensions.time.primitives.TimePrimitives
 import org.nlogo.extensions.time.primitives.TimeSeriesPrimitives
 import org.nlogo.api.DefaultClassManager
-import org.nlogo.api.PrimitiveManager
 import org.nlogo.api.Context
 
 object TimeExtension {

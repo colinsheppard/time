@@ -1,5 +1,5 @@
 enablePlugins(org.nlogo.build.NetLogoExtension, org.nlogo.build.ExtensionDocumentationPlugin)
-netLogoVersion := "6.0.4"
+netLogoVersion := "6.1.0-RC1"
 netLogoClassManager := "org.nlogo.extensions.time.TimeExtension"
 scalaVersion := "2.12.4"
 netLogoExtName := "time"
@@ -11,6 +11,5 @@ lazy val src = (project in file("."))
   .settings(
     scalaSource in Compile := baseDirectory.value / "src",
     scalaSource in Test    := baseDirectory.value / "test",
-    scalacOptions ++= Seq()
-      //"-deprecation -unchecked -Xlint -Xfatal-warnings".split(" ").toSeq
+    scalacOptions ++= "-deprecation -unchecked -Xfatal-warnings"/*-Xlint*/.split(" ").toSeq
   )

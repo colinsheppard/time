@@ -1,10 +1,10 @@
 package org.nlogo.extensions.time.datatypes
 
-import java.util.{ArrayList, Iterator, TreeSet}
-import org.nlogo.agent.{Agent, AgentIterator, ArrayAgentSet, TickCounter, TreeAgentSet, World, AgentSet}
+import java.util.{ArrayList, TreeSet}
+import org.nlogo.agent.{Agent, AgentIterator, ArrayAgentSet, TickCounter, AgentSet}
 import org.nlogo.nvm.AnonymousCommand
-import org.nlogo.api.{AnonymousProcedure, Argument, Context, ExtensionException, LogoException}
-import org.nlogo.core.{AgentKindJ, ExtensionObject, LogoList}
+import org.nlogo.api.{Argument, Context, ExtensionException}
+import org.nlogo.core.{AgentKindJ, ExtensionObject}
 import org.nlogo.nvm.ExtensionContext
 import org.nlogo.extensions.time._
 import scala.collection.JavaConverters._
@@ -72,7 +72,7 @@ class LogoSchedule extends ExtensionObject {
 
     if (isInvalidEventArgument)
       throw new ExtensionException(
-        "time: $primName expected an agent, agentset, or the string \'observer\' as the first argument")
+        s"time: $primName expected an agent, agentset, or the string \'observer\' as the first argument")
     else if (!(args(1).get.isInstanceOf[AnonymousCommand]))
       throw new ExtensionException(
         s"time: $primName expecting a command task as the second argument")
@@ -163,8 +163,7 @@ class LogoSchedule extends ExtensionObject {
      ---------------------------------------------------------------------------- */
 
   def performScheduledTasks(args: Array[Argument], context: Context): Unit = {
-    performScheduledTasks(args, context,
-      context.asInstanceOf[ExtensionContext].workspace.world.tickCounter.ticks)
+    performScheduledTasks(args, context, java.lang.Double.MAX_VALUE)
   }
   def performScheduledTasks(args: Array[Argument], context: Context, untilTime: LogoTime): Unit = {
     if (!this.isAnchored) throw new ExtensionException(
@@ -180,7 +179,6 @@ class LogoSchedule extends ExtensionObject {
     val extcontext: ExtensionContext = context.asInstanceOf[ExtensionContext]
     val emptyArgs: Array[Any] = Array.ofDim[Any](1)
     var event: LogoEvent = if (scheduleTree.isEmpty) null else scheduleTree.first()
-    val theAgents: ArrayList[org.nlogo.agent.Agent] = new ArrayList[org.nlogo.agent.Agent]()
 
     /* --------------------------------------------------------------------------
        While Loop: Recursive but can end up in a recursive infinite loop
@@ -191,12 +189,15 @@ class LogoSchedule extends ExtensionObject {
       event.agents match {
         case null => // observer context
           val nvmContext: org.nlogo.nvm.Context = new org.nlogo.nvm.Context(
-            extcontext.nvmContext.job, extcontext.getAgent.world.observer.asInstanceOf[org.nlogo.agent.Agent],
-            extcontext.nvmContext.ip, extcontext.nvmContext.activation, extcontext.workspace)
+            extcontext.nvmContext.job,
+            extcontext.getAgent.world.observer.asInstanceOf[org.nlogo.agent.Agent],
+            extcontext.nvmContext.ip,
+            extcontext.nvmContext.activation, extcontext.workspace)
           event.task.perform(nvmContext, emptyArgs.asInstanceOf[Array[AnyRef]])
         case _ =>
           val iter: AgentIterator =
-            if (event.shuffleAgentSet) event.agents.shufflerator(extcontext.nvmContext.job.random)
+            if (event.shuffleAgentSet)
+              event.agents.shufflerator(extcontext.nvmContext.job.random)
             else event.agents.iterator
           val copy: ArrayList[Agent] = new ArrayList[Agent]()
 
@@ -207,7 +208,8 @@ class LogoSchedule extends ExtensionObject {
                 break
               val nvmContext: org.nlogo.nvm.Context = new org.nlogo.nvm.Context(
                 extcontext.nvmContext.job,theAgent, extcontext.nvmContext.ip,
-                extcontext.nvmContext.activation, extcontext.workspace)
+                extcontext.nvmContext.activation,
+                extcontext.workspace)
               if (extcontext.nvmContext.stopping){return}
               event.task.perform(nvmContext, emptyArgs.asInstanceOf[Array[AnyRef]])
               if (nvmContext.stopping){return}

@@ -1,9 +1,7 @@
 package org.nlogo.extensions.time.datatypes
 
 import org.nlogo.api.Agent
-import org.nlogo.agent.AgentSet
 import org.nlogo.nvm.AnonymousCommand
-import org.nlogo.api.ExtensionException
 import org.nlogo.core.ExtensionObject
 import org.nlogo.extensions.time._
 import scala.collection.JavaConverters._

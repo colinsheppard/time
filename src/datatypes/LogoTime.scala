@@ -1,9 +1,7 @@
 package org.nlogo.extensions.time.datatypes
 
-import java.time.{Duration, LocalDate, LocalDateTime, MonthDay, Period, ZoneOffset, Instant, DateTimeException}
+import java.time.{Duration, LocalDate, LocalDateTime, MonthDay, Period, ZoneOffset}
 import java.time.temporal.ChronoUnit._
-import java.time.temporal.ChronoField._
-import java.time.chrono.{ Chronology, IsoChronology }
 import java.time.format.DateTimeFormatter
 import java.time.format.ResolverStyle.STRICT
 import java.time.format.DateTimeParseException
@@ -420,7 +418,7 @@ class LogoTime extends ExtensionObject {
       case Date =>
         per match {
           case None => {
-            var logotime = refTime
+            val logotime = refTime
               .asInstanceOf[LocalDate].atStartOfDay
               .plus(Duration.of(TimeUtils.dToL(durVal), MILLIS)).toLocalDate
             new LogoTime(logotime)
