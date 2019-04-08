@@ -12,11 +12,11 @@ to setup
   print ""
 
   set time-series time:ts-load "time-series-data.csv"
-  print time-series
 
   print time:ts-get time-series time:create "2000-01-01 01:30:00" "flow"
   print time:ts-get time-series time:create "2000-01-01 10:20:00" "flow"
   print time:ts-get time-series time:create "2000-01-01 10:30:00" "flow"
+  print time:ts-get time-series time:create "2005-01-02 10:50:01" "flow"
   print time:ts-get-exact time-series time:create "2000-01-01 10:00" "flow"
 
   print time:ts-get-interp time-series time:create "2000-01-01 10:30:00" "flow"
@@ -444,7 +444,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.4
+NetLogo 6.1.0-RC1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@

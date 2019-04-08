@@ -25,7 +25,7 @@ object TimeSeriesPrimitives {
       var time: LogoTime = null
       timeObj match {
         case tObj: String =>
-           time = new LogoTime(tObj)
+          time = new LogoTime(tObj)
         case tObj: LogoTime =>
           time = new LogoTime(tObj)
         case tObj =>

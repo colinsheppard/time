@@ -1,12 +1,15 @@
 package org.nlogo.extensions.time.datatypes
 
-import java.io.{BufferedWriter, File, FileWriter, IOException}
+import java.io.{BufferedWriter, File, FileWriter, IOException, FileNotFoundException}
 import java.util.{ArrayList, Arrays, LinkedHashMap, TreeMap}
 
 import org.nlogo.api.ExtensionException
+import org.nlogo.api.LogoException
 import org.nlogo.core.{ExtensionObject, LogoList}
 import org.nlogo.nvm.ExtensionContext
 import org.nlogo.extensions.time._
+import scala.util.{Try, Success, Failure}
+import util.control.Breaks.{breakable, break}
 import scala.collection.JavaConverters._
 
 class LogoTimeSeries extends ExtensionObject {
@@ -15,6 +18,7 @@ class LogoTimeSeries extends ExtensionObject {
     new TreeMap[LogoTime, TimeSeriesRecord](new LogoTimeComparator())
   var columns: LinkedHashMap[java.lang.String, TimeSeriesColumn] =
     new LinkedHashMap[java.lang.String, TimeSeriesColumn]()
+  var numRows = 0
 
   def this(colNames: LogoList) = {
     this()
@@ -56,12 +60,16 @@ class LogoTimeSeries extends ExtensionObject {
   def getNumColumns(): java.lang.Integer = columns.size
 
   def write(filename: String, context: ExtensionContext): Unit = {
-    val dataFile =
-      if (filename.charAt(0) == '/' || filename.charAt(0) == '\\')
-        new File(filename)
-      else new File(context.workspace.getModelDir + "/" + filename)
-    var fw: FileWriter = null
-    fw = new FileWriter(dataFile.getAbsoluteFile)
+    val dataFile = filename.charAt(0) match {
+      case '/' => new File(filename)
+      case '\\' => new File(filename)
+      case _ if context.workspace.getModelDir == null =>
+        new File("./" + filename)
+      case _ =>
+        new File(context.workspace.getModelDir + "/" + filename)
+    }
+
+    val fw = new FileWriter(dataFile.getAbsoluteFile)
     val bw: BufferedWriter = new BufferedWriter(fw)
     bw.write("TIMESTAMP")
     for (colName <- columns.keySet.asScala) {
@@ -88,31 +96,36 @@ class LogoTimeSeries extends ExtensionObject {
     /* parseTimeSeriesFile parses the files and adds them into the LogoTimeSeries
        object. There are a couple global variables: columns and times
      */
-    val bufferedSource = io.Source.fromFile(context.attachCurrentDirectory(filename))
-    var columnNames: Array[String] = Array()
-    try bufferedSource.getLines.zipWithIndex.foreach{ case (line, index) =>
-      index match {
-        case 0 =>
-          columnNames = line.split(',').map(_.trim)
-          for ( columnName <- Arrays.copyOfRange(columnNames, 1, columnNames.length)){
-            columns.put(columnName, new TimeSeriesColumn())
+    Try(io.Source.fromFile(context.attachCurrentDirectory(filename))) match {
+      case Success(bufferedSource) =>
+        var ind = 0
+        var columnNames = Array[String]()
+        for( line <- bufferedSource.getLines) {
+          breakable {
+            line match {
+              case linedata if linedata.charAt(0) == ";" => break
+              case _ if ind == 0 =>
+                ind = ind + 1
+                columnNames = line.split(',').map(_.trim)
+                for ( columnName <- Arrays.copyOfRange(columnNames, 1, columnNames.length)){
+                  columns.put(columnName, new TimeSeriesColumn())
+                }
+              case linedata =>
+                val lineData = linedata.split(",").map(_.trim)
+                val newTime = new LogoTime(lineData(0), customFormat)
+                times.put(newTime, new TimeSeriesRecord(newTime, numRows))
+                numRows = numRows + 1
+                var colInd: Int = 1
+                while (colInd <= columns.size) {
+                  if(columns.get(columnNames(colInd)) == null)
+                    throw new ExtensionException(s"Failed term: ${columnNames(colInd)} and keyset ${columns.keySet}")
+                  columns.get(columnNames(colInd)).add(lineData(colInd))
+                  colInd += 1
+                }
+            }
           }
-        case n =>
-          val lineData = line.split(",").map(_.trim)
-          val newTime = new LogoTime(lineData(0), customFormat)
-          times.put(newTime, new TimeSeriesRecord(newTime, n - 1))
-//          if( columns.size != columnNames.length ) throw new ExtensionException("Failed to be the same size")
-          var colInd: Int = 1
-          while (colInd <= columns.size) {
-            if(columns.get(columnNames(colInd)) == null)
-              throw new ExtensionException(s"Failed term: ${columnNames(colInd)} and keyset ${columns.keySet}")
-            columns.get(columnNames(colInd)).add(lineData(colInd))
-            colInd += 1
-          }
-      }
-    }
-    catch {
-      case e:IOException => throw new ExtensionException(e.getMessage());
+        }
+      case Failure(_) => throw new ExtensionException("File cannot be saved without loading/saving a model")
     }
   }
 
@@ -134,7 +147,10 @@ class LogoTimeSeries extends ExtensionObject {
     } else {
       higherKey = times.higherKey(time)
       lowerKey = times.lowerKey(time)
-      if (higherKey == null) {
+      if (higherKey == null && lowerKey == null){
+        higherKey = time
+        lowerKey = time
+      } else if (higherKey == null){
         finalKey = lowerKey
       } else if (lowerKey == null) {
         finalKey = higherKey
@@ -151,30 +167,28 @@ class LogoTimeSeries extends ExtensionObject {
         }
       }
     }
-    if (columnName == ("ALL_-_COLUMNS"))
-      resultList.add(finalKey)
+    if (columnName == ("ALL_-_COLUMNS")) resultList.add(finalKey)
     for (colName <- columnList.asScala) {
       if (getMethod == LinearInterp) {
-        try {
-       resultList.add((
-          columns
-            .get(colName)
-            .data.apply(times.get(lowerKey).dataIndex) +
-            (columns
-              .get(colName).data.map(_.toDouble).apply(times.get(higherKey).dataIndex) -
-             columns
-               .get(colName).data.map(_.toDouble).apply(times.get(lowerKey).dataIndex)) *
-            lowerKey.getDifferenceBetween(Milli, time) / lowerKey.getDifferenceBetween(Milli, higherKey))
+        if(lowerKey == null &&  higherKey == null) {
+            resultList.add(columns.get(colName)
+              .data.map(_.toDouble).apply(times.get(finalKey).dataIndex).asInstanceOf[AnyRef])
+        } else {
+          if(lowerKey == null){
+            lowerKey = time
+          } else if (higherKey == null) {
+            higherKey = time
+          }
+          val lowerKeyCol = columns.get(colName).data.apply(times.get(lowerKey).dataIndex)
+          val higherKeyCol = columns.get(colName).data.map(_.toDouble).apply(times.get(higherKey).dataIndex)
+          val lowerKeyCol2 = columns.get(colName).data.map(_.toDouble).apply(times.get(lowerKey).dataIndex)
+          val keyDiv = lowerKey.getDifferenceBetween(Milli, time) / lowerKey.getDifferenceBetween(Milli, higherKey)
+         resultList.add((lowerKeyCol + (higherKeyCol - lowerKeyCol2) * keyDiv)
          .toString)
         }
-        catch {
-          case e: IOException => throw new ExtensionException("Failed with ByTime")
-          case e: IndexOutOfBoundsException => throw new ExtensionException("Failed with ByTime: IndexOutOfBounds")
-          case e: NullPointerException => throw new ExtensionException(s"Failed with ByTime: NullPointerException: lowerKey: $lowerKey, higherKey: $higherKey, finalKey: $finalKey")
-        }
       } else {
-        resultList.add(
-          columns.get(colName).data.map(_.toDouble).apply(times.get(finalKey).dataIndex).asInstanceOf[AnyRef])
+        resultList.add(columns.get(colName)
+          .data.map(_.toDouble).apply(times.get(finalKey).dataIndex).asInstanceOf[AnyRef])
       }
     }
     if (resultList.size == 1) {
@@ -187,7 +201,7 @@ class LogoTimeSeries extends ExtensionObject {
   def getRangeByTime(timeLowArg: LogoTime,
                      timeHighArg: LogoTime,
                      columnName: String): AnyRef = {
-    if(columnName == null){ throw new ExtensionException(s"columnName is null") }
+    if(columnName == null){ throw new ExtensionException(s"$columnName is null") }
     var timeLow = timeLowArg
     var timeHigh = timeHighArg
     if (!timeLow.isBefore(timeHigh)) {
@@ -213,11 +227,12 @@ class LogoTimeSeries extends ExtensionObject {
 
     if (lowerKey == null || higherKey == null) {
       if (columnName == "ALL_-_COLUMNS" || columnName == "LOGOTIME") {
-//        resultList.add(LogoList.fromVector(scala.collection.immutable.Vector[Any](0, 0, 0).asInstanceOf[Vector[AnyRef]]))
-        resultList.add(LogoList.fromVector(scala.collection.immutable.Vector[Any](0, 0, 0).asInstanceOf[Vector[AnyRef]]))
+        resultList.add(LogoList
+          .fromVector(scala.collection.immutable.Vector[Any](0, 0, 0).asInstanceOf[Vector[AnyRef]]))
       }
       for (colName <- columnList.asScala) {
-         resultList.add(LogoList.fromVector(scala.collection.immutable.Vector[Any](0, 0, 0).asInstanceOf[Vector[AnyRef]]))
+        resultList.add(LogoList
+          .fromVector(scala.collection.immutable.Vector[Any](0, 0, 0).asInstanceOf[Vector[AnyRef]]))
       }
     } else {
       if (columnName.==("ALL_-_COLUMNS") || columnName.==("LOGOTIME")) {
@@ -225,15 +240,15 @@ class LogoTimeSeries extends ExtensionObject {
       }
       for (colName <- columnList.asScala) {
         resultList.add(
-          LogoList(columns
-                  .get(colName).data.toIterable
-                  .slice(times.get(lowerKey).dataIndex,
-                           times.get(higherKey).dataIndex + 1)))
+          LogoList(columns.get(colName).data.asInstanceOf[List[AnyRef]].toIterable
+                  .slice(times.get(lowerKey).dataIndex, times.get(higherKey).dataIndex + 1)))
       }
     }
     resultList.size match {
-      case 1 => resultList.get(0)
-      case _ => LogoList.fromJava(resultList)
+      case 1 =>
+        resultList.get(0)
+      case _ =>
+        LogoList.fromJava(resultList)
     }
   }
 

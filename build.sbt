@@ -11,5 +11,5 @@ lazy val src = (project in file("."))
   .settings(
     scalaSource in Compile := baseDirectory.value / "src",
     scalaSource in Test    := baseDirectory.value / "test",
-    scalacOptions ++= "-deprecation -unchecked -Xfatal-warnings"/*-Xlint*/.split(" ").toSeq
+    scalacOptions ++= "-deprecation -unchecked -Xfatal-warnings".split(" ").toSeq
   )
