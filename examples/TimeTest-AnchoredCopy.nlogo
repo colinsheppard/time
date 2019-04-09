@@ -1,132 +1,111 @@
-extensions [time]
+extensions [time table]
 
-globals [ gvar ]
-
-; The procedures below are meant to test the event scheduler's
-; schedule-event primitives. schedule-event inserts events
-; that are anchored to a specified time with ticks.
-; This primitive applies for turtles, a turtle, and
-; the observer context
-
-to setup
-  ca
+; All these tests in this model are meant to test the behavior of anchoring
+; and copying LogoTime. Since LogoTime has some implicit conversions with
+; copying these tests are meant to draw out those conversions
+; These tests do not check for truncating, datetype conversions
+; , or loss of information
+to run-tests
   reset-ticks
-  time:clear-schedule
-  set gvar 0
-  time:anchor-schedule time:create "2001-01-01" 1 "day"
+  copy-anchor-date
+  copy-anchor-datetime
+  copy-anchor-daydate
 end
 
-;; Scheduling Events in the event scheduler primitives ;;
-
-; schedule-turtles creates two scheduled events one and two days after 2001-01-01
-  ; the value of gvar should be 100 at the end and 50 after the first event
-
-to schedule-turtles
-  create-turtles 50
-  time:schedule-event turtles [[] -> set gvar gvar + 1] (time:create "2001-01-02")
-  time:schedule-event turtles [[] -> set gvar gvar + 1] (time:create "2001-01-03")
-end
-
-; schedule-turtle-0 creates two scheduled events one and two days after 2001-01-01
-  ; the value of gvar shoud be 1
-
-to schedule-turtle-0
-  create-turtles 1
-  time:schedule-event turtle 0 [[] -> set gvar gvar + 1] (time:create "2001-01-02")
-  time:schedule-event turtle 0 [[] -> set gvar gvar + 1] (time:create "2001-01-03")
-end
-
-; schedule-observer creates one scheduled event after 2001-01-01 to modify gvar
-  ; the value of gvar should be 1
-to schedule-observer
-  time:schedule-event "observer" [[] -> set gvar gvar + 1] (time:create "2001-01-02")
-end
-
-to run-test ; test observer scheduling events
-  setup     ; there should only be one observer event
-  schedule-observer
-  time:go
-  if time:size-of-schedule != 1 [ error "Failed to enter" ]
-  tick
-  if time:size-of-schedule != 1 [ error "Failed to enter" ]
-  time:go
-  if time:size-of-schedule != 0 [ error "Failed to enter" ]
-  if gvar != 1 [ error "Failed to increase" ]
-end
-
-to run-turtle-test ; test turtle agentset
-  setup            ; there should be 50 turtles in total
-  schedule-turtles
-  time:go
-  if time:size-of-schedule != 2 [ error (word "Failed to enter: " time:size-of-schedule) ]
-  tick
-  if time:size-of-schedule != 2 [ error (word "Failed to enter: " time:size-of-schedule)]
-  time:go
-  if time:size-of-schedule != 1 [ error "Failed to enter" ]
-  if gvar != 50 [ error (word "Failed to increase to 50 " gvar) ]
-  tick
-  if time:size-of-schedule != 1 [ error (word "Failed to enter: " time:size-of-schedule)]
-  time:go
-  if time:size-of-schedule != 0 [ error "Failed to enter" ]
-  if gvar != 100 [ error (word "Failed to increase to 100 " gvar) ]
-end
-
-to run-one-of-turtle-test ; test an individual turtle
-  setup                   ; there should be 1 turtle and it should be incremented to 1
-  schedule-turtle-0
-  time:go
-  if time:size-of-schedule != 2 [ error (word "Failed to enter: " time:size-of-schedule) ]
-  tick
-  if time:size-of-schedule != 2 [ error (word "Failed to enter: " time:size-of-schedule)]
-  time:go
-  if time:size-of-schedule != 1 [ error "Failed to enter" ]
-  if gvar != 1 [ error (word "Failed to increase to 50 " gvar) ]
-  tick
-  if time:size-of-schedule != 1 [ error (word "Failed to enter: " time:size-of-schedule)]
-  time:go
-  if time:size-of-schedule != 0 [ error "Failed to enter" ]
-  if gvar != 2 [ error (word "Failed to increase to 100 " gvar) ]
-end
-
-to test-decrement ; this tests the number of events added to the scheduler
-  setup             ; , scheduling 30 events and running them
-  let iter 1
-  while [ iter < 30 ] ; set a list of events
-    [ time:schedule-event "observer" [[] -> set gvar gvar + 1]
-      (time:create (word "2001-01-" ifelse-value iter < 10 [ word "0" iter ] [ iter ]))
-      set iter iter + 1 ]
-
-  while [ iter > 0 ] ; run a list of events off the queue
-  [
-    if time:size-of-schedule != (iter - 1) [ error word "Not the correct size " time:size-of-schedule ]
-    time:go tick
-    set iter iter - 1
+; copy-anchor-date permutes through a series of random dates
+; to check for any issues with anchoring
+to copy-anchor-date
+  print "Starting Tests......"
+  let dict table:make
+  table:put dict 0 "year"
+  table:put dict 1 "month"
+  table:put dict 2 "day"
+  repeat 100 [
+    let year 1000 + random 2000
+    let month 1 + random 12
+    let day 1 + random 28
+    let duration 1 + random 1000
+    let selected-duration-type random 3
+    let tick-date time:anchor-to-ticks (time:create (word year "-" month "-" day))
+           duration table:get dict selected-duration-type
+    reset-ticks
+    tick
+    let store-date time:copy tick-date
+    let store-same-date time:copy store-date
+    tick
+    if not time:is-before store-date tick-date
+      [ error (word store-date " is not before" tick-date) ]
+    if not time:is-after tick-date store-date
+      [ error (word store-date " is not after " tick-date) ]
+    if not time:is-equal store-date store-same-date
+        [ error (word store-date " is not equal to " store-same-date) ]
   ]
-  if gvar != 29 [ error "Failed at incrementing" ]
+  print "Finishing Tests......"
 end
 
-to test-empty ; this test checks clear-schedule command
-  ; this procedure checks if clear-schedule removes all events without invoking any of
-  ; the commands
-  setup
-  let iter 1
-  ; this while loop is creating 30 events, using the day format
-  while [ iter < 30 ]
-    [ time:schedule-event "observer" [[] -> set gvar gvar + 1] time:create word "2001-01-" iter
-      set iter iter + 1 ]
-  ; clear schedule and check if the queue has been cleared
-  time:clear-schedule
-  if time:size-of-schedule != 0 [ error word "Did not remove elements: " time:size-of-schedule ]
+; copy-anchor-daytime permutes through a series of random months and days
+; to check for any issues with anchoring
+to copy-anchor-daydate
+  ; this is just running
+  print "Starting Tests......"
+  let dict table:make
+  table:put dict 0 "day"
+  table:put dict 1 "month"
+  repeat 100 [
+    let month 1 + random 12
+    let day 1 + random 28
+    let duration 1 + random 1000
+    let selected-duration-type random 2
+    let tick-date time:anchor-to-ticks (time:create (word month "-" day))
+           duration table:get dict selected-duration-type
+    reset-ticks
+    tick
+    let store-date time:copy tick-date
+    let store-same-date time:copy store-date
+    tick
+  ]
+  print "Finishing Tests......"
 end
 
-to run-all-tests
-  print "*** Running batch of tests for schedule-event...."
-  run-test
-  run-turtle-test
-  run-one-of-turtle-test
-  test-decrement
-  test-empty
-  print "*** Completed Tests: No runtime errors with schedule-event"
+
+; copy-anchor-datetime permutes through a series of random dates and times
+; to check for any issues with anchoring
+to copy-anchor-datetime
+  print "Starting Tests......"
+  let dict table:make
+  table:put dict 0 "year"
+  table:put dict 1 "month"
+  table:put dict 2 "day"
+  table:put dict 3 "hour"
+  table:put dict 4 "minute"
+  table:put dict 5 "second"
+  table:put dict 6 "milli"
+
+  repeat 100 [
+    let year 1000 + random 2000
+    let month 1 + random 12
+    let day 1 + random 28
+    let hour random 24
+    let minute random 60
+    let second random 60
+    let milli random 1000
+    let duration 1 + random 1000
+    let selected-duration-type random 7
+    let tick-date time:anchor-to-ticks (time:create (word year "-" month "-" day " " hour ":" minute ":" second "." milli))
+           duration table:get dict selected-duration-type
+    reset-ticks
+    tick
+    let store-date time:copy tick-date ; copy the current ticked value
+    let store-same-date time:copy store-date ; create a second copy for comparison
+    tick
+    if not time:is-before store-date tick-date
+      [ error (word store-date " is not before" tick-date) ]
+    if not time:is-after tick-date store-date
+      [ error (word store-date " is not after " tick-date) ]
+    if not time:is-equal store-date store-same-date
+        [ error (word store-date " is not equal to " store-same-date) ]
+  ]
+  print "Finishing Tests......"
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -156,14 +135,31 @@ GRAPHICS-WINDOW
 ticks
 30.0
 
+BUTTON
+43
+95
+184
+128
+Run Test Batch
+run-tests
+NIL
+1
+T
+OBSERVER
+NIL
+R
+NIL
+NIL
+1
+
 @#$#@#$#@
 ## WHAT IS IT?
 
-(This file contains test and example codes for the time extension.)
+(This file contains test and example codes for the time extension)
 
 ## CREDITS AND REFERENCES
 
-(Created 02/12/2019 Charly B. Resendiz)
+(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
 @#$#@#$#@
 default
 true
@@ -470,7 +466,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.4
+NetLogo 6.1.0-RC1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@

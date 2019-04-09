@@ -1,98 +1,105 @@
-extensions [time table]
-
-globals [global-time global-var date-table]
+extensions [time]
 
 to run-tests
+  print "--- Starting Test Batch ---"
+  access-fields
+  add-time
+  add-datetime
+  print "--- Finished Test Batch ---"
 end
 
-to setup-dict
-  set date-table table:make
-  table:put date-table "day" 30
-  table:put date-table "month" 11
-  table:put date-table "year" 100
-  table:put date-table "hour" 23
-  table:put date-table "minute" 60
-  table:put date-table "second" 60
-  table:put date-table "milli" 1000
-end
-;; The test below are focused on behaviors around setup-anchor
+to access-fields
+  ; The procedure access-fields tests that time:get does not report an incorrect value
+  print "Test: Access Fields"
+  print "Starting tests........"
+  repeat 100 [
+    ; provides a random date and time for testing
+    let year 1000 + random 2000
+    let day 1 + random 28
+    let month 1 + random 12
+    let hour 12
+    let minute random 60
+    let second random 60
+    let milli 100 + random 900
 
-to setup-anchor [ date-unit time ]
-  ; don't place anything above clear-all or reset-ticks
-  clear-all
-  reset-ticks
-  setup-dict
-  time:anchor-schedule time 1 date-unit
-end
+    ; creates a string of the appropriate time and creates a LogoTime
+    let the-time-string (word year "/" month "/" day " " hour ":" minute ":" second "." milli)
+    let dt time:create-with-format the-time-string "yyyy/M/d H:m:s.SSS" ; this has a relaxed pattern for single digit values
 
-to test-anchor
-  print "Starting Tests...."
-  test-anchor-progress
-  print "Starting Slow Tests...."
-  slow-test-schedule-events
-  slow-test-schedule-events-shuffled
-  print "Finished Testing...."
-end
+    ; accesses the LogoTime values
+    let year-record time:get "year" dt
+    let month-record time:get "month" dt
+    let day-record time:get "day" dt
+    let hour-record time:get "hour" dt
+    let minute-record time:get "minute" dt
+    let second-record time:get "second" dt
+    let milli-record time:get "milli" dt
 
-to slow-test-schedule-events
-  repeat 10000 [
-    foreach [ "day" "month" "year" "hour" "minute" "second" ] [[ time-unit ] -> test-schedule-events time-unit table:get date-table time-unit (time:create "2000-01-01 00:00:00.000") ]
-    foreach [ "day" "month" "year" ] [[ time-unit ] -> test-schedule-events time-unit table:get date-table time-unit (time:create "2000-01-01") ]
-    foreach [ "day" "month" ] [[ time-unit ] -> test-schedule-events time-unit table:get date-table time-unit (time:create "01-01") ]]
-end
-
-to slow-test-schedule-events-shuffled
-  repeat 10000 [
-    foreach [ "day" "month" "year" "hour" "minute" "second" ] [[ time-unit ] -> test-schedule-events time-unit table:get date-table time-unit (time:create "2000-01-01 00:00:00.000") ]
-    foreach [ "day" "month" "year" ] [[ time-unit ] -> test-schedule-events time-unit table:get date-table time-unit (time:create "2000-01-01") ]
-    foreach [ "day" "month" ] [[ time-unit ] -> test-schedule-events time-unit table:get date-table time-unit (time:create "01-01") ]]
+    ; checks whether the value was allocated currently
+    if year != year-record or month != month-record
+       or day != day-record or hour != hour-record or minute != minute-record
+       or second != second-record or milli != milli-record
+       [ print (word year-record "/" month-record "/" day-record " " hour-record ":" minute-record ":" second-record)
+         print (word year "/" month "/" day " " hour ":" minute ":" second)
+         error "Dates don't match up" ]
+  ]
+  print "Finished testing......"
 end
 
-to test-anchor-progress
-  setup-anchor "day" (time:create "2000-01-01 00:00:00.000")
-  set global-var 0
-  time:schedule-event "observer" [[] -> set global-var 1 ] (time:create "2000-01-30 00:00:00.000")
-  time:schedule-event "observer" [[] -> error "We went to far into the future" ] (time:create "2000-01-31 00:00:00.000")
-  repeat 29 [ tick time:go ]
-  time:clear-schedule
-  if global-var != 1 [ error "Scheduler failed to adjust global-var" ]
-  set global-var 0
+; The add-datetime test checks that time:difference applies correctly for datetime arguments
+to add-datetime
+  print "\nTest: Add Dates"
+  print "Starting tests........"
+  repeat 100 [
+    let year 1000 + random 2000
+    let day 1 + random 28
+    let month 1 + random 12
+    let hour 24
+    let minute random 60
+    let second random 60
+    let milli 100 + random 900
+
+    let the-time-string (word year "/" month "/" day " " "00" ":" "00" ":" "00" "." milli)
+    let dt time:create-with-format the-time-string "yyyy/M/d H:m:s.SSS" ; this has a relaxed pattern for single digit values
+    let newdt time:plus dt random 24 "hour"
+    let newdt2 time:plus dt (24 + random 24) "hour"
+    if not time:is-between newdt dt newdt2
+     [ print time:show dt "yyyy/MM/dd HH:mm:ss.SSS"
+       print time:show newdt "yyyy/MM/dd HH:mm:ss.SSS"
+       print time:show newdt2 "yyyy/MM/dd HH:mm:ss.SSS"
+       error (word "The LogoTime: " dt " is not between " newdt " and " newdt) ]
+  ]
+  print "Finished testing......"
 end
 
-to test-schedule-events [ date-unit number logotime ]
-  setup-anchor date-unit logotime
-  set global-var 0
-  let n 1 + random number
-  time:schedule-event "observer" [[] -> set global-var 1] time:plus logotime n date-unit
-  repeat n [ tick time:go ]
-  if global-var != 1 [ error "Scheduler failed to adjust global-var" ]
+; The add-time test is meant to capture any internal conversion issues with add any units up
+  ; Since time is more consistent than month, years, and days, this procedure only captures time
+to add-time
+  print "\nTest: Add Time"
+  print "Starting tests......."
+  repeat 100 [
+    ; assign a random date and time
+    let year 1000 + random 2000
+    let day 1 + random 28
+    let month 1 + random 12
 
-  setup-anchor date-unit logotime
-  set global-var 0
-  time:schedule-event "observer" [[] -> set global-var 1] time:plus logotime n date-unit
-  repeat n [ time:go tick ]
-  if global-var != 0 [ error word "Scheduler should not adjusted value: global-var | unit: " date-unit ]
-  time:go
-  if global-var != 1 [ error "Scheduler failed to adjust global-var" ]
-  set global-var 0
-end
+    let seconds random 60
+    let minutes random 60
+    let hours   random 24
 
-to test-schedule-events-shuffled [ date-unit number logotime ]
-  setup-anchor date-unit logotime
-  set global-var 0
-  let n 1 + random number
-  time:schedule-event-shuffled "observer" [[] -> set global-var 1] time:plus logotime n date-unit
-  repeat n [ tick time:go ]
-  if global-var != 1 [ error "Scheduler failed to adjust global-var" ]
+    ;; find total distance from a time
+    let total-duration seconds + minutes * 60 + hours * 3600 + day * 24 * 3600
+    let the-time-string (word year "-" month "-" day " " "00" ":" "00" ":" "00" "." "000")
+    let extra time:create the-time-string
+    let dt time:create-with-format the-time-string "yyyy-M-d H:m:s.SSS" ; this has a relaxed pattern for single digit values
+    set dt time:plus dt seconds "second"
+    set dt time:plus dt minutes "minute"
+    set dt time:plus dt hours   "hour"
 
-  setup-anchor date-unit logotime
-  set global-var 0
-  time:schedule-event-shuffled "observer" [[] -> set global-var 1] time:plus logotime n date-unit
-  repeat n [ time:go tick ]
-  if global-var != 0 [ error word "Scheduler should not adjusted value: global-var | unit: " date-unit ]
-  time:go
-  if global-var != 1 [ error "Scheduler failed to adjust global-var" ]
-  set global-var 0
+    let total-time-duration 24 * 3600 * (time:get "day" dt) + 3600 * (time:get "hour" dt) + 60 * (time:get "minute" dt) + (time:get "second" dt)
+    if total-time-duration != total-duration [ error (word "Recorded time duration: " total-time-duration " actually time length: " total-duration) ]
+  ]
+  print "Finished testing....."
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -122,38 +129,28 @@ GRAPHICS-WINDOW
 ticks
 30.0
 
+BUTTON
+51
+30
+192
+63
+Run Test Batch
+run-tests
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
 @#$#@#$#@
 ## WHAT IS IT?
 
-(a general understanding of what the model is trying to show or explain)
+(This file contains test and example codes for the time extension)
 
-## HOW IT WORKS
-
-(what rules the agents use to create the overall behavior of the model)
-
-## HOW TO USE IT
-
-(how to use the model, including a description of each of the items in the Interface tab)
-
-## THINGS TO NOTICE
-
-(suggested things for the user to notice while running the model)
-
-## THINGS TO TRY
-
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
-
-## EXTENDING THE MODEL
-
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
-
-## NETLOGO FEATURES
-
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
-
-## RELATED MODELS
-
-(models in the NetLogo Models Library and elsewhere which are of related interest)
 
 ## CREDITS AND REFERENCES
 
@@ -464,7 +461,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.4
+NetLogo 6.1.0-RC1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@

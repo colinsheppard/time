@@ -10,10 +10,10 @@ import org.nlogo.nvm.ExtensionContext
 import org.nlogo.extensions.time._
 import scala.util.{Try, Success, Failure}
 import util.control.Breaks.{breakable, break}
+import scala.util.Try
 import scala.collection.JavaConverters._
 
 class LogoTimeSeries extends ExtensionObject {
-
   var times: TreeMap[LogoTime, TimeSeriesRecord] =
     new TreeMap[LogoTime, TimeSeriesRecord](new LogoTimeComparator())
   var columns: LinkedHashMap[java.lang.String, TimeSeriesColumn] =
@@ -192,15 +192,13 @@ class LogoTimeSeries extends ExtensionObject {
       }
     }
     if (resultList.size == 1) {
-      resultList.get(0).asInstanceOf[AnyRef]
+      resultList.get(0)
     } else {
       LogoList.fromJava(resultList)
     }
   }
 
-  def getRangeByTime(timeLowArg: LogoTime,
-                     timeHighArg: LogoTime,
-                     columnName: String): AnyRef = {
+  def getRangeByTime(timeLowArg: LogoTime, timeHighArg: LogoTime, columnName: String): AnyRef = {
     if(columnName == null){ throw new ExtensionException(s"$columnName is null") }
     var timeLow = timeLowArg
     var timeHigh = timeHighArg
@@ -210,8 +208,8 @@ class LogoTimeSeries extends ExtensionObject {
       timeHigh = timeTemp
     }
 
-    val columnList: ArrayList[String] = new ArrayList[String](columns.size)
-    val resultList: ArrayList[LogoList] = new ArrayList[LogoList](columns.size)
+    var columnList: ArrayList[String] = new ArrayList[String](columns.size)
+    var resultList: ArrayList[LogoList] = new ArrayList[LogoList](columns.size)
     columnName match {
         case "ALL_-_COLUMNS" => columnList.addAll(columns.keySet)
         case "LOGOTIME" =>
@@ -227,27 +225,38 @@ class LogoTimeSeries extends ExtensionObject {
 
     if (lowerKey == null || higherKey == null) {
       if (columnName == "ALL_-_COLUMNS" || columnName == "LOGOTIME") {
-        resultList.add(LogoList
-          .fromVector(scala.collection.immutable.Vector[Any](0, 0, 0).asInstanceOf[Vector[AnyRef]]))
+        resultList.add(LogoList.fromVector(scala.collection.immutable.Vector[Any](0, 0, 0).asInstanceOf[Vector[AnyRef]]))
       }
       for (colName <- columnList.asScala) {
-        resultList.add(LogoList
-          .fromVector(scala.collection.immutable.Vector[Any](0, 0, 0).asInstanceOf[Vector[AnyRef]]))
+        resultList.add(
+          LogoList.fromVector(scala.collection.immutable.Vector[Any](0, 0, 0)
+            .asInstanceOf[Vector[AnyRef]]))
       }
     } else {
       if (columnName.==("ALL_-_COLUMNS") || columnName.==("LOGOTIME")) {
         resultList.add(LogoList.fromJava(times.subMap(lowerKey, true, higherKey, true).keySet))
       }
       for (colName <- columnList.asScala) {
-        resultList.add(
-          LogoList(columns.get(colName).data.asInstanceOf[List[AnyRef]].toIterable
-                  .slice(times.get(lowerKey).dataIndex, times.get(higherKey).dataIndex + 1)))
+        resultList.add(LogoList.fromJava(columns.get(colName).data
+          .slice(from = times.get(lowerKey).dataIndex, until = times.get(higherKey).dataIndex + 1).asJava))
       }
     }
     resultList.size match {
       case 1 =>
-        resultList.get(0)
-      case _ =>
+        val allDoubles = resultList.get(0).toVector
+          .forall(x =>
+            try {
+              x.asInstanceOf[String].toDouble.asInstanceOf[AnyRef]; true
+            } catch {
+              case _: Throwable => false
+            }
+          )
+        if(allDoubles)
+          LogoList.fromVector(resultList.get(0).toVector
+            .map(x => x.asInstanceOf[String].toDouble.asInstanceOf[AnyRef]))
+        else
+          resultList.get(0)
+      case n =>
         LogoList.fromJava(resultList)
     }
   }

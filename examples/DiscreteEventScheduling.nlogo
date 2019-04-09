@@ -71,10 +71,6 @@ end
 ;; dynamically.  It's usually best to either use go-until.  The stop button won't work with this extension to
 ;; halt activity while a schedule is being dispatched.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-to go
-  setup
-  time:go
-end
 
 to go-until
   setup
@@ -530,7 +526,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.4
+NetLogo 6.1.0-RC1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@

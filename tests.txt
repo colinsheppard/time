@@ -1,8 +1,11 @@
 TimeModelDiscreteScheduling
   OPEN> extensions/time/examples/DiscreteEventScheduling.nlogo
   O> setup
-  O> go
   O> go-until
+
+TimeModelTimeSeriesReadWrite
+  OPEN> extensions/time/examples/TimeSeriesTest-CSVReadWrite.nlogo
+  O> run-test
 
 TimeModelSchedulingBenchmark
   OPEN> extensions/time/examples/SchedulingBenchmark.nlogo
@@ -25,27 +28,19 @@ TimeModelTimeSeriesExample
   O> go
 
 TimeModelTimeTestAnchored
-  OPEN> extensions/time/examples/TimeTests_Anchored_Copies_2019_02_06.nlogo
+  OPEN> extensions/time/examples/TimeTest-AnchoredCopy.nlogo
   O> run-tests
 
-TimeModelTimeTests_Formatter_2019_02_05
-  OPEN> extensions/time/examples/TimeTests_Formatter_2019_02_05.nlogo
+TimeModelTimeTestsFormatter
+  OPEN> extensions/time/examples/TimeTest-Formatter.nlogo
   O> run-tests
 
-TimeModelTimeTests_Repeating_Events_2019_02_11
-  OPEN> extensions/time/examples/TimeTests_Repeating_Events_2019_02_11.nlogo
+TimeModelTimeTestRepeatingEvents_2019_02_11
+  OPEN> extensions/time/examples/TimeTest-RepeatingEvent.nlogo
   O> run-tests
 
-TimeModelTimeTests_Schedule_Event_2019_02_12
-  OPEN> extensions/time/examples/TimeTests_Schedule_Event_2019_02_12.nlogo
-  O> run-all-tests
-
-TimeModelTimeTests_Schedule_Lengths_2019_02_15
-  OPEN> extensions/time/examples/TimeTests_Schedule_Lengths_2019_02_15.nlogo
-  O> run-tests
-
-TimeModelTimeTests_Schedule_Units_2019_02_11
-  OPEN> extensions/time/examples/TimeTests_Schedule_Units_2019_02_11.nlogo
+TimeModelTimeTestsScheduleLength_2019_02_15
+  OPEN> extensions/time/examples/TimeTest-ScheduleLength.nlogo
   O> run-tests
 
 TimeModelTimeTests_SFR_2019-01-29
@@ -67,7 +62,6 @@ TimeModelTimeTests_VariableTimeStepDemo
   OPEN> extensions/time/examples/VariableTimeStepDemo.nlogo
   O> setup
   O> go
-
 
 TimeCreateDefault
   extensions [time]
@@ -270,8 +264,7 @@ TimeDiscreteEventAddEventTick
   O> set dt time:anchor-to-ticks (time:create "2000/01/01 10:00") 1 "day"
   O> time:anchor-schedule dt 1 "day"
   O> time:schedule-event "observer" ([[] -> ask one-of turtles [set cheese 0]]) 2.0
-  O> tick time:go
-  O> tick time:go
+  O> time:go
   [ cheese ] of one-of turtles => 0
 
 TimeDiscreteEventAddEventDate
@@ -284,8 +277,7 @@ TimeDiscreteEventAddEventDate
   O> set dt time:anchor-to-ticks (time:create "2000/01/01 10:00") 1 "day"
   O> time:anchor-schedule dt 1 "day"
   O> time:schedule-event "observer" ([[] -> ask one-of turtles [set cheese 0]]) (time:create "2000/01/02 10:00")
-  O> tick time:go
-  O> tick time:go
+  O> time:go
   [ cheese ] of one-of turtles => 0
 
 TimeDiscreteEventAdd1
@@ -297,8 +289,7 @@ TimeDiscreteEventAdd1
   [ cheese ] of one-of turtles => 3
   O> time:anchor-schedule time:create "2000/01/01 10:00" 1 "day"
   O> time:schedule-event "observer" ([[] -> ask one-of turtles [set cheese 0]]) (time:create "2000/01/02 10:00")
-  O> tick time:go
-  O> tick time:go
+  O> time:go
   [ cheese ] of one-of turtles => 0
 
 TimeDiscreteEventAdd2
@@ -310,8 +301,7 @@ TimeDiscreteEventAdd2
   [ cheese ] of one-of turtles => 3
   O> time:anchor-schedule time:create "2000/01/01 10:00" 1 "day"
   O> time:schedule-event "observer" ([[] -> ask one-of turtles [set cheese 0]]) (time:create "2000/01/03 10:00")
-  O> tick time:go
-  O> tick time:go
+  O> time:go
   [ cheese ] of one-of turtles => 0
 
 TimeDiscreteEventAdd3
@@ -323,9 +313,9 @@ TimeDiscreteEventAdd3
   [ cheese ] of one-of turtles => 3
   O> time:anchor-schedule time:create "2000/01/01 10:00" 1 "day"
   O> time:schedule-event "observer" ([[] -> ask one-of turtles [set cheese 0]]) (time:create "2000/01/04 10:00")
-  O> tick time:go
-  O> tick time:go
   [ cheese ] of one-of turtles => 3
+  O> time:go
+  [ cheese ] of one-of turtles => 0
 
 TimeDiscreteTurtlesMovement
   extensions [time]
@@ -333,8 +323,7 @@ TimeDiscreteTurtlesMovement
   O> reset-ticks
   O> time:anchor-schedule time:create "2000/01/01 10:00" 1 "year"
   O> time:schedule-event turtles ([[] -> setxy 3 3]) 2.0
-  O> tick time:go
-  O> tick time:go
+  O> time:go
   [ ycor ] of one-of turtles => 3
 
 TimeDiscreteTurtleMovement
@@ -343,8 +332,7 @@ TimeDiscreteTurtleMovement
   O> reset-ticks
   O> time:anchor-schedule time:create "2000/01/01 10:00" 1 "year"
   O> time:schedule-event turtle 0 ([[] -> setxy 1 1]) 2.0
-  O> tick time:go
-  O> tick time:go
+  O> time:go
   [ ycor ] of turtle 0 => 1
 
 TimeDiscreteSuccess
@@ -362,17 +350,8 @@ TimeDiscreteRepeating
   O> time:anchor-schedule time:create "2000/01/01 10:00" 1 "year"
   O> time:schedule-repeating-event turtles ([[] -> set step step + 1 setxy step step]) (time:create "2000/01/02 10:00") 2.0
   [ ycor ] of one-of turtles => 0
-  O> tick time:go
+  O> time:go-until (time:plus (time:create "2000/01/02 10:00") 1 "year")
   [ ycor ] of one-of turtles => 1
-  O> tick time:go
-  [ ycor ] of one-of turtles => 2
-  O> tick time:go
-  [ ycor ] of one-of turtles => 2
-  O> tick time:go
-  [ ycor ] of one-of turtles => 3
-  O> tick time:go
-  [ ycor ] of one-of turtles => 3
-  O> tick time:go
 
 TimeGetCommandDateTime
    extensions [time]
@@ -436,3 +415,63 @@ TimePlusExamples
    time:show (time:plus (time:create-with-format "2000-01-01 10:00:00.000" "yyyy-MM-dd HH:mm:ss.SSS") 1 "hour") "MM-dd-yyyy" => "01-01-2000"
    O> ;time:show (time:plus t-date 1 "hour") "MM-dd-yyyy" this needs attention
    O> set t-date time:plus t-date 1 "hour"
+
+TimeSeriesReadWrite_Default
+  extensions [time]
+  globals [ts ts_out random_flow0 random_flow1 flow_value0 flow_value1]
+  O> set random_flow0 (random 100)
+  O> set random_flow1 (random 100)
+  O> set ts time:ts-create ["flow" "temp"]
+  O> time:ts-add-row ts (list (time:create "2000-01-01") random_flow0 2)
+  O> time:ts-add-row ts (list (time:create "2000-01-02") random_flow1 5)
+  O> time:ts-write ts "new-ts-output.csv"
+  O> set ts_out time:ts-load "new-ts-output.csv"
+  O> set flow_value0 time:ts-get ts_out (time:create "2000-01-01") "flow"
+  O> set flow_value1 time:ts-get ts_out (time:create "2000-01-02") "flow"
+  O> if (flow_value0 != random_flow0) [ error "Read and Write Error" ]
+  O> if (flow_value1 != random_flow1) [ error "Read and Write Error" ]
+
+TimeSeriesReadWrite_Exact
+  extensions [time]
+  globals [ts ts_out random_flow0 random_flow1 flow_value0-exact flow_value1-exact]
+  O> set random_flow0 (random 100)
+  O> set random_flow1 (random 100)
+  O> set ts time:ts-create ["flow" "temp"]
+  O> time:ts-add-row ts (list (time:create "2000-01-01") random_flow0 2)
+  O> time:ts-add-row ts (list (time:create "2000-01-02") random_flow1 5)
+  O> time:ts-write ts "new-ts-output.csv"
+  O> set ts_out time:ts-load "new-ts-output.csv"
+  O> set flow_value0-exact time:ts-get-exact ts_out (time:create "2000-01-01") "flow"
+  O> set flow_value1-exact time:ts-get-exact ts_out (time:create "2000-01-02") "flow"
+  O> if (flow_value0-exact != random_flow0) [ error "Read and Write Error" ]
+  O> if (flow_value1-exact != random_flow1) [ error "Read and Write Error" ]
+
+TimeSeriesReadWrite_Interp
+  extensions [time]
+  globals [ts ts_out random_flow0 random_flow1 flow_value0-interp flow_value1-interp]
+  O> set random_flow0 (random 100)
+  O> set random_flow1 (random 100)
+  O> set ts time:ts-create ["flow" "temp"]
+  O> time:ts-add-row ts (list (time:create "2000-01-01") random_flow0 2)
+  O> time:ts-add-row ts (list (time:create "2000-01-02") random_flow1 5)
+  O> time:ts-write ts "new-ts-output.csv"
+  O> set ts_out time:ts-load "new-ts-output.csv"
+  O> set flow_value0-interp time:ts-get-interp ts_out (time:create "2000-01-01") "flow"
+  O> set flow_value1-interp time:ts-get-interp ts_out (time:create "2000-01-02") "flow"
+  O> if (flow_value0-interp != random_flow0) [ error "Read and Write Error" ]
+  O> if (flow_value1-interp != random_flow1) [ error "Read and Write Error" ]
+
+TimeSeriesGetRange
+  extensions [time]
+  globals [ts ts_out random_flow0 random_flow1 flow_value0-interp flow_value1-interp start-time end-time]
+  O> set random_flow0 47
+  O> set random_flow1 52
+  O> set start-time time:create "1999-12-31"
+  O> set end-time time:create "2000-01-03"
+  O> set ts time:ts-create ["flow" "temp"]
+  O> time:ts-add-row ts (list (time:create "2000-01-01") random_flow0 2)
+  O> time:ts-add-row ts (list (time:create "2000-01-02") random_flow1 5)
+  (time:ts-get-range ts start-time end-time "flow") => ["47.0" "52.0"]
+  O> time:ts-write ts "new-ts-range.csv"
+  O> set ts_out (time:ts-load-with-format "new-ts-range.csv" "YYYY-MM-dd")
+  length (time:ts-get-range ts_out start-time end-time "flow") => 2

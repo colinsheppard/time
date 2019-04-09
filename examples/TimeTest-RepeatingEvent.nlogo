@@ -5,75 +5,51 @@ globals [global-var]
 ; self schedule an event with a later date. Shuffling
 ; is part of the primitive to allow randomized order
 to schedule-events-shuffled
+  reset-ticks
   let dt (time:create "2000-01-01 10:00:00")
   time:anchor-schedule dt 1 "hour"
   time:schedule-repeating-event-shuffled turtles [[] -> fd 1] 0 2.0 ; run at 4, and stop (but still run) at 8: [ 4, 6, 8 ] total of three runs
+  time:go-until (time:create "2000-01-01 12:00:00")
 end
 
 ; this procedure schedules repeating events that will
 ; schedule an event at a later date. This is calculated
 ; internally
 to schedule-events-repeated
+  reset-ticks
   let dt (time:create "2000-01-01 00:00:00")
   time:anchor-schedule dt 1 "hour"
   time:schedule-repeating-event turtles [[] -> fd 1] 0 2.0 ; run at 4, and stop (but still run) at 8: [ 4, 6, 8 ] total of three runs
+  time:go-until (time:create "2000-01-01 12:00:00")
 end
 
 
 to schedule-events-repeated-observer
+  reset-ticks
+  set global-var 0
   let dt (time:create "2000-01-01 00:00:00")
   time:anchor-schedule dt 1 "hour"
   time:schedule-repeating-event "observer" [[] -> set global-var global-var + 1] 0 2.0 ; run at 4, and stop (but still run) at 8: [ 4, 6, 8 ] total of three runs
+  time:go-until (time:plus dt 3 "hour")
+  if (global-var != 2) [error "Observer did not adjust properly"]
 end
 
 to schedule-events-repeated-shuffled-observer
+  reset-ticks
+  set global-var 0
   let dt (time:create "2000-01-01 00:00:00")
   time:anchor-schedule dt 1 "hour"
-  time:schedule-repeating-event "observer" [[] -> set global-var global-var + 1] 0 2.0 ; run at 4, and stop (but still run) at 8: [ 4, 6, 8 ] total of three runs
-end
-
-; schedule-event-with-movement-shuffled creates a turtle
-; and assigns total number of ticks. This is to help
-; determine the possible location after a certain number of
-; ticks.
-to schedule-event-with-movement-shuffled
-  clear-all
-  reset-ticks
-  ; crete a bunch of turtles that face a direction
-  crt 1 [ setxy 0 0 facexy 5 0 ]
-  schedule-events-shuffled
-  let increment 1
-  let assigned-iteration ((random 10) + 5) * 2
-  repeat assigned-iteration [
-    time:go
-    tick
-  ]
-  if [ xcor ] of one-of turtles != (assigned-iteration / 2) [ error (word "The interval of runs failed run " [xcor] of one-of turtles " " (assigned-iteration / 2)) ]
-end
-
-; schedule-event-with-movement creates a turtle
-; and assigns total number of ticks. This is to help
-; determine the possible location after a certain number of
-; ticks.
-to schedule-event-with-movement
-  clear-all
-  reset-ticks
-  ; create a bunch of turtles that face a direction
-  crt 1 [ setxy 0 0 facexy 5 0 ]
-  schedule-events-repeated
-  let increment 1
-  let assigned-iteration ((random 10) + 5) * 2
-  repeat assigned-iteration [
-    time:go
-    tick
-  ]
-  if [ xcor ] of one-of turtles != (assigned-iteration / 2) [ error (word "The interval of runs failed run " [xcor] of one-of turtles " " (assigned-iteration / 2)) ]
+  time:schedule-repeating-event-shuffled "observer" [[] -> set global-var global-var + 1] 0 2.0 ; run at 4, and stop (but still run) at 8: [ 4, 6, 8 ] total of three runs
+  time:go-until (time:plus dt 3 "hour")
+  if (global-var != 2) [error "Observer did not adjust properly"]
 end
 
 to schedule-repeated-test
   print "Starting tests..."
-  repeat 10000 [ schedule-event-with-movement-shuffled ]
-  repeat 10000 [ schedule-event-with-movement ]
+  repeat 1000 [ schedule-events-shuffled ]
+  repeat 1000 [ schedule-events-repeated ]
+  repeat 1000 [ schedule-events-repeated-observer ]
+  repeat 1000 [ schedule-events-repeated-shuffled-observer ]
   print "Finished testing..."
 end
 
@@ -439,7 +415,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.4
+NetLogo 6.1.0-RC2
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@

@@ -1,318 +1,104 @@
-extensions [time]
+extensions [time table]
 
-; Order of testing
-  ;; time:show-schedule
-  ;; time:schedule-event
-  ;; time:schedule-repeating-events
-
-  ;; time:go
-  ;; time:go-until
-
-to setup
-  ; this procedure creates 5 turtles and anchors the scheduler to test if any of the actions took place
-  reset-ticks
-  create-turtles 5
-  time:anchor-schedule (time:create "2001-01-01 10:00:00.000") 1 "hour"
-end
-
-; DateTime formatting and event-scheduling
-; These procedures are meant to check the number of scheduled events along
- ; checking if the schedulers does remove events
- ; this applies for all possible units
-to queue-second-datetime
-  let value 0
-  reset-ticks
-  time:anchor-schedule (time:create "2001-01-01 10:00:00.000") 1 "second"
-  time:clear-schedule
-  repeat 60 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-01-01 10:00:" value ".000"))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 60 [
-    error "The size of the schedule should be 24"
-  ] [ print "Second-DateTime: Pass" ]
-end
-
-to run-queue-second-datetime
-  let value 0
-  while [ value < 60 ]
-  [ time:go
-    if time:size-of-schedule != 60 - (value + 1) [
-      error "The queue doesn't match"
-    ]
-    set value value + 1
-    tick
-  ]
-end
-
-to queue-minute-datetime
-  let value 0
-  reset-ticks
-  time:anchor-schedule (time:create "2001-01-01 10:00:00.000") 1 "minute"
-  time:clear-schedule
-  repeat 60 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-01-01 10:" value ":00.000"))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 60 [
-    error "The size of the schedule should be 60"
-  ] [ print "Minute-DateTime: Pass" ]
-end
-
-to run-queue-minute-datetime
-  let value 0
-  while [ value < 60 ]
-  [ time:go
-    if time:size-of-schedule != 60 - (value + 1) [
-      error "The queue doesn't match"
-    ]
-    set value value + 1
-    tick
-  ]
-end
-
-
-to queue-hour-datetime
-  let value 0
-  reset-ticks
-  time:anchor-schedule (time:create "2001-01-01 00:00:00.000") 1 "hour"
-  time:clear-schedule
-  repeat 24 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-01-01 " value ":00:00.000"))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 24 [
-    error "The size of the schedule should be 24"
-  ] [ print "Hour-DateTime: Pass" ]
-end
-
-
-to run-queue-hour-datetime
-  let value 0
-  while [ value < 24 ]
-  [ time:go
-    if time:size-of-schedule != 24 - (value + 1) [
-      error "The queue doesn't match"
-    ]
-    set value value + 1
-    tick
-  ]
-end
-
-to queue-day-datetime
-  let value 1
-  reset-ticks
-  time:anchor-schedule (time:create "2001-01-01 10:00:00.000") 1 "day"
-  time:clear-schedule
-  repeat 28 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-01-" value " 10:00:00.000"))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 28 [
-    error "The size of the schedule should be 28"
-  ] [ print "Day-DateTime: Pass" ]
-end
-
-to queue-month-datetime
-  let value 1
-  reset-ticks
-  time:anchor-schedule (time:create "2001-01-01 10:00:00.000") 1 "month"
-  time:clear-schedule
-  repeat 12 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-" value "-01 10:00:00.000"))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 12 [
-    error "The size of the schedule should be 12"
-  ] [ print "Month-DateTime: Pass" ]
-end
-
-to queue-year-datetime
-  let value 1
-  reset-ticks
-  time:anchor-schedule (time:create "2001-01-01 10:00:00.000") 1 "year"
-  time:clear-schedule
-  repeat 12 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "20" (ifelse-value (value < 10) [(word "0" value)] [value])  "-01-01 10:00:00.000"))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 12 [
-    error "The size of the schedule should be 12"
-  ] [ print "Year-Date: Pass" ]
-end
-
-;; Date Formatting
-
-
-to run-queue-day-date
-  let value 1
-  while [ value < 28 ]
-  [ time:go
-    if time:size-of-schedule != 28 - value [
-      error "The queue doesn't match"
-    ]
-    set value value + 1
-    tick
-  ]
-end
-
-to queue-day-date
-  let value 1
-  reset-ticks
-  time:anchor-schedule (time:create "2001-01-01") 1 "day"
-  time:clear-schedule
-  repeat 28 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-01-" value ""))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 28 [
-    error "The size of the schedule should be 28"
-  ] [ print "Day-Date: Pass" ]
-end
-
-to run-queue-month-date
-  let value 1
-  while [ value < 12 ]
-  [ time:go
-    if time:size-of-schedule != 12 - value [
-      error "The queue doesn't match"
-    ]
-    set value value + 1
-    tick
-  ]
-end
-
-to queue-month-date
-  let value 1
-  reset-ticks
-  time:anchor-schedule (time:create "2001-01-01") 1 "month"
-  time:clear-schedule
-  repeat 12 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "2001-" value "-01"))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 12 [
-    error "The size of the schedule should be 12"
-  ] [ print "Month-Date: Pass" ]
-end
-
-to run-queue-year-date
-  let value 1
-  while [ value < 12 ]
-  [ time:go
-    if time:size-of-schedule != 12 - value [
-      error "The queue doesn't match"
-    ]
-    set value value + 1
-    tick
-  ]
-end
-
-
-to queue-year-date
-  let value 1
-  reset-ticks
-  time:anchor-schedule (time:create "2001-01-01") 1 "year"
-  time:clear-schedule
-  repeat 12 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "20" (ifelse-value (value < 10) [(word "0" value)] [value]) "-01-01"))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 12 [
-    error "The size of the schedule should be 12"
-  ] [ print "Month-Date: Pass" ]
-end
-
-to run-queue-month-day
-  let value 1
-  while [ value < 12 ]
-  [ time:go
-    if time:size-of-schedule != 12 - value [
-      error "The queue doesn't match"
-    ]
-    set value value + 1
-    tick
-  ]
-end
-
-to queue-month-day
-  let value 1
-  reset-ticks
-  time:anchor-schedule (time:create "01-01") 1 "month"
-  time:clear-schedule
-  repeat 12 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word (ifelse-value (value < 10) [word "0" value] [value]) "-01"))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 12 [
-    error "The size of the schedule should be 12"
-  ] [ print "Month-Date: Pass" ]
-end
-
-
-to run-queue-day-day
-  let value 1
-  while [ value < 28 ]
-  [ time:go
-    if time:size-of-schedule != 28 - value [
-      error "The queue doesn't match"
-    ]
-    set value value + 1
-    tick
-  ]
-end
-
-to queue-day-day
-  let value 1
-  reset-ticks
-  time:anchor-schedule (time:create "01-01") 1 "day"
-  time:clear-schedule
-  repeat 28 [
-    time:schedule-event turtles [[] -> fd 10 ] (time:create (word "01-" value))
-    set value value + 1
-  ]
-  ifelse time:size-of-schedule != 28 [
-    error "The size of the schedule should be 28"
-  ] [ print "Month-Date: Pass" ]
-end
+globals [global-time global-var date-table]
 
 to run-tests
-  queue-month-day
-  run-queue-month-day
+  reset-ticks
+  test-anchor
+end
 
-  queue-day-day
-  run-queue-day-day
+to setup-dict
+  set date-table table:make
+  table:put date-table "day" 30
+  table:put date-table "month" 11
+  table:put date-table "year" 100
+  table:put date-table "hour" 23
+  table:put date-table "minute" 60
+  table:put date-table "second" 60
+  table:put date-table "milli" 1000
+end
+;; The test below are focused on behaviors around setup-anchor
 
-  queue-year-date
-  run-queue-year-date
-  queue-year-datetime
-  run-queue-year-date
+to setup-anchor [ date-unit time ]
+  ; don't place anything above clear-all or reset-ticks
+  clear-all
+  reset-ticks
+  setup-dict
+  time:anchor-schedule time 1 date-unit
+end
 
-  queue-month-date
-  run-queue-month-date
-  queue-month-datetime
-  run-queue-month-date
+to test-anchor
+  print "Starting Tests...."
+  test-anchor-progress
+  print "Starting Slow Tests...."
+  slow-test-schedule-events
+  slow-test-schedule-events-shuffled
+  print "Finished Testing...."
+end
 
-  queue-day-date
-  run-queue-day-date
-  queue-day-datetime
-  run-queue-day-date
+to slow-test-schedule-events
+  repeat 1000 [
+    foreach [ "day" "month" "year" "hour" "minute" "second" ] [[ time-unit ] -> test-schedule-events time-unit table:get date-table time-unit (time:create "2000-01-01 00:00:00.000") ]
+    foreach [ "day" "month" "year" ] [[ time-unit ] -> test-schedule-events time-unit table:get date-table time-unit (time:create "2000-01-01") ]
+    foreach [ "day" "month" ] [[ time-unit ] -> test-schedule-events time-unit table:get date-table time-unit (time:create "01-01") ]]
+end
 
-  queue-hour-datetime
-  run-queue-hour-datetime
+to slow-test-schedule-events-shuffled
+  repeat 1000 [
+    foreach [ "day" "month" "year" "hour" "minute" "second" ] [[ time-unit ] -> test-schedule-events-shuffled time-unit table:get date-table time-unit (time:create "2000-01-01 00:00:00.000") ]
+    foreach [ "day" "month" "year" ] [[ time-unit ] -> test-schedule-events-shuffled time-unit table:get date-table time-unit (time:create "2000-01-01") ]
+    foreach [ "day" "month" ] [[ time-unit ] -> test-schedule-events-shuffled time-unit table:get date-table time-unit (time:create "01-01") ]]
+end
 
-  queue-minute-datetime
-  run-queue-minute-datetime
+to test-anchor-progress
+  setup-anchor "day" (time:create "2000-01-01 00:00:00.000")
+  set global-var 0
+  time:schedule-event "observer" [[] -> set global-var 1 ] (time:create "2000-01-30 00:00:00.000")
+  time:go
+  time:schedule-event "observer" [[] -> error "We went to far into the future" ] (time:create "2000-01-31 00:00:00.000")
+  time:clear-schedule
+  if global-var != 1 [ error "Scheduler failed to adjust global-var" ]
+  set global-var 0
+end
 
-  queue-second-datetime
-  run-queue-second-datetime
+to test-schedule-events [ date-unit number logotime ]
+  setup-anchor date-unit logotime
+  set global-var 0
+  let n 1 + random number
+  time:schedule-event "observer" [[] -> set global-var 1] time:plus logotime n date-unit
+  time:go
+  if global-var != 1 [ error "Scheduler failed to adjust global-var" ]
+  setup-anchor date-unit logotime
+  set global-var 0
+  time:schedule-event "observer" [[] -> set global-var 1] time:plus logotime n date-unit
+  time:go
+  if global-var != 1 [ error "Scheduler failed to adjust global-var" ]
+  set global-var 0
+end
+
+to test-schedule-events-shuffled [ date-unit number logotime ]
+  setup-anchor date-unit logotime
+  set global-var 0
+  time:clear-schedule
+  let n 1 + random number
+  time:schedule-event-shuffled "observer" [[] -> set global-var 1] time:plus logotime n date-unit
+  time:go-until (time:plus logotime (n) date-unit)
+  if global-var != 1 [ error word "Scheduler failed to adjust global-var what " global-var ]
+
+  setup-anchor date-unit logotime
+  set global-var 0
+  time:schedule-event-shuffled "observer" [[] -> set global-var 1] time:plus logotime n date-unit
+  if global-var != 0 [ error word "Scheduler should not adjusted value: global-var | unit: " date-unit ]
+  time:go-until (time:plus logotime n date-unit)
+  if global-var != 1 [ error "Scheduler failed to adjust global-var" ]
+  set global-var 0
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
-10
-647
-448
+0
+0
+437
+438
 -1
 -1
 13.0
@@ -330,6 +116,8 @@ GRAPHICS-WINDOW
 -16
 16
 0
+0
+1
 0
 1
 ticks
@@ -677,7 +465,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.4
+NetLogo 3D 6.1.0-RC2
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@

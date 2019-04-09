@@ -119,10 +119,8 @@ object TimeSeriesPrimitives {
 
   class TimeSeriesGetRange extends Reporter {
     def getSyntax(): Syntax =
-      SyntaxJ.reporterSyntax(Array(Syntax.WildcardType,
-                                   Syntax.WildcardType,
-                                   Syntax.WildcardType,
-                                   Syntax.StringType),
+      SyntaxJ.reporterSyntax(Array(Syntax.WildcardType, Syntax.WildcardType,
+                                   Syntax.WildcardType, Syntax.StringType),
                              Syntax.WildcardType)
     def report(args: Array[Argument], context: Context): AnyRef = {
       val ts: LogoTimeSeries = TimeUtils.getTimeSeriesFromArgument(args, 0)
