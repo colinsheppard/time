@@ -118,8 +118,6 @@ TimePlusOperatorMillisecond
   time:show (time:plus (time:create "2000/01/04 10:00") 59999 "milli") "yyyy/MM/dd HH:mm" => "2000/01/04 10:00"
   time:show (time:plus (time:create "2000/01/04 10:00") 60000 "milli") "yyyy/MM/dd HH:mm" => "2000/01/04 10:01"
 
-
-
 TimeIsBefore
   extensions [time]
   time:is-before (time:create "2000/01/01 10:00")  (time:create "2000/01/01 11:00") => true
@@ -165,7 +163,13 @@ TimeIsEqual
   time:is-equal (time:create "2000/01/01 10:00")  (time:create "2001/01/01 10:00") => false
   time:is-equal (time:create "2001/01/01 10:00")  (time:create "2000/01/01 10:00") => false
   time:is-equal (time:plus (time:create "2001/01/01 10:00") 3 "day") (time:create "2001/01/04 10:00") => true
-    time:is-equal (time:plus (time:create "2001/01/04 10:00") -3 "day") (time:create "2001/01/01 10:00") => true
+  time:is-equal (time:plus (time:create "2001/01/04 10:00") -3 "day") (time:create "2001/01/01 10:00") => true
+  time:is-equal (time:plus (time:create "2001/01/04") -3 "day") (time:create "2001/01/01") => true
+  time:is-equal (time:plus (time:create "2001/01/04") -2 "day") (time:create "2001/01/01") => false
+  time:is-equal (time:plus (time:create "2001/01/04") -3 "day") (time:plus (time:create "2001/01/01") 0 "day") => true
+  time:is-equal (time:plus (time:create "2001/01/04") 0 "day") (time:plus (time:create "2001/01/04") 0 "day") => true
+  time:is-equal (time:plus (time:create "2001/01/04") 1 "day") (time:plus (time:create "2001/01/04") 1 "day") => true
+   time:is-equal (time:plus (time:create "2001/01/04") 1 "day") (time:plus (time:create "2001/01/05") 0 "day") => true
 
 TimeShow
   extensions [time]
@@ -232,6 +236,8 @@ TimeDifferenceBetween
   time:difference-between (time:create "2000-01-02 10:00") (time:create "2000-01-01 10:00") "day" => -1
   time:difference-between (time:create "2000-01-02 10:00") (time:create "2000-01-02 10:02") "second" => 120
   time:difference-between (time:create "2000-02-01 10:00") (time:create "2000-03-01 10:00") "day" => 29
+  time:difference-between (time:create "2000-02-01 10:00") (time:create "2010-03-01 10:00") "year" => 10
+  time:difference-between (time:create "2000-02-01 10:00") (time:create "2010-01-01 10:00") "year" => 9
 
 TimeCreateWithFormat
   extensions [time]
@@ -461,7 +467,7 @@ TimeSeriesReadWrite_Interp
   O> if (flow_value0-interp != random_flow0) [ error "Read and Write Error" ]
   O> if (flow_value1-interp != random_flow1) [ error "Read and Write Error" ]
 
-TimeSeriesGetRange
+TimeSeriesGetRangeDouble
   extensions [time]
   globals [ts ts_out random_flow0 random_flow1 flow_value0-interp flow_value1-interp start-time end-time]
   O> set random_flow0 47
@@ -471,7 +477,24 @@ TimeSeriesGetRange
   O> set ts time:ts-create ["flow" "temp"]
   O> time:ts-add-row ts (list (time:create "2000-01-01") random_flow0 2)
   O> time:ts-add-row ts (list (time:create "2000-01-02") random_flow1 5)
-  (time:ts-get-range ts start-time end-time "flow") => ["47.0" "52.0"]
+  (time:ts-get-range ts start-time end-time "flow") => [47 52]
   O> time:ts-write ts "new-ts-range.csv"
   O> set ts_out (time:ts-load-with-format "new-ts-range.csv" "YYYY-MM-dd")
   length (time:ts-get-range ts_out start-time end-time "flow") => 2
+  (time:ts-get-range ts_out start-time end-time "flow") => [47 52]
+
+TimeSeriesGetRangeString
+  extensions [time]
+  globals [ts ts_out random_flow0 random_flow1 flow_value0-interp flow_value1-interp start-time end-time]
+  O> set start-time time:create "1999-12-31"
+  O> set end-time time:create "2000-01-03"
+  O> set ts time:ts-create ["flow" "temp"]
+  O> time:ts-add-row ts (list (time:create "2000-01-01") "jerry" 2)
+  O> time:ts-add-row ts (list (time:create "2000-01-02") "cherry" 5)
+  (time:ts-get-range ts start-time end-time "flow") => ["jerry" "cherry"]
+  (time:ts-get-range ts start-time end-time "temp") => [2 5]
+  O> time:ts-write ts "new-ts-range.csv"
+  O> set ts_out (time:ts-load-with-format "new-ts-range.csv" "YYYY-MM-dd")
+  length (time:ts-get-range ts_out start-time end-time "flow") => 2
+  (time:ts-get-range ts_out start-time end-time "flow") => ["jerry" "cherry"]
+  (time:ts-get-range ts_out start-time end-time "temp") => [2 5]
