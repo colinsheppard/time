@@ -495,10 +495,17 @@ class LogoTime extends ExtensionObject {
           this.date.isEqual(timeA.date) ||
           this.date.isEqual(timeB.date))
       case DayDate =>
-        ((this.monthDay.isAfter(timeA.monthDay) && this.monthDay
+        if(timeA.monthDay.equals(timeAArg.monthDay)){
+          ((this.monthDay.isAfter(timeA.monthDay) && this.monthDay
           .isBefore(timeB.monthDay)) ||
           this.monthDay.equals(timeA.monthDay) ||
           this.monthDay.equals(timeB.monthDay))
+        } else {
+          ((this.monthDay
+          .isBefore(timeBArg.monthDay)) ||
+          this.monthDay.equals(timeA.monthDay) ||
+          this.monthDay.equals(timeB.monthDay))
+        }
       case _ => true
     }
   }
