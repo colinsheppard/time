@@ -69,7 +69,7 @@ class LogoTime extends ExtensionObject {
     this.defaultFmt = this.dateType match {
       case DateTime =>
         (new DateTimeFormatterBuilder()
-          .parseStrict().appendPattern("uuuu-MM-dd HH:mm:ss").parseLenient().appendPattern("SSS")).toFormatter
+          .parseStrict().appendPattern("uuuu-MM-dd HH:mm:ss.").parseLenient().appendPattern("SSS")).toFormatter.withResolverStyle(STRICT)
       case Date => DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(STRICT)
       case DayDate => DateTimeFormatter.ofPattern("MM-dd").withResolverStyle(STRICT)
     }
@@ -93,10 +93,10 @@ class LogoTime extends ExtensionObject {
               (new DateTimeFormatterBuilder()
                 .parseStrict().appendPattern(customForm.filterNot(_ == 'S').replace('Y','y').replace('y','u'))
                 .parseStrict().appendFraction(MILLI_OF_SECOND, 1, 3, false)
-              ).toFormatter
+              ).toFormatter.withResolverStyle(STRICT)
             else
               (new DateTimeFormatterBuilder()
-                .parseStrict().appendPattern(customForm.replace('Y','y').replace('y','u'))).toFormatter
+                .parseStrict().appendPattern(customForm.replace('Y','y').replace('y','u'))).toFormatter.withResolverStyle(STRICT)
           this.dateType match {
             case DateTime => this.datetime = LocalDateTime.parse(dateString, this.customFmt)
             case Date => this.date = LocalDate.parse(dateString, this.customFmt)
