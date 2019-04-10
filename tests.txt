@@ -65,40 +65,40 @@ TimeModelTimeTests_VariableTimeStepDemo
 
 TimeCreateDefault
   extensions [time]
-  time:show (time:create "2000/01/01 10:00") "yyyy/dd/MM HH:mm" => "2000/01/01 10:00"
-  time:show (time:create "2000/01/01 10:00") "yyyy/dd/MM" => "2000/01/01"
-  time:show (time:create "2000/01/01 10:00") "dd/MM/yyyy" => "01/01/2000"
+  time:show (time:create "2000/01/01 10:00") "YYYY/dd/MM HH:mm" => "2000/01/01 10:00"
+  time:show (time:create "2000/01/01 10:00") "YYYY/dd/MM" => "2000/01/01"
+  time:show (time:create "2000/01/01 10:00") "dd/MM/YYYY" => "01/01/2000"
 
 TimePlusOperatorDay
   extensions [time]
-  time:show (time:plus (time:create "2000/01/01 10:00") 3 "day") "yyyy/MM/dd" => "2000/01/04"
-  time:show (time:plus (time:create "2000/01/04 10:00") -3 "day") "yyyy/MM/dd" => "2000/01/01"
-  time:show (time:plus (time:create "2000/01/04 10:00") 0 "day") "yyyy/MM/dd" => "2000/01/04"
+  time:show (time:plus (time:create "2000/01/01 10:00") 3 "day") "YYYY/MM/dd" => "2000/01/04"
+  time:show (time:plus (time:create "2000/01/04 10:00") -3 "day") "YYYY/MM/dd" => "2000/01/01"
+  time:show (time:plus (time:create "2000/01/04 10:00") 0 "day") "YYYY/MM/dd" => "2000/01/04"
 
 TimePlusOperatorDayCustom
   extensions [time]
-  time:show (time:plus (time:create-with-format "2000/01-01 10:00" "yyyy/MM-dd HH:mm") 3 "day") "yyyy/MM/dd" => "2000/01/04"
-  time:show (time:plus (time:create-with-format "2000/01/04 10:00" "yyyy/MM/dd HH:mm") -3 "day") "yyyy/MM/dd" => "2000/01/01"
-  time:show (time:plus (time:create-with-format "2000/01/04 10:00" "yyyy/MM/dd HH:mm") 0 "day") "yyyy/MM/dd" => "2000/01/04"
-  time:show (time:plus (time:create-with-format "01-02-2000" "MM-dd-yyyy") 3 "day") "MM-dd-yyyy" => "01-05-2000"
-  time:show (time:plus (time:create-with-format "01-02-2000" "MM-dd-yyyy") 3 "day") "MM-dd-yyyy" => "01-05-2000"
+  time:show (time:plus (time:create-with-format "2000/01-01 10:00" "YYYY/MM-dd HH:mm") 3 "day")  "YYYY/MM/dd" => "2000/01/04"
+  time:show (time:plus (time:create-with-format "2000/01/04 10:00" "YYYY/MM/dd HH:mm") -3 "day") "YYYY/MM/dd" => "2000/01/01"
+  time:show (time:plus (time:create-with-format "2000/01/04 10:00" "YYYY/MM/dd HH:mm") 0 "day")  "YYYY/MM/dd" => "2000/01/04"
+  time:show (time:plus (time:create-with-format "01-02-2000" "MM-dd-YYYY") 3 "day") "MM-dd-YYYY" => "01-05-2000"
+  time:show (time:plus (time:create-with-format "01-02-2000" "MM-dd-YYYY") 3 "day") "MM-dd-YYYY" => "01-05-2000"
 
 TimePlusOperatorHour
   extensions [time]
-  time:show (time:plus (time:create "2000/01/04 10:00") 3 "hour") "yyyy/MM/dd HH" => "2000/01/04 13"
-  time:show (time:plus (time:create "2000/01/04 10:00") 24 "hour") "yyyy/MM/dd HH" => "2000/01/05 10"
+  time:show (time:plus (time:create "2000/01/04 10:00") 3 "hour") "YYYY/MM/dd HH" => "2000/01/04 13"
+  time:show (time:plus (time:create "2000/01/04 10:00") 24 "hour") "YYYY/MM/dd HH" => "2000/01/05 10"
 
 TimePlusOperatorHourCustom
   extensions [time]
-  time:show (time:plus (time:create-with-format "2000/01/04 10:00" "yyyy/MM/dd HH:mm") 3 "hour") "yyyy/MM/dd HH" => "2000/01/04 13"
-  time:show (time:plus (time:create-with-format "2000/01/04 10:00" "yyyy/MM/dd HH:mm") 24 "hour") "yyyy/MM/dd HH" => "2000/01/05 10"
-  time:show (time:plus (time:create-with-format "01-02-2000" "MM-dd-yyyy") 3 "hour") "MM-dd-yyyy" => "01-02-2000"
-  time:show (time:plus (time:create-with-format "01-02-2000" "MM-dd-yyyy") 24 "hour") "MM-dd-yyyy" => "01-03-2000"
+  time:show (time:plus (time:create-with-format "2000/01/04 10:00" "YYYY/MM/dd HH:mm") 3 "hour") "yyyy/MM/dd HH" => "2000/01/04 13"
+  time:show (time:plus (time:create-with-format "2000/01/04 10:00" "YYYY/MM/dd HH:mm") 24 "hour") "yyyy/MM/dd HH" => "2000/01/05 10"
+  time:show (time:plus (time:create-with-format "01-02-2000" "MM-dd-YYYY") 3 "hour") "MM-dd-yyyy" => "01-02-2000"
+  time:show (time:plus (time:create-with-format "01-02-2000" "MM-dd-YYYY") 24 "hour") "MM-dd-yyyy" => "01-03-2000"
 
 TimePlusOperatorMinute
   extensions [time]
-  time:show (time:plus (time:create "2000/01/04 10:00") 59 "minute") "yyyy/MM/dd HH" => "2000/01/04 10"
-  time:show (time:plus (time:create "2000/01/04 10:00") 60 "minute") "yyyy/MM/dd HH" => "2000/01/04 11"
+  time:show (time:plus (time:create "2000/01/04 10:00") 59 "minute") "YYYY/MM/dd HH" => "2000/01/04 10"
+  time:show (time:plus (time:create "2000/01/04 10:00") 60 "minute") "YYYY/MM/dd HH" => "2000/01/04 11"
 
 TimePlusOperatorMinuteCustom
   extensions [time]

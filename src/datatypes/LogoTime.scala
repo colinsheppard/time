@@ -2,6 +2,7 @@ package org.nlogo.extensions.time.datatypes
 
 import java.time.{Duration, LocalDate, LocalDateTime, MonthDay, Period, ZoneOffset}
 import java.time.temporal.ChronoUnit._
+import java.time.temporal.ChronoField.MILLI_OF_SECOND
 import java.time.format.DateTimeFormatter
 import java.time.format.ResolverStyle.STRICT
 import java.time.format.DateTimeParseException
@@ -88,8 +89,14 @@ class LogoTime extends ExtensionObject {
           }
         case Some(customForm) =>
           this.customFmt =
-            DateTimeFormatter
-              .ofPattern(customForm.replace('Y','y').replace('y','u')).withResolverStyle(STRICT)
+            if(customForm.endsWith("S") && customForm.count(_ == 'S') < 4)
+              (new DateTimeFormatterBuilder()
+                .parseStrict().appendPattern(customForm.filterNot(_ == 'S').replace('Y','y').replace('y','u'))
+                .parseStrict().appendFraction(MILLI_OF_SECOND, 1, 3, false)
+              ).toFormatter
+            else
+              (new DateTimeFormatterBuilder()
+                .parseStrict().appendPattern(customForm.replace('Y','y').replace('y','u'))).toFormatter
           this.dateType match {
             case DateTime => this.datetime = LocalDateTime.parse(dateString, this.customFmt)
             case Date => this.date = LocalDate.parse(dateString, this.customFmt)
