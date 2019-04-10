@@ -5,6 +5,7 @@ import java.time.temporal.ChronoUnit._
 import java.time.format.DateTimeFormatter
 import java.time.format.ResolverStyle.STRICT
 import java.time.format.DateTimeParseException
+import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.WeekFields
 import org.nlogo.agent.World
 import org.nlogo.api.ExtensionException
@@ -17,7 +18,10 @@ class LogoTime extends ExtensionObject {
   var date: LocalDate = null
   var monthDay: MonthDay = null
   private var customFmt: DateTimeFormatter = null
-  private var defaultFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss.SSS").withResolverStyle(STRICT)
+  private var defaultFmt: DateTimeFormatter =
+    (new DateTimeFormatterBuilder()
+      .parseStrict().appendPattern("uuuu-MM-dd HH:mm:ss")
+      .parseLenient().appendPattern("SSS")).toFormatter
   private var isAnchored: java.lang.Boolean = false
   private var tickValue: java.lang.Double = _
   private var tickType: PeriodType = _
@@ -25,6 +29,7 @@ class LogoTime extends ExtensionObject {
   private var anchorDate: LocalDate = _
   private var anchorMonthDay: MonthDay = _
   private var world: World = _
+
 
   @throws[ExtensionException]
   def this(dt: LocalDateTime) = {
@@ -61,7 +66,9 @@ class LogoTime extends ExtensionObject {
           DayDate
     }
     this.defaultFmt = this.dateType match {
-      case DateTime => DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss.SSS").withResolverStyle(STRICT)
+      case DateTime =>
+        (new DateTimeFormatterBuilder()
+          .parseStrict().appendPattern("uuuu-MM-dd HH:mm:ss").parseLenient().appendPattern("SSS")).toFormatter
       case Date => DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(STRICT)
       case DayDate => DateTimeFormatter.ofPattern("MM-dd").withResolverStyle(STRICT)
     }
@@ -74,12 +81,15 @@ class LogoTime extends ExtensionObject {
               this.datetime =
                 if (dateString.length == 0 || dateString.==("now"))
                   LocalDateTime.now
-                else LocalDateTime.parse(dateString)
+                else
+                 LocalDateTime.parse(dateString)
             case Date    => this.date = LocalDate.parse(dateString)
             case DayDate => this.monthDay = MonthDay.parse(dateString, this.defaultFmt)
           }
         case Some(customForm) =>
-          this.customFmt = DateTimeFormatter.ofPattern(customForm.replace('Y','y').replace('y','u')).withResolverStyle(STRICT)
+          this.customFmt =
+            DateTimeFormatter
+              .ofPattern(customForm.replace('Y','y').replace('y','u')).withResolverStyle(STRICT)
           this.dateType match {
             case DateTime => this.datetime = LocalDateTime.parse(dateString, this.customFmt)
             case Date => this.date = LocalDate.parse(dateString, this.customFmt)
@@ -88,7 +98,8 @@ class LogoTime extends ExtensionObject {
       }
       catch {
         case e: DateTimeParseException =>
-          throw new ExtensionException(s"Extension could not parse input: $dateString and $customFormat")
+          throw new ExtensionException(
+            s"Extension could not parse input: $dateString and $customFormat")
       }
   }
 
