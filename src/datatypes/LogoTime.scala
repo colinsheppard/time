@@ -195,7 +195,7 @@ class LogoTime extends ExtensionObject {
       case str if timefragments.length == 1 && !str.contains(':') &&  str.contains('-') =>
         if(str.length < 6) this.dateType = DayDate else this.dateType = Date
         parseDate(timefragments(0))
-      case _ => throw new ExtensionException(s"Illegal Time String(Top Level)")
+      case str => throw new ExtensionException(s"Invalid string fragment: $str")
     }).replace('-',delimiter)
   }
   /* Format to the desired length for datetime, date, and daydate formats */
@@ -237,7 +237,7 @@ class LogoTime extends ExtensionObject {
         formatToLength(hour,2) + ":" + formatToLength(minute,2) + ":00.000"
       case Array(hour) if dateTimeStr.length < 3 =>
         formatToLength(hour,2) + ":00" + ":00.000"
-      case _ => throw new ExtensionException(s"Illegal Time String")
+      case tstr => throw new ExtensionException(s"Invalid Time String: $tstr")
     }
   }
 
