@@ -105,7 +105,7 @@ class LogoSchedule extends ExtensionObject {
     var repeatInterval: java.lang.Double = null
 
     if (addType == Repeat || addType == RepeatShuffled) {
-      if (args(3).get.getClass != classOf[java.lang.Double])
+      if (args(3).get.getClass.equals(classOf[java.lang.Double]))
           throw new ExtensionException("time:repeat expecting a number as the fourth argument")
       repeatInterval = args(3).getDoubleValue
       if (repeatInterval <= 0)
@@ -154,8 +154,12 @@ class LogoSchedule extends ExtensionObject {
       case null =>
         tickCounter = context.workspace.world.tickCounter
         tickCounter
-      case tc => context.workspace.world.tickCounter
+      case tc => tc
     }
+
+  def updateTickCounter(context: ExtensionContext): Unit = {
+    context.workspace.requestDisplayUpdate(false)
+  }
 
   /* ----------------------------------------------------------------------------
      performScheduledTasks are three functions that are meant to allow overloaded
@@ -169,7 +173,6 @@ class LogoSchedule extends ExtensionObject {
     if (!this.isAnchored) throw new ExtensionException(
       """time:go-until can only accept a LogoTime as a stopping time if the schedule is anchored
          using time:anchor-schedule""")
-    if (TimeExtension.debug) TimeUtils.printToConsole(context, s"timeAnchor: ${this.timeAnchor} tickType: ${this.tickType} tickValue: ${this.tickValue} untilTime:$untilTime")
     // Calculate the untilTick and pass it to the main function
     val untilTick: java.lang.Double = this.timeAnchor.getDifferenceBetween(this.tickType, untilTime) / this.tickValue
     performScheduledTasks(args, context, untilTick)
@@ -193,7 +196,8 @@ class LogoSchedule extends ExtensionObject {
             extcontext.nvmContext.job,
             extcontext.getAgent.world.observer.asInstanceOf[org.nlogo.agent.Agent],
             extcontext.nvmContext.ip,
-            extcontext.nvmContext.activation, extcontext.workspace)
+            extcontext.nvmContext.activation,
+            extcontext.workspace)
           event.task.perform(nvmContext, emptyArgs.asInstanceOf[Array[AnyRef]])
         case _ =>
           val iter: AgentIterator =
@@ -221,8 +225,10 @@ class LogoSchedule extends ExtensionObject {
       event.reschedule(this)
       event = if (scheduleTree.isEmpty) null else scheduleTree.first()
     }
-    if (untilTick != null && untilTick < java.lang.Double.MAX_VALUE && untilTick > getTickCounter(extcontext).ticks)
+    if (untilTick != null && untilTick < java.lang.Double.MAX_VALUE && untilTick > getTickCounter(extcontext).ticks) {
       getTickCounter(extcontext).tick(untilTick - getTickCounter(extcontext).ticks)
+    }
+    updateTickCounter(extcontext)
   }
 
   def getCurrentTime(): LogoTime =

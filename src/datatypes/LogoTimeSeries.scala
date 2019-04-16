@@ -222,14 +222,13 @@ class LogoTimeSeries extends ExtensionObject {
     var higherKey: LogoTime = timeHigh
     if (times.get(lowerKey) == null) lowerKey = times.higherKey(timeLow)
     if (times.get(higherKey) == null) higherKey = times.lowerKey(timeHigh)
-
     if (lowerKey == null || higherKey == null) {
       if (columnName == "ALL_-_COLUMNS" || columnName == "LOGOTIME") {
-        resultList.add(LogoList.fromVector(scala.collection.immutable.Vector[Any](0, 0, 0).asInstanceOf[Vector[AnyRef]]))
+        resultList.add(LogoList.fromVector(scala.collection.immutable.Vector[Any](0.0, 0.0, 0.0).asInstanceOf[Vector[AnyRef]]))
       }
       for (colName <- columnList.asScala) {
         resultList.add(
-          LogoList.fromVector(scala.collection.immutable.Vector[Any](0, 0, 0)
+          LogoList.fromVector(scala.collection.immutable.Vector[Any](0.0, 0.0, 0.0)
             .asInstanceOf[Vector[AnyRef]]))
       }
     } else {

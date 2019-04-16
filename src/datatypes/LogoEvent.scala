@@ -25,7 +25,7 @@ class LogoEvent(var agents: org.nlogo.agent.AgentSet,
    * schedule argument.  The return value indicates whether the event was added to the schedule again.
    */
 
-  def reschedule(callingSchedule: LogoSchedule): java.lang.Boolean = {
+  def reschedule(callingSchedule: LogoSchedule): java.lang.Boolean =
     repeatInterval match {
       case null => false
       case x if repeatIntervalPeriodType == null => {
@@ -38,7 +38,6 @@ class LogoEvent(var agents: org.nlogo.agent.AgentSet,
         TimeExtension.schedule.scheduleTree.add(this)
       }
     }
-  }
 
   override def equals(obj: Any): Boolean = this == obj
 

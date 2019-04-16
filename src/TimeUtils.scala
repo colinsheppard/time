@@ -40,11 +40,11 @@ object TimeUtils {
 
   def getTimeFromArgument(args: Array[Argument], argIndex: java.lang.Integer): LogoTime = {
     val time = args(argIndex).get match {
-      case logoTime: LogoTime => logoTime
       case str: String => new LogoTime(args(argIndex).getString)
+      case logoTime: LogoTime => logoTime
       case obj =>
         throw new ExtensionException(
-          s"time: was expecting a LogoTime object as argument ${argIndex + 1}, found this instead: ${Dump.logoObject(obj)}")
+          s"time was expecting a LogoTime object as argument ${argIndex + 1}, found this instead: $obj")
     }
     time.updateFromTick()
     time
@@ -55,9 +55,8 @@ object TimeUtils {
       case double: java.lang.Double => double
       case obj =>
        throw new ExtensionException(
-        "time: was expecting a number as argument " + (argIndex + 1) +
-          ", found this instead: " +
-          Dump.logoObject(obj))
+        s"time: was expecting a number as argument " + (argIndex + 1) +
+          ", found this instead: $obj")
     }
 
   def getListFromArgument(args: Array[Argument], argIndex: java.lang.Integer): LogoList =
@@ -65,20 +64,18 @@ object TimeUtils {
       case logolist: LogoList => logolist
       case logolist =>
         throw new ExtensionException(
-          "time: was expecting a list as argument " + (argIndex + 1) +
-            ", found this instead: " +
-            Dump.logoObject(logolist))
+          "time: was expecting a list as argument " + (argIndex + 1))
     }
 
-  def getIntFromArgument(args: Array[Argument], argIndex: java.lang.Integer): java.lang.Integer =
+  def getIntFromArgument(args: Array[Argument], argIndex: java.lang.Integer): java.lang.Double =
     args(argIndex).get match {
-      case double: java.lang.Double => roundDouble(double)
-      case integer: java.lang.Integer => integer
+      case double: java.lang.Double => roundDouble(double).toDouble
+      case integer: java.lang.Integer => integer.toDouble
       case obj =>
         throw new ExtensionException(
           "time: was expecting a number as argument " + (argIndex + 1) +
             ", found this instead: " +
-            Dump.logoObject(obj))
+            Dump.logoObject(0.0.asInstanceOf[AnyRef]))
     }
 
 
@@ -88,9 +85,8 @@ object TimeUtils {
       case integer: java.lang.Integer => integer.longValue()
       case obj =>
         throw new ExtensionException(
-          "time: was expecting a number as argument " + (argIndex + 1) +
-            ", found this instead: " +
-            Dump.logoObject(obj))
+          s"time: was expecting a number as argument " + (argIndex + 1) +
+            ", found this instead: $obj")
     }
 
   def getStringFromArgument(args: Array[Argument], argIndex: java.lang.Integer): String =
@@ -98,9 +94,8 @@ object TimeUtils {
       case string: String => string
       case obj =>
         throw new ExtensionException(
-          "time: was expecting a string as argument " + (argIndex + 1) +
-            ", found this instead: " +
-            Dump.logoObject(obj))
+          s"time: was expecting a string as argument " + (argIndex + 1) +
+            ", found this instead: $obj")
     }
 
   def getTimeSeriesFromArgument(args: Array[Argument], argIndex: java.lang.Integer): LogoTimeSeries =
@@ -108,10 +103,9 @@ object TimeUtils {
       case lts: LogoTimeSeries => lts
       case obj =>
         throw new ExtensionException(
-          "time: was expecting a LogoTimeSeries object as argument " +
+          s"time: was expecting a LogoTimeSeries object as argument " +
             (argIndex + 1) +
-            ", found this instead: " +
-            Dump.logoObject(obj))
+            ", found this instead: $obj")
     }
 
   def roundDouble(d: java.lang.Double): java.lang.Integer =
@@ -142,9 +136,8 @@ object TimeUtils {
       case lschedule: LogoSchedule => lschedule
       case obj =>
         throw new ExtensionException(
-          "Was expecting a LogoSchedule as argument " + (index + 1) +
-            " found this instead: " +
-            Dump.logoObject(obj))
+          s"Was expecting a LogoSchedule as argument " + (index + 1) +
+            " found this instead: $obj")
     }
 
   def printToConsole(context: Context, msg: String): Unit = {
@@ -153,7 +146,7 @@ object TimeUtils {
       .workspace
       .outputObject(msg, null, true, true, OutputDestinationJ.OUTPUT_AREA)
     Files.write(
-      Paths.get("~/log.txt"),
+      Paths.get("./log.txt"),
       (msg + "\n").getBytes,
       StandardOpenOption.APPEND)
   }

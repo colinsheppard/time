@@ -318,7 +318,7 @@ class LogoTime extends ExtensionObject {
      There is an implicit conversion to DateTime, which assumes
      the beginning of the day on year 2000
   */
-  def get(periodType: PeriodType): java.lang.Integer = {
+  def get(periodType: PeriodType): java.lang.Double = {
     periodType match {
      case Milli =>
         this.dateType match {
