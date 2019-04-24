@@ -45,17 +45,22 @@ class LogoEvent(var agents: org.nlogo.agent.AgentSet,
   def getNLTypeName(): String = "event"
   def recursivelyEqual(arg0: AnyRef): Boolean = equals(arg0)
   def dump(arg0: Boolean, arg1: Boolean, arg2: Boolean): String = {
-    var result: String = tick + "\t"
+    var result: String = tick.toString + ": "
     if (agents != null) {
       val listOfAgents: Iterable[org.nlogo.api.Agent] = agents.agents.asScala
       for (agent <- listOfAgents) {result += agent.toString + ";"}
       result = result.substring(0, result.length - 1)
     }
     val splitArr: Array[String] = task.procedure.nameToken.toString.split(":")
-    result = result + "\t" + task match {
-           case null => ""
-           case x if splitArr.length > 1 => splitArr(1).substring(0, splitArr(1).length - 1) + " " + task.procedure.displayName(0)
-           case _ => "" + task.procedure.displayName(0) }
+    result = result +
+    (if(task==null) ""
+     else
+       ((if(splitArr.length > 1){
+           splitArr(1).substring(0, splitArr(1).length()-1) + " "
+         } else {
+           ""
+         }
+       ) + task.procedure.displayName))
     result
   }
 }

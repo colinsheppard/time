@@ -105,7 +105,7 @@ class LogoSchedule extends ExtensionObject {
     var repeatInterval: java.lang.Double = null
 
     if (addType == Repeat || addType == RepeatShuffled) {
-      if (args(3).get.getClass.equals(classOf[java.lang.Double]))
+      if (args(3).get.getClass != classOf[java.lang.Double])
           throw new ExtensionException("time:repeat expecting a number as the fourth argument")
       repeatInterval = args(3).getDoubleValue
       if (repeatInterval <= 0)
@@ -246,8 +246,7 @@ class LogoSchedule extends ExtensionObject {
       buf.append(" [ ")
       val iter: java.util.Iterator[LogoEvent] = scheduleTree.iterator()
       while (iter.hasNext) {
-        buf.append(iter.next().asInstanceOf[LogoEvent].dump(true, true, true))
-        buf.append("\n")
+        buf.append(iter.next().asInstanceOf[LogoEvent].dump(true, true, true) + " ")
       }
       buf.append("]")
     }

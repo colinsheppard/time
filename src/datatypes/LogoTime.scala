@@ -21,7 +21,7 @@ class LogoTime extends ExtensionObject {
   private var customFmt: DateTimeFormatter = null
   private var defaultFmt: DateTimeFormatter =
     (new DateTimeFormatterBuilder()
-      .parseStrict().appendPattern("uuuu-MM-dd HH:mm:ss")
+      .parseStrict().appendPattern("uuuu-MM-dd HH:mm:ss.")
       .parseLenient().appendPattern("SSS")).toFormatter
   private var isAnchored: java.lang.Boolean = false
   private var tickValue: java.lang.Double = _
