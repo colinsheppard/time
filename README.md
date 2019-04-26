@@ -684,6 +684,8 @@ Behaves almost identical to time:ts-get, but if there is not an exact match with
 
 Reports a list of all of the values from the *column-name* column of the *logotimeseries* in the rows between *logotime1* and *logotime2* (inclusively).  If "ALL" or "all" is specified as the column name, then a list of lists is reported, with one sub-list for each column in *logotimeseries*, including the date/time column.  If "LOGOTIME" or "logotime" is specified as the column name, then the date/time column is returned.
 
+If in the event logotime1 is after logotime2, the primitive will determine the smallest value and compare it normally.
+
     print time:ts-get-range time-series time:create "2000-01-02 12:30:00" time:create "2000-01-03 00:30:00" "all"
 
 
@@ -697,13 +699,13 @@ Loads time series data from a text input file (comma or tab separated) and repor
 
     let ts time:ts-load "time-series-data.csv"
 
-Each input file and LogoTimeSeries object can contain one or more variables, which are accessed by the column names provided on the first line of the file.  The first line of the file must therefore start with the the word “time” or “date” (this word is actually unimportant as it is ignored), followed by the names of the variables (columns) in the file.  Do not use "all" or "ALL" for a column name as this keyword is reserved (see time:ts-get below).  
+Each input file and LogoTimeSeries object can contain one or more variables, which are accessed by the column names provided on the first line of the file.  The first line of the file must therefore start with the the word “time” or “date” (this word is actually unimportant as it is ignored), followed by the names of the variables (columns) in the file.  Do not use "all" or "ALL" for a column name as this keyword is reserved (see time:ts-get below).
 
 The first column of the file must be timestamps that can be parsed by this extension (see the [behavior section](#behavior) for acceptable string formats).  Finally, if the timestamps do not appear in chronological order in the text file, they will be automatically sorted into order when loaded.
 
 The first line(s) of an input file can include comments delineated by semicolons, just as NetLogo code can.
 
-The following is an example of hourly river flow and water temperature data that is formatted correctly: 
+The following is an example of hourly river flow and water temperature data that is formatted correctly:
 
     ; Flow and temperature data for Big Muddy River
     timestamp,flow,temperature
