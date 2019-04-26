@@ -28,7 +28,16 @@ object TimePrimitives {
         Array(Syntax.WildcardType, Syntax.NumberType, Syntax.StringType),
         Syntax.WildcardType)
     def report(args: Array[Argument], context: Context): AnyRef = {
-      val newTime: LogoTime = TimeUtils.getTimeFromArgument(args, 0)
+      /* The anchor primitives have experienced some changes with the use of the
+         Java time library. Originally, the Joda library would create copies of
+         LocalDateTime, LocalDate, and MonthDay. That is no longer the case with
+         the Java 8 time library, instead preferring references. This has caused
+         some headaches with scheduler and timeseries functionality.
+         Since two LogoTimes can be referencing the same LocalDateTime/LocalDate/
+         MonthDay, this can be a source of inconsistencies.
+         CBR [ 04/26/2019 ]
+       */
+      val newTime: LogoTime = new LogoTime(TimeUtils.getTimeFromArgument(args, 0))
       newTime.setAnchor(
         TimeUtils.getDoubleFromArgument(args, 1),
         TimeUtils.stringToPeriodType(TimeUtils.getStringFromArgument(args, 2)),

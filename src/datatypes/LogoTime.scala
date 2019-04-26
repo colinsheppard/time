@@ -8,10 +8,15 @@ import java.time.format.ResolverStyle.STRICT
 import java.time.format.DateTimeParseException
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.WeekFields
+import java.util.Comparator
 import org.nlogo.agent.World
 import org.nlogo.api.ExtensionException
 import org.nlogo.core.ExtensionObject
 import org.nlogo.extensions.time._
+
+object LogoTimeComparator extends Ordering[LogoTime] {
+  def compare(a: LogoTime, b: LogoTime): Int = a.compareTo(b)
+}
 
 class LogoTime extends ExtensionObject {
   var dateType: DateType = DateTime
@@ -30,7 +35,6 @@ class LogoTime extends ExtensionObject {
   private var anchorDate: LocalDate = _
   private var anchorMonthDay: MonthDay = _
   private var world: World = _
-
 
   @throws[ExtensionException]
   def this(dt: LocalDateTime) = {
@@ -123,9 +127,8 @@ class LogoTime extends ExtensionObject {
     }
   }
 
-  def this(time: LogoTime) = {
+  def this(time: LogoTime) =
     this(time.show(if(time.customFmt == null) time.defaultFmt else time.customFmt), if(time.customFmt == null) time.defaultFmt else time.customFmt, time.dateType)
-  }
 
   def this(dt: LocalDate) = {
     this()
@@ -155,14 +158,13 @@ class LogoTime extends ExtensionObject {
     var millisToA: java.lang.Long = null
     var millisToB: java.lang.Long = null
     this.dateType match {
-      case DateTime =>{
+      case DateTime =>
         millisToA = Math.abs(
           (Duration.between(timeA.datetime.`with`(refDateTime),
                         this.datetime.`with`(refDateTime))).toMillis)
         millisToB = Math.abs(
           (Duration.between(timeB.datetime.`with`(refDateTime),
             this.datetime.`with`(refDateTime))).toMillis)
-      }
       case Date =>
         millisToA = Math.abs(
           (Duration.between(timeA.date.`with`(refDateTime),
@@ -249,7 +251,7 @@ class LogoTime extends ExtensionObject {
     this.tickType = tickType
     this.dateType match {
       case DateTime => this.anchorDatetime = LocalDateTime.from(this.datetime)
-      case Date => this.anchorDate = LocalDate.from(this.date)
+    case Date => this.anchorDate = LocalDate.from(this.date)
       case DayDate => this.anchorMonthDay = MonthDay.from(this.monthDay)
     }
     this.world = world
@@ -260,7 +262,7 @@ class LogoTime extends ExtensionObject {
   override def toString(): String = {
     try this.updateFromTick()
     catch {
-      case e: ExtensionException => {}
+      case e: ExtensionException =>
     }
     this.dateType match {
       case DateTime =>
@@ -277,7 +279,7 @@ class LogoTime extends ExtensionObject {
   }
 
   def updateFromTick(): Unit = {
-    if (!this.isAnchored) return
+    if(!this.isAnchored) return
     this.dateType match {
       case DateTime =>
         this.datetime = this
@@ -306,26 +308,25 @@ class LogoTime extends ExtensionObject {
   def getNLTypeName(): String = "logotime"
   def recursivelyEqual(arg0: AnyRef): Boolean = equals(arg0)
 
-  def show(fmt: DateTimeFormatter): String = {
+  def show(fmt: DateTimeFormatter): String =
     this.dateType match {
       case DateTime => this.datetime.format(fmt)
       case Date => this.date.atStartOfDay().format(fmt)
       case DayDate => this.monthDay.atYear(2000).atStartOfDay().format(fmt)
     }
-  }
 
   /* Get requires a couple assumptions for a successful conversion.
      There is an implicit conversion to DateTime, which assumes
      the beginning of the day on year 2000
   */
-  def get(periodType: PeriodType): java.lang.Double = {
+  def get(periodType: PeriodType): java.lang.Double =
     periodType match {
      case Milli =>
         this.dateType match {
           case DateTime => (datetime.getNano) / 1000000
           case Date => date.atStartOfDay.getNano() / 1000000
           case DayDate => monthDay.atYear(2000).atStartOfDay.getNano() / 1000000
-      }
+        }
       case Second =>
         this.dateType match {
           case DateTime => datetime.getSecond
@@ -385,7 +386,6 @@ class LogoTime extends ExtensionObject {
         }
       case _ => throw new ExtensionException("Incorrect Time Unit")
     }
-  }
 
   /* time:plus has been the source of plenty of hidden runtime issues
      with time conversions and parsing errors. These two errors are
@@ -396,14 +396,13 @@ class LogoTime extends ExtensionObject {
      [ CBR 02/14/19 ]
    */
 
-  def plus(pType: PeriodType, durVal: java.lang.Double): LogoTime = {
+  def plus(pType: PeriodType, durVal: java.lang.Double): LogoTime =
     this.dateType match {
       case DateTime => this.plus(this.datetime, pType, durVal)
       case Date => this.plus(this.date, pType, durVal)
       case DayDate => this.plus(this.monthDay, pType, durVal)
       case _ => this
     }
-  }
 
   def plus(refTime: AnyRef, pType: PeriodType, durValArg: java.lang.Double): LogoTime = {
     var per: Option[Period] = None

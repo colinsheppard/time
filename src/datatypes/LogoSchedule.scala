@@ -106,10 +106,10 @@ class LogoSchedule extends ExtensionObject {
 
     if (addType == Repeat || addType == RepeatShuffled) {
       if (args(3).get.getClass != classOf[java.lang.Double])
-          throw new ExtensionException("time:repeat expecting a number as the fourth argument")
+          throw new ExtensionException("time repeat expecting a number as the fourth argument")
       repeatInterval = args(3).getDoubleValue
       if (repeatInterval <= 0)
-          throw new ExtensionException("time:repeat the repeat interval must be a positive number")
+          throw new ExtensionException("time repeat the repeat interval must be a positive number")
       if (args.length == 5) {
         if (!this.isAnchored)
            throw new ExtensionException(

@@ -6,6 +6,21 @@ import org.nlogo.core.ExtensionObject
 import org.nlogo.extensions.time._
 import scala.collection.JavaConverters._
 
+object LogoEventComparator extends Ordering[LogoEvent] {
+  def compare(a: LogoEvent, b: LogoEvent): Int =
+    if (a.tick < b.tick) {
+      -1
+    } else if (a.tick > b.tick) {
+      1
+    } else if (a.id < b.id) {
+      -1
+    } else if (a.id > b.id) {
+      1
+    } else {
+      0
+    }
+}
+
 class LogoEvent(var agents: org.nlogo.agent.AgentSet,
                 var task: AnonymousCommand,
                 var tick: java.lang.Double,
