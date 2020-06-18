@@ -4,6 +4,9 @@ globals[
   tick-date
   tick-day
   ts
+  t-datetime
+  t-date
+  t-day
 ]
 to setup
   ;;print __dump-extensions
@@ -60,9 +63,9 @@ to setup
   print ""
 
   ;; Create a datetime, a date, and a day
-  let t-datetime time:create "2000-01-02 03:04:05.678"
-  let t-date time:create "2000-01-02"
-  let t-day time:create "01-02"
+  set t-datetime time:create "2000-01-02 03:04:05.678"
+  set t-date time:create "2000-01-02"
+  set t-day time:create "01-02"
 
   ;; Print out the logotime using user specified format, for full description of options, see:
   ;; http://joda-time.sourceforge.net/api-release/org/joda/time/format/DateTimeFormat.html
@@ -130,10 +133,13 @@ to setup
 end
 
 to go
-  setup
   ;; during model execution, any logotime that has been achored to ticks will automatically
   ;; hold the appropriate date, and can be used analogously to using the "ticks" primitive
-  while[ticks < 20][
+  reset-ticks
+  print ""
+  print "GO ============================"
+  print ""
+  while[ticks < 2][
     tick
     print (word "tick " ticks)
     print (word "tick-datetime " tick-datetime)
@@ -142,12 +148,31 @@ to go
   ]
   tick
 end
+
+to setup-and-go
+  setup
+  ;; during model execution, any logotime that has been achored to ticks will automatically
+  ;; hold the appropriate date, and can be used analogously to using the "ticks" primitive
+  print ""
+  print "GO ============================"
+  print ""
+  while[ticks < 2][
+    tick
+    print (word "tick " ticks)
+    print (word "tick-datetime " tick-datetime)
+    print (word "tick-date " tick-date)
+    print (word "tick-day " tick-day)
+  ]
+  tick
+end
+
+
 @#$#@#$#@
 GRAPHICS-WINDOW
-0
-0
-437
-438
+137
+10
+574
+448
 -1
 -1
 13.0
@@ -549,7 +574,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.1.0-RC2
+NetLogo 6.1.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@

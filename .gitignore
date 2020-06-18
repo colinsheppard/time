@@ -7,3 +7,6 @@ examples/new-ts-file.csv
 jar-command.sh
 .DS_Store
 debugging
+.bundledFiles 
+.java-version 
+

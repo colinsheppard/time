@@ -498,3 +498,29 @@ TimeSeriesGetRangeString
   length (time:ts-get-range ts_out start-time end-time "flow") => 2
   (time:ts-get-range ts_out start-time end-time "flow") => ["jerry" "cherry"]
   (time:ts-get-range ts_out start-time end-time "temp") => [2 5]
+
+TimeSeriesGet
+  extensions [time]
+  globals [time-series]
+  O> set time-series time:ts-create ["x"]
+  O> time:ts-add-row time-series (sentence (time:create "2020-06-16 12:00") 1)
+  O> time:ts-add-row time-series (sentence (time:create "2020-06-17 12:00") 2)
+  (time:ts-get time-series (time:create "2020-06-16 23:00") "x") => 1
+
+TimeSeriesGetRange
+  extensions [time]
+  globals [time-series]
+  O> set time-series time:ts-create ["x"]
+  O> time:ts-add-row time-series (sentence (time:create "2020-06-16 12:00") 1)
+  O> time:ts-add-row time-series (sentence (time:create "2020-06-17 12:00") 2)
+  (time:ts-get-range time-series (time:create "2020-06-16 12:00") (time:create "2020-06-17 12:00") "x") => [1 2]
+  (time:ts-get-range time-series (time:create "2020-06-17 12:00") (time:create "2020-06-17 12:00") "x") => [2]
+  (time:ts-get-range time-series (time:create "2020-06-18 12:00") (time:create "2020-06-19 12:00") "x") => []
+
+TimeSeriesGetInterp
+  extensions [time]
+  globals [time-series]
+  O> set time-series time:ts-create ["flow"]
+  O> time:ts-add-row time-series (sentence (time:create "2000-01-01 00:00:00") 0)
+  O> time:ts-add-row time-series (sentence (time:create "2000-01-01 01:00:00") 10)
+  time:ts-get-interp time-series time:create "2000-01-01 00:30:00" "flow" => 5

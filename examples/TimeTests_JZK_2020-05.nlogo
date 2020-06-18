@@ -40,6 +40,7 @@ to test-ts-get-range
   time:ts-add-row time-series (sentence (time:create "2020-06-17 12:00") 2)
 
   let cond1 length (time:ts-get-range time-series (time:create "2020-06-16 12:00") (time:create "2020-06-17 12:00") "x") = 2
+
   let cond2 length (time:ts-get-range time-series (time:create "2020-06-17 12:00") (time:create "2020-06-17 12:00") "x") = 1
   ; print (time:ts-get-range time-series (time:create "2020-06-18 12:00") (time:create "2020-06-19 12:00") "x")
   ifelse cond1 and cond2 [;  and cond3 [
