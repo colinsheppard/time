@@ -9,4 +9,6 @@ jar-command.sh
 debugging
 .bundledFiles 
 .java-version 
-
+Steves-tests/*
+project/*
+target/*

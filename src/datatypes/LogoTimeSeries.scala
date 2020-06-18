@@ -220,13 +220,13 @@ class LogoTimeSeries extends ExtensionObject {
 
     var lowerKey: LogoTime = timeLow
     var higherKey: LogoTime = timeHigh
-    if (times.get(lowerKey) == None) {
+    if (times.get(lowerKey) == None) {  // NOTE: I think we don't need this. It's fine if the list is empty, just return an empty list.
       val timelist = times.keySet.filter(stime => !stime.isBefore(timeLow) || stime.isEqual(timeLow))
       if(!timelist.isEmpty)
         lowerKey = timelist.min
       else throw new ExtensionException("List is empty (Low)")
     }
-    if(times.get(higherKey) == None) {
+    if(times.get(higherKey) == None) {  // NOTE: I think we don't need this. It's fine if the list is empty, just return an empty list. 
       val timelist = times.keySet.filter(stime => stime.isBefore(timeHigh) || stime.isEqual(timeHigh))
       if(!timelist.isEmpty) higherKey = timelist.max
       else throw new ExtensionException("List is empty (High)")
