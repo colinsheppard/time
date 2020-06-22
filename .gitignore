@@ -10,5 +10,7 @@ debugging
 .bundledFiles 
 .java-version 
 Steves-tests/*
-project/*
-target/*
+target/
+TroutCode_2020-06-21/
+*.tmp.nlogo
+

@@ -1,4 +1,5 @@
 extensions [ time csv]
+__includes ["time-series.nls"]
 
 globals [
   TS
@@ -10,131 +11,9 @@ end
 
 
 
-
-;; Implementation of primitives from time series tool
-to-report ts-create [col-name-list]
-  report  "not implemented"
+to go
+  print ts-get TS time:create "2000-01-01 01:00:00" "all"
 end
-
-to-report ts-add-row [time-series row-list]
-  report "not implemented"
-end
-
-to-report ts-get [time-series logotime col-name]
-  ;report sort-by [[row1 row2] -> time:difference-between item 0 row1 timestamp "seconds" < time:difference-between item 0 row2 timestamp "seconds"] butfirst time-series
-  let closest-before-after ts-get-before-and-after time-series logotime
-  let closest-before item 0 closest-before-after
-  let closest-after item 1 closest-before-after
-  let closest nobody
-
-  (ifelse
-    closest-before = nobody [
-      set closest closest-after]
-    closest-after = nobody [
-      set closest closest-before]
-    time:difference-between (item 0 closest-before) logotime "seconds" < time:difference-between (item 0 closest-after) logotime "seconds" [
-      set closest closest-before]
-    [ ;; else
-      set closest closest-after]
-  )
-
-  report col-of-row (item 0 time-series) closest col-name
-end
-
-to-report ts-get-before-and-after [time-series logotime]
-  let closest-before nobody
-  let closest-after nobody
-
-  foreach but-first time-series [ row ->
-    let row-time (item 0 row)
-
-    ifelse closest-before = nobody [
-      if time:is-before row-time logotime [
-        set closest-before row
-      ]
-    ] [
-      if time:is-before row-time logotime and time:is-between row-time (item 0 closest-before) logotime [
-        set closest-before row
-      ]
-    ]
-
-    ifelse closest-after = nobody [
-      if time:is-after row-time logotime [
-        set closest-after row
-      ]
-    ] [
-      if time:is-after row-time logotime and time:is-between row-time logotime (item 0 closest-after) [
-        set closest-after row
-      ]
-    ]
-  ]
-
-  report list closest-before closest-after
-end
-
-
-
-to-report ts-get-interp [time-series logotime col-name]
-  report "not implemented"
-end
-
-
-to-report ts-get-exact [time-series logotime col-name]
-  let closest-row ts-get time-series logotime "all"
-  ifelse time:is-equal (item 0 closest-row) logotime [
-    report col-of-row (item 0 time-series) closest-row col-name
-  ] [
-    error word "There is no row in this timeseries with exactly the time " logotime
-  ]
-
-end
-
-to-report ts-get-range [time-series logotime1 logotime2 col-name]
-  report "not implemented"
-end
-
-
-to-report ts-load [filepath]
-  let temp-ts (csv:from-file "time-series-data.csv" ",")
-  report fput (item 0 temp-ts) map [ row ->
-    convert-row row
-  ] (butfirst temp-ts)
-
-end
-
-to-report ts-load-with-format [filepath format-string]
-  report "not implemented"
-end
-
-
-to-report ts-write [time-series filepath]
-  report "not implemented"
-end
-
-
-
-
-
-
-
-
-;; Helper Procedures
-
-to-report convert-row [row] ; helper
-  report fput (time:create item 0 row) (map [i -> ifelse-value is-string? i [read-from-string i] [i]] butfirst row)
-end
-
-
-to-report col-of-row [columns row col-name]
-  ifelse col-name = "all" or col-name = "ALL" [
-    report row
-  ] [
-    let pos position col-name (item 0 columns)
-    if pos = false [error (word "'" col-name "' is not a column in this time series")]
-    report item pos row
-  ]
-end
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
@@ -170,6 +49,23 @@ BUTTON
 66
 NIL
 setup\n
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+125
+32
+188
+65
+NIL
+go
 NIL
 1
 T

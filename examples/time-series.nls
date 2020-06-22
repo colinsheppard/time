@@ -1,0 +1,146 @@
+
+;; Implementation of primitives from time series tool
+to-report ts-create [col-name-list]
+  report  (list sentence "timestamp" col-name-list)
+end
+
+
+to-report ts-add-row [time-series row-list]
+  report lput row-list time-series  
+end
+
+
+to-report ts-get [time-series logotime col-name]
+  ;report sort-by [[row1 row2] -> time:difference-between item 0 row1 timestamp "seconds" < time:difference-between item 0 row2 timestamp "seconds"] butfirst time-series  
+  let closest item 1 time-series
+  
+  foreach but-first time-series [ row ->         
+    if time:difference-between item 0 row logotime "seconds" < time:difference-between item 0 closest logotime "seconds" [
+      set closest row
+    ]
+  ]
+      
+  report col-of-row (item 0 time-series) closest col-name
+end
+
+to-report ts-get-before-and-after [time-series logotime]
+  let closest-before nobody
+  let closest-after nobody
+  
+  foreach but-first time-series [ row -> 
+    let row-time (item 0 row)
+    
+    ifelse closest-before = nobody [
+      if is-before-or-equal? row-time logotime [
+        set closest-before row
+      ] 
+    ] [
+      if is-before-or-equal? row-time logotime and time:is-between row-time (item 0 closest-before) logotime [
+        set closest-before row
+      ]
+    ]
+    
+    ifelse closest-after = nobody [
+      if is-after-or-equal? row-time logotime [
+        set closest-after row
+      ] 
+    ] [
+      if is-after-or-equal? row-time logotime and time:is-between row-time logotime (item 0 closest-after) [
+        set closest-after row
+      ]
+    ]
+  ]
+  
+  report list closest-before closest-after
+end
+
+
+to-report ts-get-interp [time-series logotime col-name]
+  let before-and-after ts-get-before-and-after time-series logotime    
+  let before-val col-of-row (item 0 time-series) (item 0 before-and-after) col-name
+  let after-val col-of-row (item 0 time-series) (item 1 before-and-after) col-name
+  
+  (ifelse 
+    before-val = after-val [
+      report before-val]
+    before-val = nobody [
+      report after-val]
+    after-val = nobody [
+      report before-val] 
+    [ ; else
+      let before-time item 0 item 0 before-and-after
+      let after-time item 0 item 1 before-and-after
+      let before-after-time-diff (time:difference-between before-time after-time "seconds")
+      let slope (before-val - after-val) / before-after-time-diff
+      let before-logotime-diff (time:difference-between before-time logotime "seconds")
+      
+      report before-val + slope * before-logotime-diff      
+    ]
+  )
+end
+
+
+to-report ts-get-exact [time-series logotime col-name]
+  let closest-row ts-get time-series logotime "all"
+  ifelse time:is-equal (item 0 closest-row) logotime [
+    report col-of-row (item 0 time-series) closest-row col-name
+  ] [
+    error word "There is no row in this timeseries with exactly the time " logotime 
+  ]
+    
+end
+
+to-report ts-get-range [time-series logotime1 logotime2 col-name]
+  report map 
+  [row -> col-of-row (item 0 time-series) row col-name]
+  (filter [row -> is-after-or-equal? (item 0 row) logotime1 and is-before-or-equal? (item 0 row) logotime2] butfirst time-series)
+end
+
+
+
+to-report ts-load [filepath]
+  let temp-ts (csv:from-file "time-series-data.csv" ",")
+  report fput (item 0 temp-ts) map [ row -> 
+    convert-row row 
+  ] (butfirst temp-ts)
+  
+end
+
+to-report ts-load-with-format [filepath format-string]
+  report "not implemented"
+end
+
+
+to-report ts-write [time-series filepath]
+  csv:to-file filepath time-series
+end
+
+
+
+
+
+;; Helper Procedures
+
+to-report convert-row [row] ; helper 
+  report fput (time:create item 0 row) (map [i -> ifelse-value is-string? i [read-from-string i] [i]] butfirst row)
+end
+
+
+to-report col-of-row [columns row col-name]
+  ifelse col-name = "all" or col-name = "ALL" [
+    report row
+  ] [
+    let pos position col-name columns
+    if pos = false [error (word "'" col-name "' is not a column in this time series")]
+    report item pos row
+  ]
+end
+
+
+to-report is-before-or-equal? [logotime1 logotime2]
+  report time:is-before logotime1 logotime2 or time:is-equal logotime1 logotime2
+end
+
+to-report is-after-or-equal? [logotime1 logotime2]
+  report time:is-after logotime1 logotime2 or time:is-equal logotime1 logotime2
+end
