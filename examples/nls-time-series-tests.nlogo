@@ -1,28 +1,101 @@
 extensions [ time csv]
 __includes ["time-series.nls"]
 
-globals [
-  TS
-]
 
-to setup
-  set TS ts-load  "time-series-data.csv"
+
+
+to run-tests
+  ;print ts-get TS time:create "2000-01-01 01:00:00" "all"
+  test-indexes-before-and-after
+  test-ts-add-row
+  test-ts-get
+  test-ts-get-range
+  test-time-series-with-strings
+  test-ts-get-interp
 end
 
 
+to test-time-series-with-strings
+  let ts ts-load  "time-series-data.csv"
+  let start-time time:create "1999-12-31"
+  let end-time time:create "2000-01-03"
+  set ts ts-create ["flow" "temp"]
+  set ts ts-add-row ts (list (time:create "2000-01-01") "jerry" 2)
+  set ts ts-add-row ts (list (time:create "2000-01-02") "cherry" 5)
+  if (ts-get-range ts start-time end-time "flow") != ["jerry" "cherry"] [error "error dealing with strings"]
+  if (ts-get-range ts start-time end-time "temp") != [2 5] [error "error dealing with strings"]
 
-to go
-  print ts-get TS time:create "2000-01-01 01:00:00" "all"
+  ts-write ts "new-ts-range.csv"
+  let ts_out (ts-load-with-format "new-ts-range.csv" "YYYY-MM-dd")
+  print "All tests with strings passed"
+end
+
+to test-ts-get-range
+  let ts ts-load  "time-series-data.csv"
+  if (ts-get-range ts time:create "2000-01-01 01:00:00" time:create "2000-01-01 03:00:00" "flow") != (list 1010 1020 1030) [error "ts-get-range fail 1"]
+  if (ts-get-range ts time:create "2000-01-01 01:00:01" time:create "2000-01-01 03:00:00" "flow") != (list 1020 1030) [error "ts-get-range fail 2"]
+  if (ts-get-range ts time:create "1999-12-31 00:00:00" time:create "1999-12-31 23:00:00" "flow") != (list) [error "ts-get-range fail 3"]
+  if (ts-get-range ts time:create "2000-01-03 01:00:01" time:create "2000-01-04 01:00:01" "flow") != (list) [error "ts-get-range fail 3"]
+  if (ts-get-range ts time:create "2000-01-03 01:00:00" time:create "2000-01-03 01:00:00" "flow") != (list 1040) [error "ts-get-range fail 3"]
+   print "All ts-get-range tests passed"
+end
+
+to test-ts-get
+  let ts ts-load  "time-series-data.csv"
+  if not time:is-equal (ts-get ts (time:create "2000-01-03 01:00:01") "LOGOTIME") (time:create "2000-01-03 01:00:00") [error "failure to get the last time as the closest to a time bigger than the last"]
+  if not time:is-equal (ts-get ts (time:create "1999-12-31 00:00:00") "LOGOTIME") (time:create "2000-01-01 00:00:00") [error "failure to get the first time as the closest to a time bigger than the last"]
+  if not time:is-equal (ts-get ts (time:create "2000-01-01 01:00:00") "LOGOTIME") (time:create "2000-01-01 01:00:00") [error "failure to get the exact match 2000-01-01 01:00:00"]
+  if not time:is-equal (ts-get ts (time:create "2000-01-01 01:29:59") "LOGOTIME") (time:create "2000-01-01 01:00:00") [error "failure to get 2000-01-01 01:00:00 for 2000-01-01 01:29:59"]
+  if not time:is-equal (ts-get ts (time:create "2000-01-01 01:30:01") "LOGOTIME") (time:create "2000-01-01 02:00:00") [error "failure to get 2000-01-01 02:00:00 for 2000-01-01 01:30:01"]
+
+  ; what should this do? higher or lower
+  ;if not time:is-equal (ts-get ts (time:create "2000-01-01 01:30:00") "LOGOTIME") (time:create "2000-01-01 01:00:00") [error "failure to get 2000-01-01 01:00:00 for 2000-01-01 01:29:00"]
+  print "All ts-get tests passed"
+end
+
+to test-ts-add-row
+  let ts ts-load  "time-series-data.csv"
+  if not time:is-equal time:create "2000-01-03 01:00:01" (item 0 item 51 ts-add-row ts (list time:create "2000-01-03 01:00:01" 10 20)) [error "failure to add row with latest time to end"]
+  if not time:is-equal time:create "1999-12-31 00:00:00" (item 0 item 1 ts-add-row ts (list time:create "1999-12-31 00:00:00" 10 20)) [error "failure to add row with earliest time to beginning"]
+  if not time:is-equal time:create "2000-01-01 02:00:01" (item 0 item 4 ts-add-row ts (list time:create "2000-01-01 02:00:01" 10 20)) [error "failure to add row to the proper place"]
+  print "All ts-add-row tests passed"
+end
+
+to test-indexes-before-and-after
+  let ts ts-load  "time-series-data.csv"
+  if (__indexes-before-and-after ts time:create "1999-12-31 00:00:00") != list nobody 1 [error "failure to get correct index of 1999-12-31 00:00:00"]
+  if (__indexes-before-and-after ts time:create "2000-01-01 00:00:00") != list 1 1 [error "failure to get correct index of 2000-01-01 00:00:00"]
+  if (__indexes-before-and-after ts time:create "2000-01-01 01:00:00") != list 2 2 [error "failure to get correct index of 2000-01-01 01:00:00"]
+  if (__indexes-before-and-after ts time:create "2000-01-01 01:30:00") != list 2 3 [error "failure to get correct index of 2000-01-01 01:30:00"]
+  if (__indexes-before-and-after ts time:create "2000-01-01 02:00:00") != list 3 3 [error "failure to get correct index of 2000-01-01 02:00:00"]
+  if (__indexes-before-and-after ts time:create "2000-01-01 02:00:01") != list 3 4 [error "failure to get correct index of 2000-01-01 02:00:01"]
+  if (__indexes-before-and-after ts time:create "2000-01-01 03:00:00") != list 4 4 [error "failure to get correct index of 2000-01-01 03:00:00"]
+  if (__indexes-before-and-after ts time:create "2000-01-03 01:00:00") != list 50 50 [error "failure to get correct index of 2000-01-03 01:00:00"]
+  if (__indexes-before-and-after ts time:create "2000-01-03 01:00:01") != list 50 nobody [error "failure to get correct index of 2000-01-03 01:00:00"]
+
+  print "All indexes-above-and-below tests passed"
+end
+
+to test-ts-get-interp
+  let ts ts-load  "time-series-data.csv"
+  if ts-get-interp ts time:create "2000-01-01 3:30" "temp" != 13.5 [error "ts-interp failing when interpolation is right in the middle"]
+  if ts-get-interp ts time:create "2000-01-01 3:06" "temp" != 13.1 [error "ts-interp failing when interpolation is 1/10 of the way between"]
+  if ts-get-interp ts time:create "2000-01-01 3:15" "temp" != 13.25 [error "ts-interp failing when interpolation is 1/4 of the way between"]
+  if ts-get-interp ts time:create "2000-01-01 3:45" "temp" != 13.75 [error "ts-interp failing when interpolation is 3/4 of the way between"]
+  if ts-get-interp ts time:create "2000-01-01 3:54" "temp" != 13.9 [error "ts-interp failing when interpolation is 9/10 of the way between"]
+  if ts-get-interp ts time:create "2000-01-01 3:00" "temp" != 13 [error "ts-interp failing when there is an exact match"]
+
+  print "All ts-interp tests passed"
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
-10
-647
-448
+221
+27
+559
+366
 -1
 -1
-13.0
+10.0
 1
 10
 1
@@ -43,29 +116,12 @@ ticks
 30.0
 
 BUTTON
-39
-33
-105
-66
-NIL
-setup\n
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-BUTTON
 125
 32
-188
+215
 65
 NIL
-go
+run-tests\n
 NIL
 1
 T

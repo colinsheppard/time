@@ -41,14 +41,14 @@ class LogoTime extends ExtensionObject {
     this()
     this.datetime = dt
   }
-  /* The LogoTime constructors below are used thoughout the
+  /** The LogoTime constructors below are used thoughout the
      TimePrimitive class and LogoTime class to allow conversions
      and re-initialization with different formats and times.
      This has been a source of confusion since there are
      many transitions between formatting and strings that
      have caused a lot of runtime errors
      [ CBR 02/14/19 ]
-   */
+   **/
 
   @throws[ExtensionException]
   def this(dateStringArg: String, customFormat: Option[String]) = {
@@ -387,14 +387,14 @@ class LogoTime extends ExtensionObject {
       case _ => throw new ExtensionException("Incorrect Time Unit")
     }
 
-  /* time:plus has been the source of plenty of hidden runtime issues
+  /** time:plus has been the source of plenty of hidden runtime issues
      with time conversions and parsing errors. These two errors are
      often found here because of the number of constructors,
      implicit conversions, parsing, and formatting that LogoTime
      tries to automate. Also, since not all DateTime formats are
      valid sometimes new values don't make sense and error out
      [ CBR 02/14/19 ]
-   */
+   **/
 
   def plus(pType: PeriodType, durVal: java.lang.Double): LogoTime =
     this.dateType match {
@@ -527,11 +527,11 @@ class LogoTime extends ExtensionObject {
     }
   }
 
-  /* getDifferencebetween is another primitive that requires implicit conversions.
+  /** getDifferencebetween is another primitive that requires implicit conversions.
      Since matching types are a required, there shouldn't be any issues,
      but with time:plus and other primitives with hidden conversions, sometimes type checking at
      runtime fails. [ CBR 02/14/19 ]
-   */
+   **/
   def getDifferenceBetween(pType: PeriodType, endTime: LogoTime): java.lang.Double = {
     if (this.dateType != endTime.dateType){
       throw new ExtensionException(s"time comparisons only work if the LogoTimes are the same variety, but you called with a ${this.dateType.toString} and a ${endTime.dateType.toString}")

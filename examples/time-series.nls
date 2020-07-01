@@ -1,64 +1,133 @@
+;; NOTE: the main file that includes this one must have both the csv and time extensions
 
-;; Implementation of primitives from time series tool
+;; Implementation of what were primitives from the time-extension time-series tool 
 to-report ts-create [col-name-list]
-  report  (list sentence "timestamp" col-name-list)
+  report  (list sentence "LOGOTIME" col-name-list)
 end
 
 
-to-report ts-add-row [time-series row-list]
-  report lput row-list time-series  
-end
-
-
-to-report ts-get [time-series logotime col-name]
-  ;report sort-by [[row1 row2] -> time:difference-between item 0 row1 timestamp "seconds" < time:difference-between item 0 row2 timestamp "seconds"] butfirst time-series  
-  let closest item 1 time-series
+to-report ts-add-row [ltime-series row] 
   
-  foreach but-first time-series [ row ->         
-    if time:difference-between item 0 row logotime "seconds" < time:difference-between item 0 closest logotime "seconds" [
-      set closest row
+  (ifelse
+    length ltime-series = 1 or time:is-after (__time-of row) (__time-of last ltime-series) [      
+      report lput row ltime-series
     ]
+    time:is-before (__time-of row) (__time-of item 1 ltime-series) [
+      report insert-item 1 ltime-series row
+    ]
+    [ ;else
+      let b&a __indexes-before-and-after ltime-series (__time-of row)
+      if first b&a = last b&a [error (word "a row with logotime " __time-of row " already exists")]
+      report insert-item (last b&a) ltime-series row
+    ]  
+  )
+end
+
+
+to-report ts-get [ltime-series logotime col-name]  
+  let b&a ts-get-before-and-after ltime-series logotime
+  let columns (item 0 ltime-series)
+  (ifelse 
+    first b&a = nobody [report __col-of-row columns (last b&a) col-name] ; need this explicitly so we don't try to get __time-of first b&a iin the next conditional when first b&a is nobody    
+    last b&a = nobody or 
+    (abs(time:difference-between logotime (__time-of first b&a) "seconds") <= abs(time:difference-between logotime (__time-of last b&a) "seconds"))[
+      report __col-of-row columns (first b&a) col-name   ; logotime is closer to the item before than after
+    ]  [ ; else 
+    report __col-of-row columns (last b&a) col-name 
+    ]
+  )
+end
+
+
+to-report ts-get-before-and-after [ltime-series logotime]
+  let b&a __indexes-before-and-after ltime-series logotime
+  let before ifelse-value (first b&a = nobody) [nobody] [item (first b&a) ltime-series]
+  let after ifelse-value (last b&a = nobody) [nobody] [item (last b&a) ltime-series]
+  report list before after
+end
+
+
+to-report ts-get-interp [ltime-series logotime col-name]
+  ;; if col-name is a specific column, return just the linearly interpolated value
+  ;; if col-name is "all" then return a whole interpolated row, including an interpolated logotime
+  
+  let before-and-after ts-get-before-and-after ltime-series logotime    
+  let col-names first ltime-series
+  
+  ifelse col-name = "all" or col-name = "ALL" [        
+    report fput logotime map [col -> __interp before-and-after logotime col-names col] butfirst col-names
+  ] [     
+    report __interp before-and-after logotime col-names col-name
+  ]  
+end
+
+
+to-report ts-get-exact [ltime-series logotime col-name]
+  let closest-row ts-get ltime-series logotime "all"
+  ifelse time:is-equal (item 0 closest-row) logotime [
+    report __col-of-row (item 0 ltime-series) closest-row col-name
+  ] [
+    error word "There is no row in this timeseries with exactly the time " logotime 
   ]
-      
-  report col-of-row (item 0 time-series) closest col-name
+    
 end
 
-to-report ts-get-before-and-after [time-series logotime]
-  let closest-before nobody
-  let closest-after nobody
+
+to-report ts-get-range [ltime-series logotime1 logotime2 col-name]
+; reverse the times if logotime2 is before logotime1
+  if time:is-before logotime2 logotime1 [ 
+    let temp1 logotime1
+    set logotime1 logotime2
+    set logotime2 temp1
+  ]
+    
+  ; get the index after logotime1
+  let b&a-t1 __indexes-before-and-after ltime-series logotime1
+  let after-t1 __after-index b&a-t1 length ltime-series
+    
+  ; get the index after logotime2
+  let b&a-t2 __indexes-before-and-after ltime-series logotime2
+  let after-t2 __after-index b&a-t2 length ltime-series
   
-  foreach but-first time-series [ row -> 
-    let row-time (item 0 row)
-    
-    ifelse closest-before = nobody [
-      if is-before-or-equal? row-time logotime [
-        set closest-before row
-      ] 
-    ] [
-      if is-before-or-equal? row-time logotime and time:is-between row-time (item 0 closest-before) logotime [
-        set closest-before row
-      ]
-    ]
-    
-    ifelse closest-after = nobody [
-      if is-after-or-equal? row-time logotime [
-        set closest-after row
-      ] 
-    ] [
-      if is-after-or-equal? row-time logotime and time:is-between row-time logotime (item 0 closest-after) [
-        set closest-after row
-      ]
-    ]
+  if (first b&a-t2 = last b&a-t2) [ ;if logotime2 is exactly in the ltime-series, increase after-t2 by 1 so that logotime2 is included
+    set after-t2 after-t2 + 1
   ]
   
-  report list closest-before closest-after
+  ; report the columns of the sublist between aftere-t1 and after-t2 
+  let columns (item 0 ltime-series)
+  report map [row -> __col-of-row columns row col-name] sublist ltime-series after-t1 after-t2
 end
 
 
-to-report ts-get-interp [time-series logotime col-name]
-  let before-and-after ts-get-before-and-after time-series logotime    
-  let before-val col-of-row (item 0 time-series) (item 0 before-and-after) col-name
-  let after-val col-of-row (item 0 time-series) (item 1 before-and-after) col-name
+to-report ts-load [filepath]
+  report ts-load-with-format filepath nobody
+end
+
+
+to-report ts-load-with-format [filepath format-string]
+  let temp-ts __remove-comment-lines (csv:from-file filepath ",")
+  
+  let columns fput "LOGOTIME" butfirst item 0 temp-ts ; replace the first column with "LOGOTIME"
+  
+  report fput columns __sort-by-date map [ row ->
+    __convert-row-with-format row format-string
+  ] (butfirst temp-ts)
+end
+
+
+to ts-write [ltime-series filepath]
+  csv:to-file filepath fput (first ltime-series) map [row -> 
+    fput (__show-default (first row)) (butfirst row)] 
+    butfirst ltime-series
+end
+
+
+;**********************************
+;********Helper Procedures*********
+;**********************************
+to-report __interp [before-and-after logotime col-names col-name]
+  let before-val __col-of-row col-names (item 0 before-and-after) col-name
+  let after-val __col-of-row col-names (item 1 before-and-after) col-name 
   
   (ifelse 
     before-val = after-val [
@@ -71,76 +140,114 @@ to-report ts-get-interp [time-series logotime col-name]
       let before-time item 0 item 0 before-and-after
       let after-time item 0 item 1 before-and-after
       let before-after-time-diff (time:difference-between before-time after-time "seconds")
-      let slope (before-val - after-val) / before-after-time-diff
+      let slope (after-val - before-val) / before-after-time-diff
       let before-logotime-diff (time:difference-between before-time logotime "seconds")
       
       report before-val + slope * before-logotime-diff      
     ]
   )
 end
-
-
-to-report ts-get-exact [time-series logotime col-name]
-  let closest-row ts-get time-series logotime "all"
-  ifelse time:is-equal (item 0 closest-row) logotime [
-    report col-of-row (item 0 time-series) closest-row col-name
-  ] [
-    error word "There is no row in this timeseries with exactly the time " logotime 
-  ]
-    
-end
-
-to-report ts-get-range [time-series logotime1 logotime2 col-name]
-  report map 
-  [row -> col-of-row (item 0 time-series) row col-name]
-  (filter [row -> is-after-or-equal? (item 0 row) logotime1 and is-before-or-equal? (item 0 row) logotime2] butfirst time-series)
-end
-
-
-
-to-report ts-load [filepath]
-  let temp-ts (csv:from-file "time-series-data.csv" ",")
-  report fput (item 0 temp-ts) map [ row -> 
-    convert-row row 
-  ] (butfirst temp-ts)
   
+
+to-report __indexes-before-and-after [timeseries logotime]  
+  ; return the indexes of the rows in timeseries that have logotimes above and below logotimes. 
+  ; if there is an exact match, return the index of the exact row twice. 
+  ; the column names are included so that you can just use the index on the timeseries list and not butfirst timeseries list. 
+  ; This is equivalent to treating ltime-series objects here as starting at index 1
+  let i round ((length timeseries) / 2)
+  let max-i length timeseries - 1
+  let min-i 1
+  while [true] [
+    (ifelse
+      time:is-equal logotime (__time-of item i timeseries) [report list i i]      
+      (time:is-before logotime (__time-of item i timeseries)) and i = 1 [report list nobody i]
+      (time:is-after logotime (__time-of item i timeseries)) and i = (length timeseries - 1) [report list i nobody]
+      (time:is-after logotime (__time-of item i timeseries)) and (time:is-before logotime (__time-of item (i + 1) timeseries)) [report list i (i + 1)]
+      time:is-before logotime (__time-of item i timeseries) [        
+        set max-i i
+        set i floor ((i + min-i) / 2)
+      ]
+      __is-after-or-equal? logotime (__time-of item (i + 1) timeseries) [        
+        set min-i i
+        set i ceiling ((i + max-i) / 2)
+      ]
+    )
+  ]  
 end
 
-to-report ts-load-with-format [filepath format-string]
-  report "not implemented"
+to-report __time-of [row]
+  report item 0 row
+end
+
+to-report __sort-by-date [timeseries]
+  report sort-by [[row1 row2] -> time:is-before (item 0 row1) (item 0 row2)] timeseries
+end
+
+to-report __remove-comment-lines [data]
+  while [(first (first (first data)) = ";")]  ;; remove lines that start with a semicolon 
+      [set data but-first data]
+  report data
+end
+
+to-report __convert-row-with-format [row format-string] ; helper
+  let new-time ifelse-value format-string = nobody [time:create item 0 row] [time:create-with-format (item 0 row) format-string]
+  ;report fput new-time (map [i -> ifelse-value is-string? i [read-from-string i] [i]] butfirst row)
+  report fput new-time butfirst row
+end
+
+to-report __convert-row [row] ; helper   
+  report __convert-row-with-format row nobody
 end
 
 
-to-report ts-write [time-series filepath]
-  csv:to-file filepath time-series
+to-report __col-of-row [columns row col-name]
+  (ifelse 
+    col-name = "all" or col-name = "ALL" [report row] 
+    col-name = "LOGOTIME" or col-name = "logotime" [report item 0 row]
+    [ ;else
+      let pos position col-name columns
+      if pos = false [error (word "'" col-name "' is not a column in this time series")]
+      report item pos row
+    ]
+  )
 end
 
-
-
-
-
-;; Helper Procedures
-
-to-report convert-row [row] ; helper 
-  report fput (time:create item 0 row) (map [i -> ifelse-value is-string? i [read-from-string i] [i]] butfirst row)
-end
-
-
-to-report col-of-row [columns row col-name]
-  ifelse col-name = "all" or col-name = "ALL" [
-    report row
-  ] [
-    let pos position col-name columns
-    if pos = false [error (word "'" col-name "' is not a column in this time series")]
-    report item pos row
-  ]
-end
-
-
-to-report is-before-or-equal? [logotime1 logotime2]
+to-report __is-before-or-equal? [logotime1 logotime2]
   report time:is-before logotime1 logotime2 or time:is-equal logotime1 logotime2
 end
 
-to-report is-after-or-equal? [logotime1 logotime2]
+to-report __is-after-or-equal? [logotime1 logotime2]
   report time:is-after logotime1 logotime2 or time:is-equal logotime1 logotime2
+end
+
+to-report __logotime-variety [logotime]
+  let variety nobody
+  carefully [
+    let temp time:is-equal logotime time:create "2000-12-01 1"
+    set variety "DATETIME"
+  ] [
+    carefully [
+      let temp time:is-equal logotime time:create "2000-12-01"
+      set variety "DATE"
+    ] [
+      let temp time:is-equal logotime time:create "12-01"
+      set variety "DAY"
+    ]
+  ]
+  report variety
+end
+
+to-report __show-default [logotime]
+  ; Like time:show, but it shows the default format depending on the variety
+  ; of the logotime .
+  let variety __logotime-variety logotime
+  (ifelse
+    variety = "DATETIME" [report time:show logotime "yyyy-MM-dd HH:mm:ss.SSS"]
+    variety = "DATE" [report time:show logotime "yyyy-MM-dd"]
+    variety = "DAY" [report time:show logotime "MM-dd"]
+  )
+end
+
+to-report __after-index [before-and-after max-index]
+  report ifelse-value (last before-and-after) = nobody [max-index] [last before-and-after]
 end
