@@ -116,10 +116,10 @@ ticks
 30.0
 
 BUTTON
-125
-32
-215
-65
+128
+29
+218
+62
 NIL
 run-tests\n
 NIL

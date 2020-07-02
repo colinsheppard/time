@@ -21,7 +21,7 @@ class TimeExtension extends DefaultClassManager {
   }
 
   def load(primManager: org.nlogo.api.PrimitiveManager): Unit = {
-    /*
+    /**
      Time and formatting Primitives
      */
     primManager.addPrimitive("is-before", new TimePrimitives.IsBefore())
@@ -36,19 +36,20 @@ class TimeExtension extends DefaultClassManager {
     primManager.addPrimitive("create", new TimePrimitives.NewLogoTime())
     primManager.addPrimitive("create-with-format", new TimePrimitives.CreateWithFormat())
     primManager.addPrimitive("copy", new TimePrimitives.Copy())
-    /*
-     TimeSeries Primitives
+    /**
+     TimeSeries Primitives:
      */
-    primManager.addPrimitive("ts-create", new TimeSeriesPrimitives.TimeSeriesCreate())
-    primManager.addPrimitive("ts-add-row", new TimeSeriesPrimitives.TimeSeriesAddRow())
-    primManager.addPrimitive("ts-load", new TimeSeriesPrimitives.TimeSeriesLoad())
-    primManager.addPrimitive("ts-load-with-format", new TimeSeriesPrimitives.TimeSeriesLoadWithFormat())
-    primManager.addPrimitive("ts-write", new TimeSeriesPrimitives.TimeSeriesWrite())
-    primManager.addPrimitive("ts-get", new TimeSeriesPrimitives.TimeSeriesGet())
-    primManager.addPrimitive("ts-get-interp", new TimeSeriesPrimitives.TimeSeriesGetInterp())
-    primManager.addPrimitive("ts-get-exact", new TimeSeriesPrimitives.TimeSeriesGetExact())
-    primManager.addPrimitive("ts-get-range", new TimeSeriesPrimitives.TimeSeriesGetRange())
-    /*
+    // not included in beta. May re-include later
+    // primManager.addPrimitive("ts-create", new TimeSeriesPrimitives.TimeSeriesCreate())
+    // primManager.addPrimitive("ts-add-row", new TimeSeriesPrimitives.TimeSeriesAddRow())
+    // primManager.addPrimitive("ts-load", new TimeSeriesPrimitives.TimeSeriesLoad())
+    // primManager.addPrimitive("ts-load-with-format", new TimeSeriesPrimitives.TimeSeriesLoadWithFormat())
+    // primManager.addPrimitive("ts-write", new TimeSeriesPrimitives.TimeSeriesWrite())
+    // primManager.addPrimitive("ts-get", new TimeSeriesPrimitives.TimeSeriesGet())
+    // primManager.addPrimitive("ts-get-interp", new TimeSeriesPrimitives.TimeSeriesGetInterp())
+    // primManager.addPrimitive("ts-get-exact", new TimeSeriesPrimitives.TimeSeriesGetExact())
+    // primManager.addPrimitive("ts-get-range", new TimeSeriesPrimitives.TimeSeriesGetRange())
+    /**
      DiscreteEventscheduler primitives
      */
     primManager.addPrimitive("schedule-event", new DiscreteEventSchedulerPrimitives.AddEvent())
